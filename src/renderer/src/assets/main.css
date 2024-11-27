@@ -1,0 +1,30 @@
+@import './base.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.ant-table-placeholder {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    height: 100% !important;
+    width: 100% !important;
+    min-width: 100% !important; /* Ensures the container takes up full width */
+    min-height: 150px !important; /* Ensures vertical centering */
+  }
+
+.ant-table-cell{
+  padding: 8px !important;
+}
+
+.ant-card-body{
+  padding: 8px !important;
+}
+/* .ant-spin .ant-spin-dot{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+ width: 9rem;
+ height: 8rem;
+} */

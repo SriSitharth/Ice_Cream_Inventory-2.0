@@ -1,0 +1,17 @@
+.billtable, .billtable th, .billtable td {
+    border: 1px solid #dedede !important; /* Ensure border stays even if Tailwind adds border-none */
+    border-collapse: collapse;
+    padding: 5px;
+}
+
+.gstitemtable, .gstitemtable th,.gstitemtable  td{
+    border: 1px solid #dedede;
+}
+
+.gsttaxtable, .gsttaxtable th, .gsttaxtable td {
+    border: 1px solid #dedede !important; /* Ensure border stays even if Tailwind adds border-none */
+}
+
+.pdf-padding, .pdf-padding th, .pdf-padding td {
+    padding-bottom: 2px;
+}

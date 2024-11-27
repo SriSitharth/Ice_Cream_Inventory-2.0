@@ -1,0 +1,10 @@
+/* Selected value in input field */
+.box-select .ant-select-selector {
+    color: #f26723 !important;  /* Text color for selected value */
+  }
+  
+  /* Dropdown option text */
+  .box-select .ant-select-item-option {
+    color: #f26723;  /* Default text color for dropdown options */
+  }
+  

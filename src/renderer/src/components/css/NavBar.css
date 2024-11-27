@@ -1,0 +1,36 @@
+.ant-tabs-tab-btn {
+    color: #4f4e4e !important;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: #4f4e4e !important;
+}
+
+.ant-tabs-tab-btn {
+    color: #727272 !important;
+}
+
+.active-text-white{
+    color: #ffffff !important;
+}
+
+.ant-tabs-tab-active .active-text-white{
+    color: #ffffff !important;
+    font-weight: 500 !important;
+}
+/*
+ 
+.ant-tabs-tab-btn .active{
+    color: #000000 !important;
+} */
+/* .ant-card .ant-card-head {
+    border-bottom: 1px solid #bd3e00 !important;
+} */
+
+/* .ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: #ffffff !important;
+}
+
+.testactive{
+    color: red;
+} */
