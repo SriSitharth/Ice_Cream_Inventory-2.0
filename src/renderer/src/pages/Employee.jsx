@@ -42,6 +42,8 @@ import { PiWarningCircleFill } from 'react-icons/pi'
 import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import { truncateString } from '../js-files/letter-length-sorting'
 
+import { addEmployee } from '../sql/employee'
+
 export default function Employee({ datas, employeeUpdateMt }) {
   // states
   const [form] = Form.useForm()
@@ -56,7 +58,6 @@ export default function Employee({ datas, employeeUpdateMt }) {
   useEffect(() => {
     setEmployeeTbLoading(true)
     const filteredData = datas.employees
-      .filter((data) => data.isdeleted === false)
       .map((item, index) => ({ ...item, sno: index + 1, key: item.id || index }))
     setData(filteredData)
     setEmployeeTbLoading(false)
@@ -77,12 +78,16 @@ export default function Employee({ datas, employeeUpdateMt }) {
   // create new project
   const createNewEmployee = async (values) => {
     setIsNewEmployeeLoading(true)
+    console.log(values);
     try {
-      await createEmployee({
+      await addEmployee({
         ...values,
-        createddate: TimestampJs(),
-        updateddate: '',
-        isdeleted: false
+        name: values.employeename,
+        address: values.location,
+        mobileNumber: values.mobilenumber,
+        createdDate: new Date().toISOString(),
+        modifiedDate: new Date().toISOString(),
+        isDeleted: 0
       })
       form.resetFields()
       employeeUpdateMt()
@@ -112,17 +117,17 @@ export default function Employee({ datas, employeeUpdateMt }) {
           String(record.position).toLowerCase().includes(value.toLowerCase()) ||
           String(record.mobilenumber).toLowerCase().includes(value.toLowerCase()) ||
           String(record.location).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.employeename).toLowerCase().includes(value.toLowerCase()) || 
+          String(record.name).toLowerCase().includes(value.toLowerCase()) || 
           String(record.gender).toLowerCase().includes(value.toLowerCase()) 
         )
       }
     },
     {
       title: 'Employee',
-      dataIndex: 'employeename',
-      key: 'employeename',
+      dataIndex: 'name',
+      key: 'name',
       editable: true,
-      sorter: (a, b) => a.employeename.localeCompare(b.employeename),
+      sorter: (a, b) => a.name.localeCompare(b.name),
       showSorterTooltip: { target: 'sorter-icon' },
       defaultSortOrder: 'ascend'
     },
@@ -137,10 +142,10 @@ export default function Employee({ datas, employeeUpdateMt }) {
     },
     {
       title: 'Address',
-      dataIndex: 'location',
-      key: 'location',
+      dataIndex: 'address',
+      key: 'address',
       editable: true,
-      sorter: (a, b) => a.location.localeCompare(b.location),
+      sorter: (a, b) => a.address.localeCompare(b.address),
       showSorterTooltip: { target: 'sorter-icon' },
       render: (text,record)=>{
         return text.length > 18 ? <Tooltip title={text}>{truncateString(text,18)}</Tooltip> : text
@@ -148,8 +153,8 @@ export default function Employee({ datas, employeeUpdateMt }) {
     },
     {
       title: 'Mobile',
-      dataIndex: 'mobilenumber',
-      key: 'mobilenumber',
+      dataIndex: 'mobileNumber',
+      key: 'mobileNumber',
       editable: true,
       width: 140
     },

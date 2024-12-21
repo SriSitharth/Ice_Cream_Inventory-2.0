@@ -53,6 +53,8 @@ import { areArraysEqual, compareArrays } from '../js-files/compare-two-array-of-
 import './css/CustomerList.css';
 import TableHeight from '../components/TableHeight'
 
+import { addCustomer } from '../sql/customer'
+
 export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdateMt }) {
   // states
   const [form] = Form.useForm()
@@ -77,7 +79,6 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   useEffect(() => {
     setCustomerTbLoading(true)
     const filteredData = datas.customers
-      .filter((data) => data.isdeleted === false)
       .map((item, index) => ({ ...item, sno: index + 1, key: item.id || index }))
     
 
@@ -121,14 +122,18 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     let {boxnumbers,...newvalue} = values;
     boxnumbers = boxnumbers === undefined ? [] : boxnumbers
     setIsNewCustomerLoading(true)
+    console.log(values)
     try {
-     let result =  await createCustomer({
+     let result =  await addCustomer({
         ...newvalue,
+        name: values.customername,
+        transportationType: values.transport,
+        address: values.location,
         gstin: values.gstin || '',
-        vehicleorfreezerno: values.vehicleorfreezerno || '',
-        createddate: TimestampJs(),
-        updateddate: '',
-        isdeleted: false
+        vehicleOrFreezerNo: values.vehicleorfreezerno || '',
+        createdDate: new Date().toISOString(),
+        modifiedDate: new Date().toISOString(),
+        isDeleted: 0
       });
 
       let customerid = result.status ===200 ? result.res.id : undefined;
@@ -420,9 +425,9 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       filteredValue: [searchText],
       onFilter: (value, record) => {
         return (
-          String(record.customername).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.name).toLowerCase().includes(value.toLowerCase()) ||
           String(record.transport).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.location).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.address).toLowerCase().includes(value.toLowerCase()) ||
           String(record.mobilenumber).toLowerCase().includes(value.toLowerCase()) ||
           String(record.gstin).toLowerCase().includes(value.toLowerCase()) ||
           String(record.vehicleorfreezerno).toLowerCase().includes(value.toLowerCase())
@@ -431,26 +436,26 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     },
     {
       title: 'Customer',
-      dataIndex: 'customername',
-      key: 'customername',
+      dataIndex: 'name',
+      key: 'name',
       editable: true,
-      sorter: (a, b) => a.customername.localeCompare(b.customername),
+      sorter: (a, b) => a.name.localeCompare(b.name),
       showSorterTooltip: { target: 'sorter-icon' },
       defaultSortOrder: 'ascend'
     },
     {
       title: 'Transport',
-      dataIndex: 'transport',
-      key: 'transport',
+      dataIndex: 'transportationType',
+      key: 'transportationType',
       editable: true,
-      sorter: (a, b) => a.transport.localeCompare(b.transport),
+      sorter: (a, b) => a.transportationType.localeCompare(b.transportationType),
       showSorterTooltip: { target: 'sorter-icon' },
       width: 139
     },
     {
       title: 'Mobile',
-      dataIndex: 'mobilenumber',
-      key: 'mobilenumber',
+      dataIndex: 'mobileNumber',
+      key: 'mobileNumber',
       editable: true,
       width: 136
     },
@@ -466,10 +471,10 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     },
     {
       title: 'Address',
-      dataIndex: 'location',
-      key: 'location',
+      dataIndex: 'address',
+      key: 'address',
       editable: true,
-      sorter: (a, b) => a.location.localeCompare(b.location),
+      sorter: (a, b) => a.address.localeCompare(b.address),
       showSorterTooltip: { target: 'sorter-icon' },
       render: (text,record)=>{
         return text.length > 10 ? <Tooltip title={text}>{truncateString(text,10)}</Tooltip> : text
@@ -489,8 +494,8 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     {
       title: 'Number',
       // title: 'Freezer Box',
-      dataIndex: 'vehicleorfreezerno',
-      key: 'vehicleorfreezerno',
+      dataIndex: 'vehicleOrFreezerNo',
+      key: 'vehicleOrFreezerNo',
       width:120,
       // editable: true,
       render: (text,record)=>{
@@ -500,7 +505,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
         return ( <>
 
         {
-          record.transport === 'Company' ? <Tooltip title={record.vehicleorfreezerno}>{truncateString(record.vehicleorfreezerno,10)}</Tooltip> 
+          record.transport === 'Company' ? <Tooltip title={record.vehicleOrFreezerNo}>{truncateString(record.vehicleOrFreezerNo,10)}</Tooltip> 
           : record.transport === 'Freezer Box' ?
           <Badge size='small' count={freezerboxCount}>
           <Button onClick={() => setFreezerBox(pre=>({...pre,popupid:record.id}))} className="h-[1.7rem]">

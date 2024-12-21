@@ -17,7 +17,7 @@ import { getMaterialDetailsById, getSupplier } from './firebase/data-tables/supp
 import { getproduct, getProductById } from './firebase/data-tables/products'
 import { getCustomer } from './firebase/data-tables/customer'
 import { getRawmaterial } from './firebase/data-tables/rawmaterial'
-import { getDelivery } from './firebase/data-tables/delivery'
+// import { getDelivery } from './firebase/data-tables/delivery'
 import { getEmployee } from './firebase/data-tables/employee'
 import { getProduction } from './firebase/data-tables/production'
 import { getStorage } from './firebase/data-tables/storage'
@@ -26,6 +26,13 @@ import dayjs from 'dayjs'
 import { getBalanceSheet } from './firebase/data-tables/balancesheet'
 import { getFreezerbox } from './firebase/data-tables/freezerbox'
 import { latestFirstSort } from './js-files/sort-time-date-sec'
+
+import { getProducts } from './sql/product'
+import { getSuppliers } from './sql/supplier'
+import { getCustomers } from './sql/customer'
+import { getEmployees } from './sql/employee'
+import { getRawMaterials } from './sql/rawmaterial'
+import { getDelivery } from './sql/delivery'
 
 const App = () => {
   const [navPages, setNavPages] = useState({
@@ -110,36 +117,38 @@ const App = () => {
   // get table datas 'project list'
   useEffect(() => {
     const fetchData = async () => {
-      const { product, status } = await getproduct()
-
-      if (status) {
-        setDatas((pre) => ({ ...pre, product }))
-      }
+      const product = await getProducts()
+      setDatas((pre) => ({ ...pre, product }))
     }
     fetchData()
   }, [datas.projectupdatestaus])
 
   // get table datas 'supplier list'
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     const { supplier, status } = await getSupplier()
+  //     if (status) {
+  //       let supplierWithItems = await Promise.all(
+  //         supplier.map(async (data) => ({ ...data, ...(await getMaterialDetailsById(data.id)) }))
+  //       )
+  //       setDatas((pre) => ({ ...pre, suppliers: supplierWithItems }))
+  //     }
+  //   }
+  //   fetchData()
+  // }, [datas.supplierupdatestaus])
   useEffect(() => {
     const fetchData = async () => {
-      const { supplier, status } = await getSupplier()
-      if (status) {
-        let supplierWithItems = await Promise.all(
-          supplier.map(async (data) => ({ ...data, ...(await getMaterialDetailsById(data.id)) }))
-        )
-        setDatas((pre) => ({ ...pre, suppliers: supplierWithItems }))
-      }
+      const supplier = await getSuppliers()
+      setDatas((pre) => ({ ...pre, suppliers: supplier }))
     }
     fetchData()
-  }, [datas.supplierupdatestaus])
+  }, [datas.customerupdatestaus])
 
   // get table datas 'customer list'
   useEffect(() => {
     const fetchData = async () => {
-      const { customer, status } = await getCustomer()
-      if (status) {
-        setDatas((pre) => ({ ...pre, customers: customer }))
-      }
+      const customer = await getCustomers()
+      setDatas((pre) => ({ ...pre, customers: customer }))
     }
     fetchData()
   }, [datas.customerupdatestaus])
@@ -147,11 +156,10 @@ const App = () => {
   // get table datas 'raw material list'
   useEffect(() => {
     const fetchData = async () => {
-      const { status, rawmaterial } = await getRawmaterial()
-      if (status) {
-        const sortedRawmaterial = await latestFirstSort(rawmaterial)
-        setDatas((pre) => ({ ...pre, rawmaterials: sortedRawmaterial }))
-      }
+      const rawmaterial = await getRawMaterials()
+      console.log(rawmaterial)
+      const sortedRawmaterial = await latestFirstSort(rawmaterial)
+      setDatas((pre) => ({ ...pre, rawmaterials: sortedRawmaterial }))
     }
     fetchData()
   }, [datas.rawmaterialupdatestaus])
@@ -171,11 +179,9 @@ const App = () => {
   // get table datas 'delivery list'
   useEffect(() => {
     const fetchData = async () => {
-      const { status, delivery } = await getDelivery()
-      if (status) {
-        const sortedDelivery = await latestFirstSort(delivery)
-        setDatas((pre) => ({ ...pre, delivery: sortedDelivery }))
-      }
+      const delivery = await getDelivery()
+      const sortedDelivery = await latestFirstSort(delivery)
+      setDatas((pre) => ({ ...pre, delivery: sortedDelivery }))
     }
     fetchData()
   }, [datas.deliveryupdatestaus])
@@ -183,10 +189,8 @@ const App = () => {
   // get table datas 'employee list'
   useEffect(() => {
     const fetchData = async () => {
-      const { status, employee } = await getEmployee()
-      if (status) {
-        setDatas((pre) => ({ ...pre, employees: employee }))
-      }
+      const employee = await getEmployees()
+      setDatas((pre) => ({ ...pre, employees: employee }))
     }
     fetchData()
   }, [datas.employeeupdatestaus])
@@ -231,7 +235,6 @@ const App = () => {
       if (status) {
         setDatas((pre) => ({ ...pre, spending: spending }))
       }
-      console.log(spending)
     }
     fetchData()
   }, [datas.spendingupdatestatus])

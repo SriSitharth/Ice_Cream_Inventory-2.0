@@ -47,6 +47,8 @@ import { getRawmaterial } from '../firebase/data-tables/rawmaterial';
 import { truncateString } from '../js-files/letter-length-sorting';
 import './css/SupplierList.css'
 
+import { addSupplier } from '../sql/supplier';
+
 export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt }) {
   // states
   const [form] = Form.useForm();
@@ -69,16 +71,15 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
   useEffect(() => {
     setSupplierTbLoading(true)
     const filteredData = datas.suppliers
-      .filter((data) => data.isdeleted === false)
       .map((item, index) => ({ ...item, sno: index + 1, key: item.id || index }))
     // setData(filteredData)
    
   async function fetchMaterialItems(){
-    let getAlldatas = await Promise.all(filteredData.map(async data=>{
-      let {materials,status} = await getMaterialDetailsById(data.id);
-      return ({...data,item:materials.filter(data=> data.isdeleted === false)})
-    }))
-    setData(getAlldatas);
+    // let getAlldatas = await Promise.all(filteredData.map(async data=>{
+    //   let {materials,status} = await getMaterialDetailsById(data.id);
+    //   return ({...data,item:materials.filter(data=> data.isdeleted === false)})
+    // }))
+    setData(filteredData);
     setSupplierTbLoading(false)
    }
     fetchMaterialItems()
@@ -135,10 +136,13 @@ if(duplicateNames.length > 0){
 
     const supplierDatas = {
       ...value,
-      suppliername:formatName(value.suppliername),
-      createddate: TimestampJs(),
-      updateddate: '',
-      isdeleted: false
+      name:formatName(value.suppliername),
+      mobileNumber: value.mobilenumber,
+      address: value.location,
+      gender: 'Male',
+      createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
+      isDeleted: 0
     }
 
     // const materialExists = datas.storage.find(storageItem => 
@@ -161,6 +165,10 @@ if(duplicateNames.length > 0){
 
     setSupplierModalLoading(true)
     try {
+
+      console.log(supplierDatas)
+      await addSupplier(supplierDatas)
+
       const supplierCollectionRef = collection(db, 'supplier')
       const supplierDocRef = await addDoc(supplierCollectionRef, supplierDatas)
       const materialCollectionRef = collection(supplierDocRef, 'materialdetails')
@@ -400,10 +408,10 @@ const [supplierName,setSupplierName] = useState('');
       onFilter: (value, record) => {
 
         return (
-          String(record.suppliername).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.name).toLowerCase().includes(value.toLowerCase()) ||
           String(record.materialname).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.location).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.mobilenumber).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.address).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
           // String(record.gender).toLowerCase().includes(value.toLowerCase()) ||
           record.item.some(data => String(data.materialname).toLowerCase().includes(value.toLowerCase()))
 
@@ -412,10 +420,10 @@ const [supplierName,setSupplierName] = useState('');
     },
     {
       title: 'Supplier',
-      dataIndex: 'suppliername',
-      key: 'suppliername',
+      dataIndex: 'name',
+      key: 'name',
       editable: true,
-      sorter: (a, b) => a.suppliername.localeCompare(b.suppliername),
+      sorter: (a, b) => a.name.localeCompare(b.name),
       showSorterTooltip: { target: 'sorter-icon' },
       defaultSortOrder: 'ascend'
     },
@@ -429,10 +437,10 @@ const [supplierName,setSupplierName] = useState('');
     // },
     {
       title: 'Address',
-      dataIndex: 'location',
-      key: 'location',
+      dataIndex: 'address',
+      key: 'address',
       editable: true,
-      sorter: (a, b) => a.location.localeCompare(b.location),
+      sorter: (a, b) => a.address.localeCompare(b.address),
       showSorterTooltip: { target: 'sorter-icon' },
       render: (text,record)=>{
         return text.length > 18 ? <Tooltip title={text}>{truncateString(text,18)}</Tooltip> : text
@@ -440,8 +448,8 @@ const [supplierName,setSupplierName] = useState('');
     },
     {
       title: 'Mobile',
-      dataIndex: 'mobilenumber',
-      key: 'mobilenumber',
+      dataIndex: 'mobileNumber',
+      key: 'mobileNumber',
       editable: true,
       width: 136
     },
@@ -452,36 +460,36 @@ const [supplierName,setSupplierName] = useState('');
     //   editable: true,
     //   width: 83
     // },
-    {
-      title: "Material",
-      dataIndex: 'material',
-      key: 'material',
-      width: 80,
-      render: (_, record) => {
-        return (
-          <>
-            <Button onClick={() => handlePopoverClick(record.id)} className="h-[1.7rem]">
-            <MdProductionQuantityLimits/>
-            </Button>
-            <Popover
-              content={<div>
-              {
-                record.item.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} /> : record.item.sort((a,b)=> a.materialname.localeCompare(b.materialname)).map((data,i)=>{
-                return <span>{i+1}.{data.materialname} {'-'} {data.unit}<br/> </span>
-              })
-             }
-                <IoCloseCircle color='red' size={20} className='absolute right-2 top-2 cursor-pointer' onClick={() => setOpenPopoverRow(null)}/>
-              </div>}
-              title="Material"
-              trigger="click"
-              open={openPopoverRow === record.id} // Open only for the clicked row
-              onOpenChange={(visible) => handlePopoverOpenChange(visible, record.id)}
-            >
-            </Popover>
-          </>
-        );
-      }
-    },
+    // {
+    //   title: "Material",
+    //   dataIndex: 'material',
+    //   key: 'material',
+    //   width: 80,
+    //   render: (_, record) => {
+    //     return (
+    //       <>
+    //         <Button onClick={() => handlePopoverClick(record.id)} className="h-[1.7rem]">
+    //         <MdProductionQuantityLimits/>
+    //         </Button>
+    //         <Popover
+    //           content={<div>
+    //           {
+    //             record.item.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} /> : record.item.sort((a,b)=> a.materialname.localeCompare(b.materialname)).map((data,i)=>{
+    //             return <span>{i+1}.{data.materialname} {'-'} {data.unit}<br/> </span>
+    //           })
+    //          }
+    //             <IoCloseCircle color='red' size={20} className='absolute right-2 top-2 cursor-pointer' onClick={() => setOpenPopoverRow(null)}/>
+    //           </div>}
+    //           title="Material"
+    //           trigger="click"
+    //           open={openPopoverRow === record.id} // Open only for the clicked row
+    //           onOpenChange={(visible) => handlePopoverOpenChange(visible, record.id)}
+    //         >
+    //         </Popover>
+    //       </>
+    //     );
+    //   }
+    // },
     
     {
       title: 'Action',

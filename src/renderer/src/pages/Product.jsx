@@ -30,10 +30,10 @@ import { PiWarningCircleFill } from 'react-icons/pi'
 import { DatestampJs } from '../js-files/date-stamp'
 import companyLogo from '../assets/img/companylogo.png'
 import { generatPDF } from '../js-files/pdf-generator'
-// import loadingGif from '../assets/Loopy-ezgif.com-gif-maker.gif'
-// import loadingGif from '../assets/Dessertanyone_Steemit-ezgif.com-effects.gif'
 import loadingGif from '../assets/Dessertanyone_Steemit-ezgif.com-effects.gif'
 import { formatName } from '../js-files/letter-or-name'
+
+import { addProduct } from '../sql/product'
 
 const { Search } = Input
 
@@ -49,11 +49,11 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
   useEffect(() => {
     setProductTbLoading(true)
     const filteredData = datas.product
-      .filter((data) => data.isdeleted === false)
       .map((item, index) => ({ ...item, sno: index + 1, key: item.id || index }))
     setData(filteredData)
     setProductTbLoading(false)
-  }, [datas])
+    console.log(filteredData)
+  }, [datas,datas.projectupdatestaus])
 
   // search
   const [searchText, setSearchText] = useState('')
@@ -88,39 +88,29 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
   else{
     console.log({
       ...values,
-      productname: formatName(values.productname),
-      // flavour: formatName(values.flavour),
-      flavour: '',
-      unit:'',
-      quantity:'',
-      createddate: TimestampJs(),
-      updateddate: '',
-      isdeleted: false
+      name: formatName(values.productname),
+      productPerPack: values.productperpack,
+      price: values.price,
+      createdDate: TimestampJs(),
+      modifiedDate: TimestampJs(),
+      isDeleted: 0
     });
     console.log(storageExists);
     
     setIsProductLoading(true)
-    const productRef = await createproduct({
-      ...values,
-      productname: formatName(values.productname),
-      // flavour: formatName(values.flavour),
-      flavour: '',
-      unit:'',
-      quantity:'',
-      createddate: TimestampJs(),
-      updateddate: '',
-      isdeleted: false
+    const productRef = await addProduct({
+      name: formatName(values.productname),
+      productPerPack: values.productperpack,
+      price: values.price,
+      createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
+      isDeleted: 0
     });
-    const productId = productRef.res.id
-    console.log(productId, productRef)
+
+    const productId = productRef.id
     
     if (storageExists === false ) {
       await createStorage({
-        // productname: formatName(values.productname),
-        // flavour: formatName(values.flavour),
-        // quantity: values.quantity,
-        // unit: values.unit,
-        //productperpack: values.productperpack,
         productid: productId,
         alertcount: 0,
         numberofpacks: 0,
@@ -163,10 +153,10 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
     },
     {
       title: 'Product',
-      dataIndex: 'productname',
-      key: 'productname',
+      dataIndex: 'name',
+      key: 'name',
       editable: true,
-      sorter: (a, b) => a.productname.localeCompare(b.productname),
+      sorter: (a, b) => a.name.localeCompare(b.name),
       showSorterTooltip: { target: 'sorter-icon' },
       defaultSortOrder: 'ascend'
     },
@@ -202,8 +192,8 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
     },
     {
       title: 'Product Per Pack',
-      dataIndex: 'productperpack',
-      key: 'productperpack',
+      dataIndex: 'productPerPack',
+      key: 'productPerPack',
       editable: true,
       width: 149
     },
@@ -212,7 +202,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
       width: 150,
       key: 'packprice',
       render: (_, record) => (
-        <span>{formatToRupee(record.price * record.productperpack, true)}</span>
+        <span>{formatToRupee(record.price * record.productPerPack, true)}</span>
       )
     },
     {

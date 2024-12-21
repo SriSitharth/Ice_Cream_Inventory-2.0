@@ -28,7 +28,7 @@ import { createRawmaterial, fetchMaterials, updateRawmaterial } from '../firebas
 import { TimestampJs } from '../js-files/time-stamp'
 import { createStorage, getStorage, updateStorage } from '../firebase/data-tables/storage'
 import dayjs from 'dayjs'
-import { getAllMaterialDetailsFromAllSuppliers, getMaterialDetailsById, getOneMaterialDetailsById, getSupplierById } from '../firebase/data-tables/supplier'
+import { getAllMaterialDetailsFromAllSuppliers, getMaterialDetailsById, getOneMaterialDetailsById } from '../firebase/data-tables/supplier'
 const { Search } = Input
 const { RangePicker } = DatePicker
 import { PiWarningCircleFill } from 'react-icons/pi'
@@ -41,6 +41,8 @@ import { FaClipboardList } from 'react-icons/fa'
 import TableHeight from '../components/TableHeight'
 import './css/RawMaterial.css'
 
+import { addRawMaterial } from '../sql/rawmaterial'
+import { getSupplierById } from '../sql/supplier'
 
 export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateMt }) {
   //states
@@ -68,12 +70,12 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       setIsMaterialTbLoading(true);
       let rawTableDtas = await Promise.all(datas.rawmaterials.slice(offset, offset + chunkSize).map(async data => 
                   ({...data,
-                   ...(data.supplierid ? await getSupplierById(data.supplierid) :  '-'),
-                   ...(data.supplierid && data.materialid ? await getOneMaterialDetailsById(data.supplierid,data.materialid): '-') 
+                   ...(data.supplierId ? await getSupplierById(data.supplierId) :  '-'),
+                  //  ...(data.supplierid && data.materialid ? await getOneMaterialDetailsById(data.supplierid,data.materialid): '-') 
                   })));
 
-      const filteredMaterials = await Promise.all(rawTableDtas.filter((data) => !data.isdeleted && isWithinRange(data.date)).map((item,index) => ({ ...item, key:item.id || index,}) ));
-
+      const filteredMaterials = await Promise.all(rawTableDtas.filter((data) => isWithinRange(data.date)).map((item,index) => ({ ...item, key:item.id || index,}) ));
+      console.log(filteredMaterials);
       setData((prevData) =>  (offset === 0 ? filteredMaterials : [...prevData, ...filteredMaterials]));
       setIsMaterialTbLoading(false);
     }
@@ -441,39 +443,17 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     },
     {
       title: 'Supplier',
-      dataIndex: 'suppliername',
-      key: 'suppliername',
+      dataIndex: 'name',
+      key: 'name',
       editable: true,
-      render:(_,record)=>{
-
-       return record.supplier === undefined ? '-' : record.supplier.suppliername 
-      }
+      // render:(_,record)=>{
+      //  return record.supplier === undefined ? '-' : record.supplier.name
+      // }
     },
-    // {
-    //   title: 'Material',
-    //   dataIndex: 'materialname',
-    //   key: 'materialname',
-    //   editable: true,
-    //   render:(_,record)=>{
-    //     return record.material === undefined ? record.materialname : record.material.materialname
-    //   }
-    // },
-    // {
-    //   title: 'Quantity',
-    //   dataIndex: 'quantity',
-    //   key: 'quantity',
-    //   editable: true,
-    //   width: 120,
-    //   render: (_, record) => {
-    //     // Check if record.material and record.material.unit exist, then return the appropriate string
-    //     return record.quantity + ' ' + (record.material && record.material.unit ? record.material.unit : record.unit);
-    //   }
-      
-    // },
     {
       title: 'Price',
-      dataIndex: 'billamount',
-      key: 'billamount',
+      dataIndex: 'billAmount',
+      key: 'billAmount',
       editable: true,
       width: 120,
       // render:(text)=>{
@@ -495,11 +475,11 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     },
     {
       title: 'Status',
-      dataIndex: 'paymentstatus',
-      key: 'paymentstatus',
+      dataIndex: 'paymentStatus',
+      key: 'paymentStatus',
       editable: false,
       width: 140,
-      sorter: (a, b) => a.paymentstatus.localeCompare(b.paymentstatus),
+      sorter: (a, b) => a.paymentStatus.localeCompare(b.paymentStatus),
       showSorterTooltip: { target: 'sorter-icon' },
       render: (text, record) => (
         <span className="flex gap-x-0">
@@ -971,204 +951,6 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     setMtOption((pre) => ({ ...pre, tempproduct: newTempProduct }))
   };
 
-  // add new material to data base
-  // old method
-//   const addNewTemMaterial = async () => {
-//     let i = 1
-//     setIsLoadMaterialUsedModal(true);
-//     try {
-//       let materialDetailData = mtOption.tempproduct.map(data=>({
-//         date:data.date,
-//         isdeleted:false,
-//         type:usedmaterialform.getFieldValue().type,
-//         paymentstatus: usedmaterialform.getFieldValue().type === 'Return' ? 'Returned' : 'Used',
-//         createddate:TimestampJs(),
-//       }))[0];
-  
-//       // material type data
-//       const supplierDbRef = collection(db,'rawmaterial');
-//       const createSupplierRef = await addDoc(supplierDbRef,{...materialDetailData});
-//       const materialDbRef = collection(createSupplierRef,'materialdetails');
-//       let {materials,status} = await getAllMaterialDetailsFromAllSuppliers();
-
-//       if(status){
-//           let materialItems = materials.map((material,index) => {
-//           // Find the matching product in mtOption.tempproduct
-//           let matchingProduct = mtOption.tempproduct.find(data =>  material.materialname === data.materialname && material.unit === data.quantity.split(' ')[1] && data.isdeleted === false);
-//           // If a match is found, return the desired properties, otherwise return an empty object
-//           console.log(matchingProduct);
-//           return matchingProduct ? {
-//             sno: i++,
-//             supplierid: material.supplierId,
-//             materialid: material.materialId, // Add other properties if needed
-//             quantity: Number(matchingProduct.quantity.split(' ')[0]),
-//             isdeleted:false  // Example of getting data from matchingProduct
-//           } : {};
-//         }).filter(item => Object.keys(item).length > 0);  // Filter out empty objects
-
-
-
-//       // materil item loop
-//        await Promise.all(materialItems.map(async item=> {
-//         await addDoc(materialDbRef,item)
-//        }));
-
-//       mtOption.tempproduct.map( data=> ({...data,type:materialType,quantity:Number(data.quantity.split(' ')[0])})).forEach(async material =>{
-       
-//         let existingMaterial = await  datas.storage.find( storage =>  storage.materialname === material.materialname && storage.category === 'Material List');
-       
-//         if(material.type === 'Return'){
-//           await updateStorage(existingMaterial.id,{
-//               quantity: existingMaterial.quantity + material.quantity
-//             });
-//         }
-//         else{
-//           await updateStorage(existingMaterial.id,{
-//             quantity: existingMaterial.quantity - material.quantity
-//           });
-//         }
-//       })
-
-//       // do not uncommand
-//       // const existingMaterial =  datas.storage.find(
-//       //   (storageItem) =>
-//       //     storageItem.materialname === newMaterial.materialname &&
-//       //     storageItem.category === 'Material List'
-//       // )
-//       // end this..
-
-//       }
-      
-//       await rawmaterialUpdateMt();
-//       await storageUpdateMt();
-//       setMtOption((pre) => ({ ...pre, tempproduct: [], count: 0 }));
-//       message.open({ type: 'success', content: 'Added Successfully' });
-//       setUsedMaterialModal(false)
-//     } catch (error) {
-//       console.log(error)
-//     } finally {
-//       setIsLoadMaterialUsedModal(false);
-//       setUnitOnchange('')
-//     } 
-// /*
-//       mtOption.tempproduct.map(async (item) => {
-//         let { key, quantity, type, ...newMaterial } = item
-//         let quantityNumber = Number(quantity.split(' ')[0]);
-//         let unit = quantity.split(' ')[1];
-
-//         await createRawmaterial({
-//           ...newMaterial,
-//           quantity: quantityNumber,
-//           type: type,
-//           unit:unit,
-//           paymentstatus: type === 'Return' ? 'Returned' : 'Used'
-//         })
-//         const existingMaterial = datas.storage.find(
-//           (storageItem) =>
-//             storageItem.materialname === newMaterial.materialname &&
-//             storageItem.category === 'Material List'
-//         )
-//         if (existingMaterial) {
-//           if (type === 'Return') {
-//             await updateStorage(existingMaterial.id, {
-//               quantity: existingMaterial.quantity + quantityNumber
-//             })
-//           } else {
-//             await updateStorage(existingMaterial.id, {
-//               quantity: existingMaterial.quantity - quantityNumber
-//             })
-//           }
-//           storageUpdateMt()
-//         }
-//       })
-//       await rawmaterialUpdateMt()
-//       setUsedMaterialModal(false)
-//       usedmaterialform.resetFields()
-//       setMtOption((pre) => ({ ...pre, tempproduct: [], count: 0 }))
-//       message.open({ type: 'success', content: 'Added Successfully' })
-//       */   
-//   }
-
-// working but order miss match method
-// const addNewTemMaterial = async () => {
-//   let i = 1;
-//   setIsLoadMaterialUsedModal(true);
-//   try {
-//     let materialDetailData = mtOption.tempproduct.map(data => ({
-//       date: data.date,
-//       isdeleted: false,
-//       type: usedmaterialform.getFieldValue().type,
-//       paymentstatus: usedmaterialform.getFieldValue().type === 'Return' ? 'Returned' : 'Used',
-//       createddate: TimestampJs(),
-//     }))[0];
-
-//     const supplierDbRef = collection(db, 'rawmaterial');
-//     const createSupplierRef = await addDoc(supplierDbRef, { ...materialDetailData });
-//     const materialDbRef = collection(createSupplierRef, 'materialdetails');
-//     let { materials, status } = await getAllMaterialDetailsFromAllSuppliers();
-
-//     if (status) {
-//       let processedProducts = new Set();  // Track processed products
-
-//       let materialItems = materials.map((material) => {
-//         let matchingProduct = mtOption.tempproduct.find(data =>
-//           material.materialname === data.materialname &&
-//           material.unit === data.quantity.split(' ')[1] &&
-//           data.isdeleted === false
-//         );
-
-//         // Check if the matching product was already processed
-//         if (matchingProduct && !processedProducts.has(matchingProduct.materialname)) {
-//           processedProducts.add(matchingProduct.materialname); // Mark as processed
-//           return {
-//             sno: i++,
-//             supplierid: material.supplierId,
-//             materialid: material.materialId,
-//             quantity: Number(matchingProduct.quantity.split(' ')[0]),
-//             isdeleted: false
-//           };
-//         }
-//         return null;
-//       }).filter(item => item !== null);
-
-//       // Process material items without duplicates
-//       await Promise.all(materialItems.map(async item => {
-//         await addDoc(materialDbRef, item);
-//       }));
-
-//       mtOption.tempproduct.map(data => ({
-//         ...data,
-//         type: materialType,
-//         quantity: Number(data.quantity.split(' ')[0])
-//       })).forEach(async material => {
-//         let existingMaterial = await datas.storage.find(storage =>
-//           storage.materialname === material.materialname && storage.category === 'Material List'
-//         );
-
-//         if (material.type === 'Return') {
-//           await updateStorage(existingMaterial.id, {
-//             quantity: existingMaterial.quantity + material.quantity
-//           });
-//         } else {
-//           await updateStorage(existingMaterial.id, {
-//             quantity: existingMaterial.quantity - material.quantity
-//           });
-//         }
-//       });
-//     }
-
-//     await rawmaterialUpdateMt();
-//     await storageUpdateMt();
-//     setMtOption(pre => ({ ...pre, tempproduct: [], count: 0 }));
-//     message.open({ type: 'success', content: 'Added Successfully' });
-//     setUsedMaterialModal(false);
-//   } catch (error) {
-//     console.log(error);
-//   } finally {
-//     setIsLoadMaterialUsedModal(false);
-//     setUnitOnchange('');
-//   }
-// };
 
 const addNewTemMaterial = async () => {
   let i = 1;

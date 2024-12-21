@@ -52,7 +52,7 @@ import { db } from '../firebase/firebase'
 import { FaClipboardList } from 'react-icons/fa'
 import { TbFileDownload } from 'react-icons/tb'
 import { MdOutlineModeEditOutline } from 'react-icons/md'
-import { getCustomerById } from '../firebase/data-tables/customer'
+// import { getCustomerById } from '../firebase/data-tables/customer'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import companyLogo from '../assets/img/companylogo.png'
@@ -64,6 +64,9 @@ import '../pages/css/Delivery.css'
 import { getFreezerbox, getFreezerboxById } from '../firebase/data-tables/freezerbox'
 import TableHeight from '../components/TableHeight'
 import { ClockCircleOutlined } from '@ant-design/icons';
+
+import { addDelivery } from '../sql/delivery'
+import { getCustomerById } from '../sql/customer'
 
 const { TextArea } = Input
 export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, customerUpdateMt }) {
@@ -105,13 +108,13 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       setTableLoading(true)
       const filteredData = await Promise.all(
         datas.delivery
-          .filter((data) => !data.isdeleted && isWithinRange(data.date))
+          .filter((data) => isWithinRange(data.date))
           .slice(offset, offset + chunkSize)
           .map(async (item, index) => {
 
-            const result = await getCustomerById(item.customerid);
-            
-            const freezerboxResult = item.boxid === '' ? item.boxid : await getFreezerboxById(item.boxid)
+            const result = await getCustomerById(item.customerId);
+            console.log(result)
+            const freezerboxResult = item.boxId === '' ? item.boxId : await getFreezerboxById(item.boxId)
 
             const customerName = result.status === 200 ? result.customer.customername : item.customername
             const mobileNumber = result.status === 200 ? result.customer.mobilenumber : item.mobilenumber
@@ -184,9 +187,9 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           String(record.type).toLowerCase().includes(value.toLowerCase()) ||
           String(record.date).toLowerCase().includes(value.toLowerCase()) ||
           String(record.customername).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.billamount).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.billAmount).toLowerCase().includes(value.toLowerCase()) ||
           String(record.type).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.paymentstatus).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.paymentStatus).toLowerCase().includes(value.toLowerCase()) ||
           String(record.boxnumber).toLowerCase().includes(value.toLowerCase())
         )
       }
@@ -222,8 +225,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     },
     {
       title: 'Price',
-      dataIndex: 'billamount',
-      key: 'billamount',
+      dataIndex: 'billAmount',
+      key: 'billAmount',
       width: 130,
       render: (text) => <span>{formatToRupee(text, true)}</span>
     },
@@ -255,11 +258,11 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     },
     {
       title: 'Payment Status',
-      dataIndex: 'paymentstatus',
-      key: 'paymentstatus',
+      dataIndex: 'paymentStatus',
+      key: 'paymentStatus',
       editable: true,
       width: 155,
-      sorter: (a, b) => a.paymentstatus.localeCompare(b.paymentstatus),
+      sorter: (a, b) => a.paymentStatus.localeCompare(b.paymentStatus),
       showSorterTooltip: { target: 'sorter-icon' },
       render: (text, record) =>
         text === 'Paid' ? (
