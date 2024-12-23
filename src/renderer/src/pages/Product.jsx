@@ -33,7 +33,8 @@ import { generatPDF } from '../js-files/pdf-generator'
 import loadingGif from '../assets/Dessertanyone_Steemit-ezgif.com-effects.gif'
 import { formatName } from '../js-files/letter-or-name'
 
-import { addProduct } from '../sql/product'
+import { addProduct,updateProduct } from '../sql/product'
+import { addStorage } from '../sql/storage'
 
 const { Search } = Input
 
@@ -95,7 +96,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
       modifiedDate: TimestampJs(),
       isDeleted: 0
     });
-    console.log(storageExists);
+    
     
     setIsProductLoading(true)
     const productRef = await addProduct({
@@ -108,15 +109,17 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
     });
 
     const productId = productRef.id
+    console.log(storageExists,productId);
     
     if (storageExists === false ) {
-      await createStorage({
-        productid: productId,
-        alertcount: 0,
-        numberofpacks: 0,
+      await addStorage({
+        productId: productId,
+        alertCount: 0,
+        numberOfPacks: 0,
         category: 'Product List',
-        createddate: TimestampJs(),
-        isdeleted:false
+        createdDate: new Date().toISOString(),
+        modifiedDate: new Date().toISOString(),
+        isDeleted:0
       })
       storageUpdateMt()
     }
@@ -126,7 +129,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
      setIsModalOpen(false)
      setProductOnchangeValue('')
      message.open({content:'Product Created Successfully',type:'success'})
- }
+      }
     } catch (e) {
       console.log(e)
       message.open({content:'Product Creation Failed',type:'error'})
@@ -353,19 +356,10 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
   const save = async (key) => {
     try {
       const row = await form.validateFields()
-      const newData = [...data]
-      // const index = newData.findIndex((item) => key.id === item.key);
-      // const checkName = data.some(data => data.productname === key.productname);
-      // console.log(checkName);
       if (
-        // index != null &&
-        // row.flavour === key.flavour &&
-        row.productname === key.productname &&
-        // row.quantity === key.quantity &&
-        row.productperpack === key.productperpack &&
+        row.name === key.name &&
+        row.productPerPack === key.productPerPack &&
         row.price === key.price 
-        // && (key.productname === formatName(row.productname))
-        // && row.unit === key.unit
       ) {
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKeys([]);
@@ -373,7 +367,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
       else {
         setProductTbLoading(true)
         setEditingKeys([]);
-        await updateproduct(key.id, { ...row,productname:formatName(row.productname), updateddate: TimestampJs() });
+        await updateProduct(key.id, { ...row,name:formatName(row.name) });
         productUpdateMt();
         message.open({ type: 'success', content: 'Updated Successfully' });
         setProductTbLoading(false)
@@ -455,10 +449,9 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
    
     let storageProduct = datas.storage.find(pr => pr.productid === id);
    
-    await updateproduct(id, {isdeleted: true, // deletedby: 'admin', 
-      deleteddate: TimestampJs()
-    });
-    await updateStorage(storageProduct.id,{isdeleted:true,updateddate: TimestampJs()})
+    await updateProduct(id, {isDeleted: 1});
+
+    // await updateStorage(storageProduct.id,{isdeleted:true,updateddate: TimestampJs()})
     
    await storageUpdateMt()
    await productUpdateMt()

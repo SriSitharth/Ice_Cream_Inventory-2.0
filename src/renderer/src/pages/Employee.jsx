@@ -43,6 +43,7 @@ import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import { truncateString } from '../js-files/letter-length-sorting'
 
 import { addEmployee } from '../sql/employee'
+import { addEmployeePayment } from '../sql/employee'
 
 export default function Employee({ datas, employeeUpdateMt }) {
   // states

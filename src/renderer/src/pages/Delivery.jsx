@@ -111,15 +111,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           .filter((data) => isWithinRange(data.date))
           .slice(offset, offset + chunkSize)
           .map(async (item, index) => {
-
             const result = await getCustomerById(item.customerId);
             console.log(result)
             const freezerboxResult = item.boxId === '' ? item.boxId : await getFreezerboxById(item.boxId)
 
-            const customerName = result.status === 200 ? result.customer.customername : item.customername
-            const mobileNumber = result.status === 200 ? result.customer.mobilenumber : item.mobilenumber
+            const customerName = result.status === 200 ? result.customer.name : item.customername
+            const mobileNumber = result.status === 200 ? result.customer.mobileNumber : item.mobilenumber
             const gstNumber = result.status === 200 ? result.customer.gstin : item.gstin
-            const address = result.status === 200 ? result.customer.location : item.location
+            const address = result.status === 200 ? result.customer.address : item.location
             const boxnumber = freezerboxResult.status === 200 && freezerboxResult !== '' ? freezerboxResult.freezerbox.boxnumber : '';
             return {
               ...item,
@@ -205,7 +204,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         return dateB.isAfter(dateA) ? -1 : 1
       },
       // defaultSortOrder: 'descend',
-      width: 115,
+      width: 155,
       editable: false
     },
     {

@@ -25,11 +25,14 @@ import dayjs from 'dayjs'
 import { createProduction, updateProduction } from '../firebase/data-tables/production'
 import jsonToExcel from '../js-files/json-to-excel'
 import { updateStorage } from '../firebase/data-tables/storage'
-import { getProductById } from '../firebase/data-tables/products'
+// import { getProductById } from '../firebase/data-tables/products'
 import { PiWarningCircleFill } from 'react-icons/pi'
 import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import { MdOutlineModeEditOutline } from 'react-icons/md'
 import { chunk, debounce } from 'lodash'
+
+import { getProductById } from '../sql/product'
+
 export default function Production({ datas, productionUpdateMt, storageUpdateMt }) {
   const [form] = Form.useForm()
   const [form2] = Form.useForm()
@@ -48,20 +51,16 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       setIsProductionTbLoading(true)
       const filteredProductions = await Promise.all(
         datas.productions
-          .filter((data) => !data.isdeleted && isWithinRange(data.date))
+          .filter((data) => isWithinRange(data.date))
           .slice(offset, offset + chunkSize)
           .map(async (item, index) => {
-            const result = await getProductById(item.productid)
-            const productname = result.status === 200 ? result.product.productname : 'a'
-            const flavour = result.status === 200 ? result.product.flavour : 'a'
-            const quantity = result.status === 200 ? result.product.quantity : 'a'
+            const result = await getProductById(item.productId)
+            const productname = result.name
             return {
               ...item,
               sno: offset + index + 1,
               key: item.id || index,
               productname: productname,
-              flavour: flavour,
-              quantity: quantity
             }
           })
       )
@@ -118,9 +117,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         return (
           String(record.date).toLowerCase().includes(value.toLowerCase()) ||
           String(record.productname).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.flavour).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.quantity).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.numberofpacks).toLowerCase().includes(value.toLowerCase())
+          String(record.numberOfPacks).toLowerCase().includes(value.toLowerCase())
         )
       }
     },
@@ -136,7 +133,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       },
       // defaultSortOrder: 'descend',
       editable: false,
-      width: 115
+      width: 155
     },
     {
       title: 'Product',
@@ -144,23 +141,10 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       key: 'productname',
       editable: false
     },
-    // {
-    //   title: 'Flavor',
-    //   dataIndex: 'flavour',
-    //   key: 'flavour',
-    //   editable: false
-    // },
-    // {
-    //   title: 'Quantity',
-    //   dataIndex: 'quantity',
-    //   key: 'quantity',
-    //   editable: false,
-    //   width: 120
-    // },
     {
       title: 'Packs',
-      dataIndex: 'numberofpacks',
-      key: 'numberofpacks',
+      dataIndex: 'numberOfPacks',
+      key: 'numberOfPacks',
       editable: true,
       width: 130
     },

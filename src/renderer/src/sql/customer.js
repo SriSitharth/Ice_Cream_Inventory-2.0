@@ -52,3 +52,19 @@ export const getCustomerById = async (id) => {
     throw error;
   }
 };
+
+export const addCustomerPayment = async (paymentData) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/Payment/AddCustomerPayment`, paymentData, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Customer payment added successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error adding customer payment:', error.message);
+    throw error;
+  }
+};

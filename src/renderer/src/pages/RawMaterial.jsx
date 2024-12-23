@@ -438,8 +438,8 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
         const dateB = dayjs(b.date, format)
         return dateB.isAfter(dateA) ? -1 : 1
       },
-      // defaultSortOrder: 'descend',
-      width: 115
+      // defaultSortOrder: 'descend',115
+      width: 155
     },
     {
       title: 'Supplier',

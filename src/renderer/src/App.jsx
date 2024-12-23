@@ -12,27 +12,30 @@ import { LuMilk } from 'react-icons/lu'
 import { notification, Button } from 'antd'
 import { FaBoxesPacking } from 'react-icons/fa6'
 import { TbFileSpreadsheet } from 'react-icons/tb'
-import Pages from './components/Pages'
-import { getMaterialDetailsById, getSupplier } from './firebase/data-tables/supplier'
-import { getproduct, getProductById } from './firebase/data-tables/products'
-import { getCustomer } from './firebase/data-tables/customer'
-import { getRawmaterial } from './firebase/data-tables/rawmaterial'
-// import { getDelivery } from './firebase/data-tables/delivery'
-import { getEmployee } from './firebase/data-tables/employee'
-import { getProduction } from './firebase/data-tables/production'
-import { getStorage } from './firebase/data-tables/storage'
-import { getSpending } from './firebase/data-tables/spending'
-import dayjs from 'dayjs'
-import { getBalanceSheet } from './firebase/data-tables/balancesheet'
-import { getFreezerbox } from './firebase/data-tables/freezerbox'
 import { latestFirstSort } from './js-files/sort-time-date-sec'
+import Pages from './components/Pages'
+import dayjs from 'dayjs'
+// import { getMaterialDetailsById, getSupplier } from './firebase/data-tables/supplier'
+// import { getproduct, getProductById } from './firebase/data-tables/products'
+// import { getCustomer } from './firebase/data-tables/customer'
+// import { getRawmaterial } from './firebase/data-tables/rawmaterial'
+// import { getDelivery } from './firebase/data-tables/delivery'
+// import { getEmployee } from './firebase/data-tables/employee'
+// import { getProduction } from './firebase/data-tables/production'
+// import { getStorage } from './firebase/data-tables/storage'
+// import { getSpending } from './firebase/data-tables/spending'
+// import { getFreezerbox } from './firebase/data-tables/freezerbox'
 
-import { getProducts } from './sql/product'
+import { getProducts, getProductById } from './sql/product'
 import { getSuppliers } from './sql/supplier'
 import { getCustomers } from './sql/customer'
 import { getEmployees } from './sql/employee'
 import { getRawMaterials } from './sql/rawmaterial'
+import { getProductions } from './sql/production'
 import { getDelivery } from './sql/delivery'
+import { getStorages } from './sql/storage'
+import { getFreezerboxes } from './sql/freezerbox'
+import { getSpendings } from './sql/spending'
 
 const App = () => {
   const [navPages, setNavPages] = useState({
@@ -124,18 +127,6 @@ const App = () => {
   }, [datas.projectupdatestaus])
 
   // get table datas 'supplier list'
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     const { supplier, status } = await getSupplier()
-  //     if (status) {
-  //       let supplierWithItems = await Promise.all(
-  //         supplier.map(async (data) => ({ ...data, ...(await getMaterialDetailsById(data.id)) }))
-  //       )
-  //       setDatas((pre) => ({ ...pre, suppliers: supplierWithItems }))
-  //     }
-  //   }
-  //   fetchData()
-  // }, [datas.supplierupdatestaus])
   useEffect(() => {
     const fetchData = async () => {
       const supplier = await getSuppliers()
@@ -157,7 +148,6 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       const rawmaterial = await getRawMaterials()
-      console.log(rawmaterial)
       const sortedRawmaterial = await latestFirstSort(rawmaterial)
       setDatas((pre) => ({ ...pre, rawmaterials: sortedRawmaterial }))
     }
@@ -167,11 +157,9 @@ const App = () => {
   // get table datas 'production list'
   useEffect(() => {
     const fetchData = async () => {
-      const { status, production } = await getProduction()
-      if (status) {
-        const sortedProduction = await latestFirstSort(production)
-        setDatas((pre) => ({ ...pre, productions: sortedProduction }))
-      }
+      const production = await getProductions()
+      const sortedProduction = await latestFirstSort(production)
+      setDatas((pre) => ({ ...pre, productions: sortedProduction }))
     }
     fetchData()
   }, [datas.productionupdatestaus])
@@ -198,32 +186,17 @@ const App = () => {
   // get table datas 'storage list'
   useEffect(() => {
     const fetchData = async () => {
-      const { status, storage } = await getStorage()
-      if (status) {
-        setDatas((pre) => ({ ...pre, storage }))
-      }
+      const storage = await getStorages()
+      setDatas((pre) => ({ ...pre, storage }))
     }
     fetchData()
   }, [datas.storageupdatestaus])
 
-  // get table datas 'balace sheet'
-  useEffect(() => {
-    const fetchData = async () => {
-      const { balancesheet, status } = await getBalanceSheet()
-      if (status) {
-        setDatas((pre) => ({ ...pre, balancesheet: balancesheet }))
-      }
-    }
-    fetchData()
-  }, [datas.balancesheetstatus])
-
   // get table datas 'freezerbox'
   useEffect(() => {
     const fetchData = async () => {
-      const { freezerbox, status } = await getFreezerbox()
-      if (status) {
-        setDatas((pre) => ({ ...pre, freezerbox: freezerbox }))
-      }
+      const freezerbox = await getFreezerboxes()
+      setDatas((pre) => ({ ...pre, freezerbox: freezerbox }))
     }
     fetchData()
   }, [datas.freezerboxstatus])
@@ -231,10 +204,8 @@ const App = () => {
   // get table datas 'Spending'
   useEffect(() => {
     const fetchData = async () => {
-      const { spending, status } = await getSpending()
-      if (status) {
-        setDatas((pre) => ({ ...pre, spending: spending }))
-      }
+      const spending = await getSpendings()
+      setDatas((pre) => ({ ...pre, spending: spending }))
     }
     fetchData()
   }, [datas.spendingupdatestatus])
@@ -248,8 +219,8 @@ const App = () => {
       for (const record of datas.storage) {
         if (record.category === 'Product List') {
           try {
-            const { product, status } = await getProductById(record.productid)
-            if (status === 200 && record.numberofpacks < record.alertcount) {
+            const product = await getProductById(record.productId)
+            if (record.numberofpacks < record.alertcount) {
               notification.warning({
                 message: 'Alert',
                 duration: 0,

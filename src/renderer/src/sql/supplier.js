@@ -52,3 +52,19 @@ export const getSupplierById = async (id) => {
     throw error;
   }
 };
+
+export const addSupplierPayment = async (paymentData) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/Payment/AddSupplierPayment`, paymentData, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Supplier payment added successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error adding supplier payment:', error.message);
+    throw error;
+  }
+};

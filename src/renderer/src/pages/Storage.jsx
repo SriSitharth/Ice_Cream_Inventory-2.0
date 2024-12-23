@@ -16,8 +16,10 @@ import { updateStorage } from '../firebase/data-tables/storage'
 import { MdOutlineModeEditOutline } from 'react-icons/md'
 import { LuSave } from 'react-icons/lu'
 import { TiCancel } from 'react-icons/ti'
-import { getProductById } from '../firebase/data-tables/products'
+// import { getProductById } from '../firebase/data-tables/products'
 const { Search } = Input
+
+import { getProductById } from '../sql/product'
 
 export default function Storage({ datas, storageUpdateMt }) {
   const [form] = Form.useForm()
@@ -42,8 +44,8 @@ export default function Storage({ datas, storageUpdateMt }) {
       if (checkCategory) {
         const idCompareData = await Promise.all(
           rawData.map(async (data) => {
-            const { product, status } = await getProductById(data.productid);
-            if (status) {
+            const product = await getProductById(data.productId);
+            if (product) {
               const { id, ...filterpr } = product;
               return { ...data, ...filterpr };
             }
@@ -51,9 +53,9 @@ export default function Storage({ datas, storageUpdateMt }) {
           })
         );
         sortedData = idCompareData.sort((a, b) => {
-          if (!a.productname) return 1;
-          if (!b.productname) return -1;
-          return a.productname.localeCompare(b.productname);
+          if (!a.name) return 1;
+          if (!b.name) return -1;
+          return a.name.localeCompare(b.name);
         });
       } else {
         sortedData = rawData.sort((a, b) => {
@@ -72,7 +74,6 @@ export default function Storage({ datas, storageUpdateMt }) {
     fetchData(); 
   }, [datas, selectedSegment]);
   
-  
 
   // search
   const [searchText, setSearchText] = useState('')
@@ -88,8 +89,7 @@ export default function Storage({ datas, storageUpdateMt }) {
   const setAlert = async (values) => {
     if (editingRecordId) {
       await updateStorage(editingRecordId, {
-        alertcount: values.alertcount,
-        updateddate: TimestampJs()
+        alertCount: values.alertCount,
       })
     }
     form.resetFields()
@@ -188,9 +188,7 @@ export default function Storage({ datas, storageUpdateMt }) {
       filteredValue: [searchText],
       onFilter: (value, record) => {
         return (
-          String(record.productname).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.flavour).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.quantity).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.name).toLowerCase().includes(value.toLowerCase()) ||
           String(record.alertcount).toLowerCase().includes(value.toLowerCase()) ||
           String(record.numberofpacks).toLowerCase().includes(value.toLowerCase())
         )
@@ -199,34 +197,13 @@ export default function Storage({ datas, storageUpdateMt }) {
     },
     {
       title: 'Product',
-      dataIndex: 'productname',
-      key: 'productname',
-      sorter:  (a, b) => a.productname.localeCompare(b.productname),
+      dataIndex: 'name',
+      key: 'name',
+      sorter:  (a, b) => a.name.localeCompare(b.name),
       showSorterTooltip: { target: 'sorter-icon' },
       // defaultSortOrder: 'ascend',
       editable:false
     },
-    // {
-    //   title: 'Flavor',
-    //   dataIndex: 'flavour',
-    //   key: 'flavour',
-    //   sorter: (a, b) => a.flavour.localeCompare(b.flavour),
-    //   showSorterTooltip: { target: 'sorter-icon' },
-    //   editable:false
-    // },
-    // {
-    //   title: 'Quantity',
-    //   dataIndex: 'quantity',
-    //   key: 'quantity',
-    //   editable:false,
-    //   render: (text, record) => {
-    //     return (
-    //       <div>
-    //         <span>{text}</span> <span>{record.unit}</span>
-    //       </div>
-    //     );
-    //   }
-    // },
     {
       title: 'Packs',
       dataIndex: 'quantity',
