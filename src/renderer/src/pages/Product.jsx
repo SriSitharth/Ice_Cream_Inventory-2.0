@@ -21,16 +21,13 @@ import { MdOutlineModeEditOutline } from 'react-icons/md'
 import { LuSave } from 'react-icons/lu'
 import { TiCancel } from 'react-icons/ti'
 import { AiOutlineDelete } from 'react-icons/ai'
-import { createproduct, updateproduct } from '../firebase/data-tables/products'
 import { TimestampJs } from '../js-files/time-stamp'
 import jsonToExcel from '../js-files/json-to-excel'
-import { createStorage, updateStorage } from '../firebase/data-tables/storage'
 import { formatToRupee } from '../js-files/formate-to-rupee'
 import { PiWarningCircleFill } from 'react-icons/pi'
 import { DatestampJs } from '../js-files/date-stamp'
 import companyLogo from '../assets/img/companylogo.png'
 import { generatPDF } from '../js-files/pdf-generator'
-import loadingGif from '../assets/Dessertanyone_Steemit-ezgif.com-effects.gif'
 import { formatName } from '../js-files/letter-or-name'
 
 import { addProduct,updateProduct } from '../sql/product'
@@ -74,8 +71,6 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
     
     try {
       const productExists = datas.product.some((product) => (product.productname === values.productname  || product.productname === formatName(values.productname)) && product.isdeleted === false
-          // && product.flavour === values.flavour &&
-          // product.quantity === values.quantity
           );
 
       // const storageExists = datas.storage.filter(prfound => datas.product.filter(pr => pr.id === prfound.productid && pr.productname === formatName(values.productname)));
@@ -113,7 +108,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
     
     if (storageExists === false ) {
       await addStorage({
-        productId: productId,
+        productId: String(productId),
         alertCount: 0,
         numberOfPacks: 0,
         category: 'Product List',

@@ -68,3 +68,36 @@ export const addSupplierPayment = async (paymentData) => {
     throw error;
   }
 };
+
+export const getSupplierPayments = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Payment/GetSupplierPayments`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('All supplier payments fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all supplier payments:', error.message);
+    throw error;
+  }
+};
+
+export const getSupplierPaymentsById = async (supplierId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Payment/GetSupplierPaymentsById`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      params: { id: supplierId },
+    });
+
+    console.log('Payments for supplier fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching payments for supplier:', error.message);
+    throw error;
+  }
+};

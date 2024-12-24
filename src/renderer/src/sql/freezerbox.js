@@ -34,3 +34,20 @@ export const addFreezerbox = async (freezerboxData) => {
     throw error;
   }
 };
+
+export const updateFreezerbox = async (id, freezerboxData) => {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/Freezerbox/UpdateFreezerbox`, freezerboxData, {
+      params: { id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Freezerbox updated successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating freezerbox:', error.message);
+    throw error;
+  }
+};

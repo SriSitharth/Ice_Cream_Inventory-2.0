@@ -48,6 +48,8 @@ import { truncateString } from '../js-files/letter-length-sorting';
 import './css/SupplierList.css'
 
 import { addSupplier } from '../sql/supplier';
+import { addStorage, updateStorage } from '../sql/storage';
+import { getSupplierAndMaterials , addSupplierAndMaterial } from '../sql/supplierandmaterials';
 
 export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt }) {
   // states
@@ -193,14 +195,15 @@ if(duplicateNames.length > 0){
       // new material add storage
       if(materialExist.length > 0){
         for (const items of materialExist){
-          await createStorage({
-            materialname: items.materialname,
+          await addStorage({
+            materialName: items.materialname,
             unit: items.unit,
-            alertcount: 0,
+            alertCount: 0,
             quantity: 0,
-            isdeleted: false,
+            isDeleted: 0,
             category: 'Material List',
-            createddate: TimestampJs()
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString()
           })
         }
       }
@@ -412,7 +415,7 @@ const [supplierName,setSupplierName] = useState('');
           String(record.materialname).toLowerCase().includes(value.toLowerCase()) ||
           String(record.address).toLowerCase().includes(value.toLowerCase()) ||
           String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
-          // String(record.gender).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.gender).toLowerCase().includes(value.toLowerCase()) ||
           record.item.some(data => String(data.materialname).toLowerCase().includes(value.toLowerCase()))
 
         )
@@ -453,13 +456,13 @@ const [supplierName,setSupplierName] = useState('');
       editable: true,
       width: 136
     },
-    // {
-    //   title: 'Gender',
-    //   dataIndex: 'gender',
-    //   key: 'gender',
-    //   editable: true,
-    //   width: 83
-    // },
+    {
+      title: 'Gender',
+      dataIndex: 'gender',
+      key: 'gender',
+      editable: true,
+      width: 83
+    },
     // {
     //   title: "Material",
     //   dataIndex: 'material',
@@ -617,14 +620,15 @@ const [supplierName,setSupplierName] = useState('');
           (storageItem) => storageItem.category === 'Material List' && storageItem.materialname?.trim().toLowerCase() === items.materialname?.trim().toLowerCase() && storageItem.unit?.trim().toLowerCase() === items.unit?.trim().toLowerCase()
         )
         if (!materialExists) {
-          await createStorage({
-            materialname: items.materialname,
+          await addStorage({
+            materialName: items.materialname,
             unit: items.unit,
-            alertcount: 0,
+            alertCount: 0,
             quantity: 0,
-            isdeleted: false,
+            isDeleted: 0,
             category: 'Material List',
-            createddate: TimestampJs()
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString()
           })
           await storageUpdateMt()
         }
@@ -638,14 +642,15 @@ const [supplierName,setSupplierName] = useState('');
         await addNewMaterialItem(supplerId,{...newupdateddata,updateddate:TimestampJs(),isdeleted:false})
         const materialExists = datas.storage.find((storageItem) => storageItem.materialname === newupdateddata.materialname && storageItem.category === 'Material List' && storageItem.unit === newupdateddata.unit)
         if (!materialExists) {
-          await createStorage({
-            materialname: newupdateddata.materialname,
+          await addStorage({
+            materialName: newupdateddata.materialname,
             unit: newupdateddata.unit,
-            alertcount: 0,
+            alertCount: 0,
             quantity: 0,
-            isdeleted: false,
+            isDeleted: 0,
             category: 'Material List',
-            createddate: TimestampJs()
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString()
           })
         }
       }
@@ -677,7 +682,7 @@ const [supplierName,setSupplierName] = useState('');
         );
         console.log(oldMaterialExists,newItem,isMaterialInSupplierList,allMaterials)
         if (oldMaterialExists) {
-          await deleteStorage(oldMaterialExists.id);
+          await updateStorage(oldMaterialExists.id,{isDeleted: 1});
           await storageUpdateMt();
         }
       }

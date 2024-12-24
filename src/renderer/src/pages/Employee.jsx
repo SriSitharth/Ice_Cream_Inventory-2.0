@@ -29,7 +29,6 @@ import jsonToExcel from '../js-files/json-to-excel'
 import {
   createEmployee,
   fetchPayDetailsForEmployee,
-  updateEmployee,
   updatePayDetailsForEmployee
 } from '../firebase/data-tables/employee'
 const { Search, TextArea } = Input
@@ -42,8 +41,7 @@ import { PiWarningCircleFill } from 'react-icons/pi'
 import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import { truncateString } from '../js-files/letter-length-sorting'
 
-import { addEmployee } from '../sql/employee'
-import { addEmployeePayment } from '../sql/employee'
+import { addEmployee, updateEmployee, addEmployeePayment, getEmployeePaymentsById, updateEmployeePayment } from '../sql/employee'
 
 export default function Employee({ datas, employeeUpdateMt }) {
   // states
@@ -369,18 +367,19 @@ export default function Employee({ datas, employeeUpdateMt }) {
       const row = await form.validateFields()
       const newData = [...data]
       const index = newData.findIndex((item) => key.id === item.key)
+      console.log(row,key)
       if (
         index != null &&
-        row.employeename === key.employeename &&
+        row.name === key.name &&
         row.position === key.position &&
-        row.location === key.location &&
-        row.mobilenumber === key.mobilenumber &&
+        row.address === key.address &&
+        row.mobileNumber === key.mobileNumber &&
         row.gender === key.gender
       ) {
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKeys([])
       } else {
-        await updateEmployee(key.id, { ...row, updateddate: TimestampJs() })
+        await updateEmployee(key.id, { ...row})
         employeeUpdateMt()
         message.open({ type: 'success', content: 'Updated Successfully' })
         setEditingKeys([])
@@ -459,17 +458,19 @@ export default function Employee({ datas, employeeUpdateMt }) {
   const deleteProduct = async (data) => {
     // await deleteproduct(data.id);
     const { id, ...newData } = data;
-    // console.log(id);
-    let {paydetails,status} = await fetchPayDetailsForEmployee(id);
-    if(paydetails.length >0){
+    console.log(id,data);
+    let paydetails  = await getEmployeePaymentsById(id);
+    if(paydetails & paydetails.length > 0){
+      await Promise.all(
       paydetails.map( async paydata =>{
-          await updatePayDetailsForEmployee(id,paydata.id,{isdeleted:true});
-      });
-    };
+          await updateEmployeePayment(id,paydata.id,{isDeleted:1});
+      })
+    );
+    }else{
+      console.log("No payments found for the employee")
+    }
     await updateEmployee(id, {
-      isdeleted: true,
-      // deletedby: 'admin',
-      deleteddate: TimestampJs()
+      isDeleted: 1
     });
     employeeUpdateMt();
     message.open({ type: 'success', content: 'Deleted Successfully' });

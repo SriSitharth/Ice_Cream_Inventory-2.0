@@ -68,3 +68,36 @@ export const addCustomerPayment = async (paymentData) => {
     throw error;
   }
 };
+
+export const getCustomerPayments = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Payment/GetCustomerPayments`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('All customer payments fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all customer payments:', error.message);
+    throw error;
+  }
+};
+
+export const getCustomerPaymentsById = async (customerId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Payment/GetCustomerPaymentsById`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      params: { id: customerId },
+    });
+
+    console.log('Payments for customer fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching payments for customer:', error.message);
+    throw error;
+  }
+};

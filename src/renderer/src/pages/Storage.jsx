@@ -12,14 +12,13 @@ import {
 } from 'antd'
 import { LuMilk, LuIceCream } from 'react-icons/lu'
 import { TimestampJs } from '../js-files/time-stamp'
-import { updateStorage } from '../firebase/data-tables/storage'
 import { MdOutlineModeEditOutline } from 'react-icons/md'
 import { LuSave } from 'react-icons/lu'
 import { TiCancel } from 'react-icons/ti'
-// import { getProductById } from '../firebase/data-tables/products'
 const { Search } = Input
 
 import { getProductById } from '../sql/product'
+import { updateStorage } from '../sql/storage'
 
 export default function Storage({ datas, storageUpdateMt }) {
   const [form] = Form.useForm()
@@ -38,7 +37,7 @@ export default function Storage({ datas, storageUpdateMt }) {
       
       const rawData = datas.storage.filter((data) => data.category === selectedSegment);
       const checkCategory = rawData.some((data) => data.category === 'Product List');
-      
+      console.log("storage",rawData)
       let sortedData = [];
   
       if (checkCategory) {
@@ -59,13 +58,13 @@ export default function Storage({ datas, storageUpdateMt }) {
         });
       } else {
         sortedData = rawData.sort((a, b) => {
-          if (!a.materialname) return 1;
-          if (!b.materialname) return -1;
-          return a.materialname.localeCompare(b.materialname);
+          if (!a.materialName) return 1;
+          if (!b.materialName) return -1;
+          return a.materialName.localeCompare(b.materialName);
         });
       }
 
-      let filterSortedData = sortedData.length > 0 ? sortedData.filter(data => data.isdeleted === false) : sortedData;
+      let filterSortedData = sortedData.length > 0 ? sortedData.filter(data => !data.isDeleted) : sortedData;
   
       setData(filterSortedData);
       setTableLoading(false);
@@ -118,7 +117,7 @@ export default function Storage({ datas, storageUpdateMt }) {
       filteredValue: [searchText],
       onFilter: (value, record) => {
         return (
-          String(record.materialname).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.materialName).toLowerCase().includes(value.toLowerCase()) ||
           String(record.quantity).toLowerCase().includes(value.toLowerCase())
         )
       },
@@ -126,9 +125,9 @@ export default function Storage({ datas, storageUpdateMt }) {
     },
     {
       title: 'Material',
-      dataIndex: 'materialname',
-      key: 'materialname',
-      sorter: (a, b) =>a.materialname.localeCompare(b.materialname),
+      dataIndex: 'materialName',
+      key: 'materialName',
+      sorter: (a, b) =>a.materialName.localeCompare(b.materialName),
       showSorterTooltip: { target: 'sorter-icon' },
       // defaultSortOrder: 'ascend',
       editable: false
@@ -148,8 +147,8 @@ export default function Storage({ datas, storageUpdateMt }) {
     },
     {
       title: 'Alert Count',
-      dataIndex: 'alertcount',
-      key: 'alertcount',
+      dataIndex: 'alertCount',
+      key: 'alertCount',
       editable: true
     },
     {
@@ -189,8 +188,8 @@ export default function Storage({ datas, storageUpdateMt }) {
       onFilter: (value, record) => {
         return (
           String(record.name).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.alertcount).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.numberofpacks).toLowerCase().includes(value.toLowerCase())
+          String(record.alertCount).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.numberOfPacks).toLowerCase().includes(value.toLowerCase())
         )
       },
       editable:false
@@ -209,23 +208,23 @@ export default function Storage({ datas, storageUpdateMt }) {
       dataIndex: 'quantity',
       key: 'quantity',
       render: (_, record) => {
-        const quotient = Math.floor(record.numberofpacks / record.productperpack)
-        const remainder = record.numberofpacks % record.productperpack
+        const quotient = Math.floor(record.numberOfPacks / record.productPerPack)
+        const remainder = record.numberOfPacks % record.productPerPack
         return `${quotient} Pack , ${remainder} Piece`
       }
     },
     {
       title: 'Piece',
-      dataIndex: 'numberofpacks',
-      key: 'numberofpacks',
-      sorter: (a, b) => (Number(a.numberofpacks) || 0) - (Number(b.numberofpacks) || 0),
+      dataIndex: 'numberOfPacks',
+      key: 'numberOfPacks',
+      sorter: (a, b) => (Number(a.numberOfPacks) || 0) - (Number(b.numberOfPacks) || 0),
       showSorterTooltip: { target: 'sorter-icon' },
       editable: true
     },
     {
       title: 'Alert Count',
-      dataIndex: 'alertcount',
-      key: 'alertcount',
+      dataIndex: 'alertCount',
+      key: 'alertCount',
       editable: true
     },
     {
@@ -293,7 +292,7 @@ export default function Storage({ datas, storageUpdateMt }) {
     ...restProps
   }) => {
     const inputNode =
-      dataIndex === 'quantity' || dataIndex === 'alertcount' || dataIndex === 'numberofpacks' ? <InputNumber type='number'/> : <Input />
+      dataIndex === 'quantity' || dataIndex === 'alertCount' || dataIndex === 'numberOfPacks' ? <InputNumber type='number'/> : <Input />
     return (
       <td {...restProps}>
         {editing ? (
@@ -325,17 +324,17 @@ export default function Storage({ datas, storageUpdateMt }) {
     
     try {
       const row = await ediablefForm.validateFields()
+      console.log(row);
       if (selectedSegment === 'Material List') {
-        const exsitingData = await datas.storage.some((item) => item.id === record.id && item.alertcount === row.alertcount && item.quantity === row.quantity)
+        const exsitingData = await datas.storage.some((item) => item.id === record.id && item.alertCount === row.alertCount && item.quantity === row.quantity)
         if (exsitingData) {
           message.open({ type: 'info', content: 'Data already exists'})
           setEditingKeys([])
         } else {
           setTableLoading(true)
           await updateStorage(record.id, {
-            alertcount: row.alertcount, 
-            quantity: row.quantity,
-            updateddate: TimestampJs()
+            alertCount: row.alertCount, 
+            quantity: row.quantity
           })
           storageUpdateMt()
           message.open({ type: 'success', content: 'Updated successfully' })
@@ -343,7 +342,7 @@ export default function Storage({ datas, storageUpdateMt }) {
           setTableLoading(false)
         }
       } else {
-        const exsitingData = await datas.storage.some((item) => item.id === record.id && item.numberofpacks === row.numberofpacks && item.alertcount === row.alertcount)
+        const exsitingData = await datas.storage.some((item) => item.id === record.id && item.numberOfPacks === row.numberOfPacks && item.alertCount === row.alertCount)
 
         if (exsitingData) {
           message.open({
@@ -354,9 +353,8 @@ export default function Storage({ datas, storageUpdateMt }) {
         } else {
           setTableLoading(true)
           await updateStorage(record.id, {
-            alertcount: row.alertcount,
-            numberofpacks: row.numberofpacks,
-            updateddate: TimestampJs()
+            alertCount: row.alertCount,
+            numberOfPacks: row.numberOfPacks
           })
           storageUpdateMt()
           message.open({ type: 'success', content: 'Updated successfully' })
@@ -469,7 +467,7 @@ export default function Storage({ datas, storageUpdateMt }) {
               <Form.Item name="materialname" label="Material">
                 <Input disabled />
               </Form.Item>
-              <Form.Item name="alertcount" label="Alert Count" rules={[{ required: true }]}>
+              <Form.Item name="alertCount" label="Alert Count" rules={[{ required: true }]}>
                 <InputNumber className="w-full" type="number" />
               </Form.Item>
             </>
@@ -485,7 +483,7 @@ export default function Storage({ datas, storageUpdateMt }) {
               <Form.Item name="quantity" label="Quantity">
                 <Input disabled />
               </Form.Item>
-              <Form.Item name="alertcount" label="Alert Count" rules={[{ required: true }]}>
+              <Form.Item name="alertCount" label="Alert Count" rules={[{ required: true }]}>
                 <InputNumber className="w-full" type="number" />
               </Form.Item>
             </>
