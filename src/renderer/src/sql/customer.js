@@ -35,6 +35,23 @@ export const addCustomer = async (customerData) => {
   }
 };
 
+export const updateCustomer = async (id, customerData) => {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/Customer/UpdateCustomer`, customerData, {
+      params: { id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Customer updated successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating customer:', error.message);
+    throw error;
+  }
+};
+
 // Get customer by ID
 export const getCustomerById = async (id) => {
   try {
@@ -88,10 +105,10 @@ export const getCustomerPayments = async () => {
 export const getCustomerPaymentsById = async (customerId) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/Payment/GetCustomerPaymentsById`, {
+      params: { id: customerId },
       headers: {
         'Content-Type': 'application/json',
       },
-      params: { id: customerId },
     });
 
     console.log('Payments for customer fetched successfully:', response.data);

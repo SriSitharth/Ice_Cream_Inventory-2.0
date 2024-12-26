@@ -82,7 +82,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
       await addEmployee({
         ...values,
         name: values.employeename,
-        address: values.location,
+        address: values.address,
         mobileNumber: values.mobilenumber,
         createdDate: new Date().toISOString(),
         modifiedDate: new Date().toISOString(),
@@ -114,8 +114,8 @@ export default function Employee({ datas, employeeUpdateMt }) {
       onFilter: (value, record) => {
         return (
           String(record.position).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.mobilenumber).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.location).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.address).toLowerCase().includes(value.toLowerCase()) ||
           String(record.name).toLowerCase().includes(value.toLowerCase()) || 
           String(record.gender).toLowerCase().includes(value.toLowerCase()) 
         )
@@ -203,10 +203,12 @@ export default function Employee({ datas, employeeUpdateMt }) {
               onClick={async () => {
                 setEmployeePay((pre) => ({ ...pre, name: record }))
                 setEmpListTb(true)
-                let { paydetails, status } = await fetchPayDetailsForEmployee(record.id)
-                if (status) {
-                  let checkPayData = paydetails.filter((item) => item.isdeleted === false)
-                  let lastestSrot =await latestFirstSort(checkPayData.filter(paydata => paydata.isdeleted === false));
+                let paydetails = await getEmployeePaymentsById(record.id)
+                console.log(paydetails)
+                if (paydetails) {
+                  let checkPayData = paydetails.filter((item) => item.isDeleted === 1)
+                  console.log(checkPayData,paydetails)
+                  // let lastestSort = await latestFirstSort(checkPayData.filter(paydata => !paydata.isDeleted));
                   const totalPayment = checkPayData.reduce((total, item) => {
                     if (item.type === 'Payment') {
                       return total + (Number(item.amount) || 0);
@@ -226,7 +228,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
                   setEmployeePayDetails((pre) => ({
                     ...pre,
                     modal: true,
-                    data: lastestSrot,
+                    data: checkPayData,
                     parentid: record.id
                   }))
                 }
@@ -484,7 +486,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
       Employee: pr.employeename,
       Gender: pr.gender,
       Mobile: pr.mobilenumber,
-      Location: pr.location,
+      Address: pr.address,
       Position: pr.position
     }))
     jsonToExcel(excelDatas, `Employee-List-${TimestampJs()}`)
@@ -508,18 +510,18 @@ export default function Employee({ datas, employeeUpdateMt }) {
     const empId = employeePay.name.id
     const payData = {
       ...Datas,
-      collectiontype:'employee',
-      employeeid: empId,
-      date: formateDate,
-      description: description === undefined ? '' : description,
-      createddate: TimestampJs(),
-      isdeleted: false,
+      collectionType:'employee',
+      employeeId: empId,
+      date: new Date().toISOString(),
+      decription: description === undefined ? '' : description,
+      createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
+      isDeleted: 1,
     }
 
     try {
-      const employeeDocRef = doc(db, 'employee', empId)
-      const payDetailsRef = collection(employeeDocRef, 'paydetails')
-      await addDoc(payDetailsRef, payData)
+      await addEmployeePayment(payData)
+      console.log(payData)
       message.open({ type: 'success', content: 'Pay Added Successfully' })
     } catch (e) {
       console.log(e)
@@ -583,19 +585,19 @@ export default function Employee({ datas, employeeUpdateMt }) {
     },
     {
       title: 'Mode',
-      dataIndex: 'paymentmode',
-      key: 'paymentmode',
+      dataIndex: 'paymentMode',
+      key: 'paymentMode',
       width: 70,
       render: (_, record) => (
         <> 
-        <Tag color="cyan">{record.paymentmode ? record.paymentmode : ''}</Tag>
+        <Tag color="cyan">{record.paymentMode ? record.paymentMode : ''}</Tag>
         </>
       )
     },
     {
       title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
+      dataIndex: 'decription',
+      key: 'decription',
     }
   ]
 
@@ -933,7 +935,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
 
             <Form.Item
               className="mb-2"
-              name="location"
+              name="address"
               label="Address"
               rules={[{ required: true, message: false }]}
             >
@@ -973,7 +975,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
           <Form
             onFinish={empPayMt}
             form={employeePayForm}
-            initialValues={{ date: dayjs(), paymentmode: 'Cash', type: 'Payment' }}
+            initialValues={{ date: dayjs(), paymentMode: 'Cash', type: 'Payment' }}
             layout="vertical"
           >
             <Form.Item name="type" className="mb-1 mt-3">
@@ -1015,7 +1017,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
 
             <Form.Item
                 className="mb-0 top-[2rem] left-80"
-                name="paymentmode"
+                name="paymentMode"
                 label="Payment Mode"
                 rules={[{ required: true, message: false }]}
               >

@@ -32,7 +32,7 @@ import { TimestampJs } from '../js-files/time-stamp'
 import jsonToExcel from '../js-files/json-to-excel'
 import {
   createCustomer,
-  updateCustomer,
+  // updateCustomer,
   getCustomerPayDetailsById,
   updatePaydetailsCustomer,
 } from '../firebase/data-tables/customer'
@@ -52,7 +52,7 @@ import { areArraysEqual, compareArrays } from '../js-files/compare-two-array-of-
 import './css/CustomerList.css';
 import TableHeight from '../components/TableHeight'
 
-import { addCustomer, getCustomerById } from '../sql/customer'
+import { addCustomer, updateCustomer, getCustomerById, addCustomerPayment, getCustomerPaymentsById} from '../sql/customer'
 import { addFreezerbox, updateFreezerbox } from '../sql/freezerbox'
 
 export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdateMt }) {
@@ -119,33 +119,30 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   const createNewProject = async (values) => {
 
     let {boxnumbers,...newvalue} = values;
-    boxnumbers = boxnumbers === undefined ? [] : boxnumbers
+    boxnumbers = boxnumbers || [];
     setIsNewCustomerLoading(true)
     console.log(values)
     try {
      let result =  await addCustomer({
         ...newvalue,
-        name: values.customername,
-        transportationType: values.transport,
-        address: values.location,
+        name: values.name,
+        transportationType: values.transportationType,
+        address: values.address,
         gstin: values.gstin || '',
-        vehicleOrFreezerNo: values.vehicleorfreezerno || '',
+        vehicleOrFreezerNo: values.vehicleOrFreezerNo || '',
         createdDate: new Date().toISOString(),
         modifiedDate: new Date().toISOString(),
         isDeleted: 0
       });
 
-      let customerId = result.status ===200 ? result.res.id : undefined;
-
       if(boxnumbers.length > 0 && boxnumbers){
       boxnumbers.forEach(async box => {
         await updateFreezerbox(box,{
-        customerId:customerId
+        customerId:result.id,
         });
         await freezerboxUpdateMt()
       })}else{
         console.log('No');
-        
       };
 
       await customerUpdateMt();
@@ -159,7 +156,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       setIsModalOpen(false)
       setIsNewCustomerLoading(false)
       setCustomerOnchange({
-        customername: '',
+        name: '',
         payamount: ''
       })
     }
@@ -167,7 +164,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   };
 
   const showPayModal = (record) => {
-    setCustomerName(record.customername)
+    setCustomerName(record.name)
     payForm.resetFields()
     setCustomerPayId(record.id)
     setIsPayModelOpen(true)
@@ -181,17 +178,20 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     let formateDate = dayjs(date).format('DD/MM/YYYY')
     const payData = {
       ...Datas,
-      collectiontype:'customer',
-      date: formateDate,
+      collectionType:'customer',
+      date: new Date().toISOString(),
       customerId:customerPayId,
-      description: description || '',
-      createddate: TimestampJs(),
-      isdeleted:false,
+      decription: description || '',
+      createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
+      isDeleted:0
     }
     try {
-      const customerDocRef = doc(db, 'customer', customerPayId)
-      const payDetailsRef = collection(customerDocRef, 'paydetails')
-      await addDoc(payDetailsRef, payData)
+      // const customerDocRef = doc(db, 'customer', customerPayId)
+      // const payDetailsRef = collection(customerDocRef, 'paydetails')
+      // await addDoc(payDetailsRef, payData)
+      console.log(payData)
+      await addCustomerPayment(payData)
       message.open({ type: 'success', content: 'Pay Added Successfully' })
     } catch (e) {
       console.log(e)
@@ -201,7 +201,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       setIsPayModelOpen(false)
       setIsCustomerPayLoading(false)
       setCustomerOnchange({
-        customername: '',
+        name: '',
         payamount: ''
       })
     }
@@ -210,31 +210,31 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   const [customerName,setCustomerName] = useState('');
   
   const showPayDetailsModal = async (record) => {
-    setCustomerName(record.customername)
+    setCustomerName(record.name)
     try {
-      const payDetailsResponse = await getCustomerPayDetailsById(record.id);
+      const payDetailsResponse = await getCustomerPaymentsById(record.id);
 
       let payDetails = []
-      if (payDetailsResponse.status === 200) {
-        payDetails = payDetailsResponse.paydetails.filter(data => data.isdeleted === false)
+      if (payDetailsResponse) {
+        payDetails = payDetailsResponse.filter(data => !data.isDeleted)
       }
       const deliveryDocRef = await datas.delivery.filter(
-        (item) => item.isdeleted === false && item.customerId === record.id
-      ).map(data=>({...data,customername:record.customername}))
+        (item) => !item.isDeleted && item.customerId === record.id
+      ).map(data=>({...data,name:record.name}))
 
       const combinedData = payDetails.concat(deliveryDocRef)
-      let sortedData = await latestFirstSort(combinedData)
+      // let sortedData = await latestFirstSort(combinedData)
       
       // setPayDetailsData(sortedData)
+      console.log('Comb',combinedData)
+      // const addFreezerboxNumber = await Promise.all(
+      //   combinedData.map(async data => {
+      //     const { freezerbox, status } = await getFreezerboxById(data.boxid);
+      //     return { ...data, boxNumber: freezerbox ? freezerbox.boxNumber : ''};
+      //   })
+      // );
 
-      const addFreezerboxNumber = await Promise.all(
-        sortedData.map(async data => {
-          const { freezerbox, status } = await getFreezerboxById(data.boxid);
-          return { ...data, boxNumber: freezerbox ? freezerbox.boxNumber : ''};
-        })
-      );
-
-      setPayDetailsData(addFreezerboxNumber)
+      setPayDetailsData(combinedData)
       
       
 
@@ -381,12 +381,12 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
         
         return record.paymentstatus === undefined ? (
           <>
-            {record.type === 'Balance' ? <Tag color='orange'>Book</Tag> : <Tag color="cyan">{record.paymentmode}</Tag>}
+            {record.type === 'Balance' ? <Tag color='orange'>Book</Tag> : <Tag color="cyan">{record.paymentMode}</Tag>}
           </>
         ) : record.paymentstatus === 'Paid' ? (
           <span className="flex items-center">
             <Tag color="green">Paid</Tag>
-            {record.paymentmode && <Tag color="cyan">{record.paymentmode}</Tag>}
+            {record.paymentMode && <Tag color="cyan">{record.paymentMode}</Tag>}
           </span>
         ) : record.paymentstatus === 'Unpaid' ? (
           <Tag color="red">UnPaid</Tag>
@@ -396,7 +396,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
             <Tag color="blue" className="text-[0.7rem]">
               {formatToRupee(record.partialamount, true)}
             </Tag>
-            {record.paymentmode && <Tag color="cyan">{record.paymentmode}</Tag>}
+            {record.paymentMode && <Tag color="cyan">{record.paymentMode}</Tag>}
           </span>
         ) :  (
           <></>
@@ -424,11 +424,11 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       onFilter: (value, record) => {
         return (
           String(record.name).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.transport).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.transportationType).toLowerCase().includes(value.toLowerCase()) ||
           String(record.address).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.mobilenumber).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
           String(record.gstin).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.vehicleorfreezerno).toLowerCase().includes(value.toLowerCase())
+          String(record.vehicleOrFreezerNo).toLowerCase().includes(value.toLowerCase())
         )
       }
     },
@@ -480,10 +480,10 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     },
     // {
     //   title: 'Vehicle',
-    //   dataIndex: 'vehicleorfreezerno',
-    //   key: 'vehicleorfreezerno',
+    //   dataIndex: 'vehicleOrFreezerNo',
+    //   key: 'vehicleOrFreezerNo',
     //   editable: true,
-    //   sorter: (a, b) => a.location.localeCompare(b.location),
+    //   sorter: (a, b) => a.address.localeCompare(b.address),
     //   showSorterTooltip: { target: 'sorter-icon' },
     //   render: (text,record)=>{
     //     return text.length > 10 ? <Tooltip title={text}>{truncateString(text,10)}</Tooltip> : text
@@ -503,8 +503,8 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
         return ( <>
 
         {
-          record.transport === 'Company' ? <Tooltip title={record.vehicleOrFreezerNo}>{truncateString(record.vehicleOrFreezerNo,10)}</Tooltip> 
-          : record.transport === 'Freezer Box' ?
+          record.transportationType === 'Company' ? <Tooltip title={record.vehicleOrFreezerNo}>{truncateString(record.vehicleOrFreezerNo,10)}</Tooltip> 
+          : record.transportationType === 'Freezer Box' ?
           <Badge size='small' count={freezerboxCount}>
           <Button onClick={() => setFreezerBox(pre=>({...pre,popupid:record.id}))} className="h-[1.7rem]">
           <BsBoxSeam/>
@@ -583,15 +583,15 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
                 setUpdateCustomerDetails({isclick:true,data:record});
                 setIsModalOpen(true);
                 form.setFieldsValue({
-                  customername:record.customername,
-                  transport:record.transport,
-                  vehicleorfreezerno:record.vehicleorfreezerno,
+                  name:record.name,
+                  transportationType:record.transportationType,
+                  vehicleOrFreezerNo:record.vehicleOrFreezerNo,
                   boxnumbers:record.freezerbox.map(data=>({label:data.boxNumber,value:data.id})),
-                  mobilenumber:record.mobilenumber,
+                  mobileNumber:record.mobileNumber,
                   gstin:record.gstin,
-                  location:record.location
+                  address:record.address
                   });
-                  setTransportOnchange(record.transport)
+                  setTransportOnchange(record.transportationType)
                 console.log(
                   record.freezerbox,
                 )
@@ -627,20 +627,20 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     children,
     ...restProps
   }) => {
-    const inputNode = dataIndex === 'mobilenumber' ? <InputNumber type="number" /> : <Input />
+    const inputNode = dataIndex === 'mobileNumber' ? <InputNumber type="number" /> : <Input />
     return (
       <td {...restProps}>
         {editing ? (
           <>
-            {dataIndex === 'transport' ? (
+            {dataIndex === 'transportationType' ? (
               <span className="flex gap-x-1">
                 <Form.Item
-                  name="transport"
+                  name="transportationType"
                   style={{ margin: 0 }}
                   rules={[{ required: true, message: false }]}
                 >
                   <Select
-                    placeholder="Select transport"
+                    placeholder="Select transportationType"
                     optionFilterProp="label"
                     options={[
                       { value: 'Self', label: 'Self' },
@@ -651,9 +651,9 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
                   />
                 </Form.Item>
               </span>
-            ) : dataIndex === 'mobilenumber' ? (
+            ) : dataIndex === 'mobileNumber' ? (
               <Form.Item
-                name="mobilenumber"
+                name="mobileNumber"
                 style={{ margin: 0 }}
                 rules={[{ required: true, message: false }]}
               >
@@ -666,10 +666,10 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
                 rules={[
                   {
                     required:
-                      dataIndex === 'customername' ||
-                      dataIndex === 'transport' ||
-                      dataIndex === 'mobilenumber' ||
-                      dataIndex === 'location'
+                      dataIndex === 'name' ||
+                      dataIndex === 'transportationType' ||
+                      dataIndex === 'mobileNumber' ||
+                      dataIndex === 'address'
                         ? true
                         : false,
                     message: false,
@@ -703,7 +703,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       ...col,
       onCell: (record) => ({
         record,
-        inputType: col.dataIndex === 'mobilenumber' ? 'number' : 'text',
+        inputType: col.dataIndex === 'mobileNumber' ? 'number' : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: isEditing(record)
@@ -723,17 +723,17 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       const index = newData.findIndex((item) => key.id === item.key)
       if (
         index != null &&
-        row.customername === key.customername &&
-        row.transport === key.transport &&
-        row.location === key.location &&
-        row.vehicleorfreezerno === key.vehicleorfreezerno &&
-        row.mobilenumber === key.mobilenumber &&
+        row.name === key.name &&
+        row.transportationType === key.transportationType &&
+        row.address === key.address &&
+        row.vehicleOrFreezerNo === key.vehicleOrFreezerNo &&
+        row.mobileNumber === key.mobileNumber &&
         row.gstin === key.gstin
       ) {
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKeys([])
       } else {
-        await updateCustomer(key.id, { ...row, updateddate: TimestampJs() })
+        await updateCustomer(key.id, { ...row})
         customerUpdateMt()
         message.open({ type: 'success', content: 'Updated Successfully' })
         setEditingKeys([])
@@ -855,8 +855,8 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     // await deleteproduct(data.id);
     const { id, ...newData } = data;
 
-    let {paydetails,status} = await getCustomerPayDetailsById(data.id);
-
+    let paydetails = await getCustomerPaymentsById(data.id);
+    console.log(data,paydetails)
     if(paydetails.length > 0){
       paydetails.map( async paydata =>{
          await updatePaydetailsCustomer(id,paydata.id,{isdeleted:true});
@@ -864,9 +864,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     };
     
     await updateCustomer(id, {
-      isdeleted: true,
-      // deletedby: 'admin',
-      deleteddate: TimestampJs()
+      isDeleted: 1,
     });
 
     // remove freezerbox customerId:''
@@ -886,12 +884,12 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     const exportDatas = data.filter((item) => selectedRowKeys.includes(item.key))
     const excelDatas = exportDatas.map((pr, i) => ({
       No: i + 1,
-      Customer: pr.customername,
-      Mobile: pr.mobilenumber,
+      Customer: pr.name,
+      Mobile: pr.mobileNumber,
       GSTIN: pr.gstin || '',
-      Location: pr.location,
-      Transport: pr.transport,
-      Vehicle: pr.vehicleorfreezerno || ''
+      Location: pr.address,
+      Transport: pr.transportationType,
+      Vehicle: pr.vehicleOrFreezerNo || ''
     }))
     jsonToExcel(excelDatas, `Customer-List-${TimestampJs()}`)
     setSelectedRowKeys([])
@@ -909,7 +907,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   // warning modal methods
   const [isCloseWarning, setIsCloseWarning] = useState(false)
   const [customerOnchange, setCustomerOnchange] = useState({
-    customername: '',
+    name: '',
     payamount: ''
   })
 
@@ -918,21 +916,21 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     form.resetFields()
     setIsCloseWarning(false)
     setCustomerOnchange({
-      customername: '',
+      name: '',
       payamount: ''
     })
     setIsPayModelOpen(false)
   }
 
   const customerOnchangeMt = debounce((e, input) => {
-    if (input === 'customername') {
+    if (input === 'name') {
       setCustomerOnchange({
-        customername: e.target.value,
+        name: e.target.value,
         payamount: ''
       })
     } else {
       setCustomerOnchange({
-        customername: '',
+        name: '',
         payamount: e
       })
     }
@@ -948,7 +946,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     editid:'',
     spinner:false,
     tabledata:[],
-    customername:'',
+    name:'',
     update:false,
     popupid:null
   });
@@ -956,8 +954,9 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
   // create freezer box
   const CreateNewFreezerBox = async()=>{
+    let boxNumber = freezerform.getFieldsValue().boxNumber;
   try{
-    let checkExsistingBox = datas.freezerbox.some(box => box.boxNumber.trim() === freezerform.getFieldsValue().boxNumber.trim());
+    let checkExsistingBox = datas.freezerbox.some(box => box.boxNumber && boxNumber && String(box.boxNumber).trim() === String(boxNumber).trim());
   if(checkExsistingBox){
   return message.open({type:'warning',content:'The box name is already exsist'});
   }
@@ -988,7 +987,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   //   let freezerBoxData = await datas.freezerbox.filter(box => box.isdeleted === false).map( async fz =>{
   //     let {customer,status} = await getCustomerById(fz.customerId === '' || fz.customerId === undefined ? undefined : fz.customerId);
   //     if(status){
-  //      return {...fz,customername:customer === undefined ? '-': customer.customername}
+  //      return {...fz,name:customer === undefined ? '-': customer.name}
   //     }});
   //   let processTabledata = await Promise.all(freezerBoxData);
   //  await setFreezerBox(pre=>({...pre,tabledata:processTabledata}));
@@ -1010,9 +1009,9 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
           freezerBoxData.map(async fz => {
             if(fz.customerId) {
             const customer = await getCustomerById(fz.customerId);
-            return { ...fz, customername: customer?.name || '-' };
+            return { ...fz, name: customer?.name || '-' };
           }else{
-            return { ...fz, customername: '-' };
+            return { ...fz, name: '-' };
           }
           })
         );
@@ -1020,6 +1019,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
         // Update state with processed data
         setFreezerBox(pre => ({ ...pre, tabledata: processTabledata.sort((a, b) => {
           const extractParts = (str) => {
+            if (!str || typeof str !== 'string') return [0, ''];
             const regex = /^(\d+)?(.*)$/; // Extract numeric part (if any) and remaining text
             const [, numPart, textPart] = str.match(regex) || [null, '', ''];
             return [parseInt(numPart || 0, 10), textPart.trim()];
@@ -1069,7 +1069,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       dataIndex: 'customerId',
       key: 'customerId',
       render:  (text,record)=>{
-        return record.customername
+        return record.name
       }
     },
     {
@@ -1085,8 +1085,8 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
                 customer = await getCustomerById(record.customerId);
                 console.log(customer)
                 }
-                freezerform.setFieldsValue({boxNumber:record.boxNumber, customerId : customer ? customer.customername : undefined});
-                setFreezerBox(pre =>({...pre,frommodal:true,editclick:true,editid:record.id,customername:customer ? customer.customername : undefined}));  
+                freezerform.setFieldsValue({boxNumber:record.boxNumber, customerId : customer ? customer.name : undefined});
+                setFreezerBox(pre =>({...pre,frommodal:true,editclick:true,editid:record.id,name:customer ? customer.name : undefined}));  
               }}
             >
               <MdOutlineModeEditOutline size={20} />
@@ -1116,9 +1116,9 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
   // const UpdateFreezerBox = async()=>{
   //   let {boxNumber,customerId} = freezerform.getFieldValue();
-  //   let updateData = (customerId === freezerBox.customername) ? {boxNumber:boxNumber} :{boxNumber:boxNumber,customerId:customerId === undefined ? '' : customerId};
+  //   let updateData = (customerId === freezerBox.name) ? {boxNumber:boxNumber} :{boxNumber:boxNumber,customerId:customerId === undefined ? '' : customerId};
   //   console.log(updateData);
-  //   let check = datas.freezerbox.some(name => name.boxNumber.trim() === boxNumber.trim() && customerId === freezerBox.customername);
+  //   let check = datas.freezerbox.some(name => name.boxNumber.trim() === boxNumber.trim() && customerId === freezerBox.name);
     
   //   if(check){
   //     return message.open({type:'info',content:'No changes found'})
@@ -1127,7 +1127,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   //   await setFreezerBox(pre =>({...pre,spinner:true}));   
   //   await updateFreezerbox(freezerBox.editid,updateData);
   //   await message.open({type:'success',content:'updated successfully'});
-  //   await setFreezerBox(pre =>({...pre,frommodal:false,editclick:false,editid:'',customername:'',spinner:false,update:!freezerBox.modal})); 
+  //   await setFreezerBox(pre =>({...pre,frommodal:false,editclick:false,editid:'',name:'',spinner:false,update:!freezerBox.modal})); 
   //   await freezerboxUpdateMt();
   //   }
   // //   let checkBoxAndName = datas.freezerbox.some(name => name.boxNumber === boxNumber.trim() && name.customerId === customerId);
@@ -1146,15 +1146,21 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   const UpdateFreezerBox = async () => {
     try {
       let { boxNumber, customerId } = freezerform.getFieldValue();
+      boxNumber = boxNumber?.trim() || null;
+      customerId = customerId || null;
       let updateData =
-        customerId === freezerBox.customername
+        customerId === freezerBox.name
           ? { boxNumber: boxNumber }
-          : { boxNumber: boxNumber, customerId: customerId === undefined ? '' : customerId };
+          : { boxNumber: boxNumber, customerId: customerId || null};
   
       console.log(updateData);
+
+      if (!boxNumber) {
+        return message.open({ type: 'error', content: 'Box number cannot be empty' });
+      }
   
       let check = datas.freezerbox.some(
-        (name) => name.boxNumber.trim() === boxNumber.trim() && customerId === freezerBox.customername
+        (name) => name.boxNumber && name.boxNumber.trim() === boxNumber.trim() && customerId === freezerBox.name
       );
   
       if (check) {
@@ -1168,7 +1174,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
           frommodal: false,
           editclick: false,
           editid: '',
-          customername: '',
+          name: '',
           spinner: false,
           update: !freezerBox.modal,
         }));
@@ -1187,7 +1193,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   
   const updateCustomerData = async ()=>{
     try{
-      let {boxnumbers,customername,gstin,location,mobilenumber,transport,vehicleorfreezerno} = form.getFieldsValue();
+      let {boxnumbers,name,gstin,address,mobileNumber,transportationType,vehicleOrFreezerNo} = form.getFieldsValue();
     boxnumbers = boxnumbers === undefined ? [] : boxnumbers
     let selectBoxConvertor = boxnumbers.some(data => data.value === undefined) ? boxnumbers :  boxnumbers.map(data => data.value);
     let oldboxes = updateCustomerDetails.data.freezerbox.map(data => data.id);
@@ -1198,26 +1204,26 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     //new data
     let newBoxes = selectBoxConvertor.filter(item => !oldboxes.includes(item));
     
-    if(updateCustomerDetails.data.customername === customername &&
+    if(updateCustomerDetails.data.name === name &&
       compareArrays(selectBoxConvertor,oldboxes) &&
       // await areArraysEqual(updateCustomerDetails.data.freezerbox,convertbox) &&
       updateCustomerDetails.data.gstin === gstin &&
-      updateCustomerDetails.data.location === location &&
-      updateCustomerDetails.data.mobilenumber === mobilenumber &&
-      updateCustomerDetails.data.transport === transport && 
-      updateCustomerDetails.data.vehicleorfreezerno === vehicleorfreezerno
+      updateCustomerDetails.data.address === address &&
+      updateCustomerDetails.data.mobileNumber === mobileNumber &&
+      updateCustomerDetails.data.transportationType === transportationType && 
+      updateCustomerDetails.data.vehicleOrFreezerNo === vehicleOrFreezerNo
     ){
       return message.open({type:'info',content:'No changes made'})
     }
     else{
       setIsNewCustomerLoading(true)
       let updateData = {
-        customername:customername,
+        name:name,
         gstin:gstin,
-        location:location,
-        mobilenumber:mobilenumber,
-        transport:transport,
-        vehicleorfreezerno:vehicleorfreezerno === undefined ? '' : vehicleorfreezerno,
+        address:address,
+        mobileNumber:mobileNumber,
+        transportationType:transportationType,
+        vehicleOrFreezerNo:vehicleOrFreezerNo === undefined ? '' : vehicleOrFreezerNo,
         updateddate:TimestampJs()
       }
 
@@ -1299,7 +1305,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
               onClick={() => {
                 setIsModalOpen(true)
                 form.resetFields()
-                form.setFieldsValue({ transport: 'Self' });
+                form.setFieldsValue({ transportationType: 'Self' });
                 setTransportOnchange('Self')
               }}
             >
@@ -1331,9 +1337,9 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
       <Modal
         maskClosable={
-          customerOnchange.customername === '' ||
-          customerOnchange.customername === undefined ||
-          customerOnchange.customername === null
+          customerOnchange.name === '' ||
+          customerOnchange.name === undefined ||
+          customerOnchange.name === null
             ? true
             : false
         }
@@ -1344,14 +1350,14 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
         okButtonProps={{ disabled: isNewCustomerLoading }}
         onCancel={() => {
           if (
-            customerOnchange.customername === '' ||
-            customerOnchange.customername === undefined ||
-            customerOnchange.customername === null
+            customerOnchange.name === '' ||
+            customerOnchange.name === undefined ||
+            customerOnchange.name === null
           ) {
             setIsModalOpen(false)
             form.resetFields()
             setCustomerOnchange({
-              customername: '',
+              name: '',
               payamount: ''
             })
           } else {
@@ -1362,31 +1368,31 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       >
         <Spin spinning={isNewCustomerLoading}>
           <Form
-            initialValues={{ transport: 'Self' }}
+            initialValues={{ transportationType: 'Self' }}
             onFinish={updateCustomerDetails.isclick === true ? updateCustomerData : createNewProject}
             form={form}
             layout="vertical"
             onValuesChange={(changedValues) => {
-              if (changedValues.transport) {
-                handleTransportChange(changedValues.transport)
+              if (changedValues.transportationType) {
+                handleTransportChange(changedValues.transportationType)
               }
             }}
           >
             <Form.Item
               className="mb-2"
-              name="customername"
+              name="name"
               label="Name"
               rules={[{ required: true, message: false }]}
             >
               <Input
-                onChange={(e) => customerOnchangeMt(e, 'customername')}
+                onChange={(e) => customerOnchangeMt(e, 'name')}
                 placeholder="Enter the Customer Name"
               />
             </Form.Item>
 
             <Form.Item
               className="mb-2"
-              name="transport"
+              name="transportationType"
               label="Transport Type"
               rules={[{ required: true, message: false }]}
             >
@@ -1395,10 +1401,10 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
                   form.resetFields(['boxnumbers'])
                 }
                 else if(e.target.value === 'Freezer Box'){
-                  form.resetFields(['vehicleorfreezerno'])
+                  form.resetFields(['vehicleOrFreezerNo'])
                 }
                 else if(e.target.value === 'Self' || e.target.value === 'Mini Box'){
-                  form.resetFields(['boxnumbers','vehicleorfreezerno'])
+                  form.resetFields(['boxnumbers','vehicleOrFreezerNo'])
                 }
                 setTransportOnchange(e.target.value);
                 },300)}>
@@ -1411,7 +1417,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
             <Form.Item
               className="mb-2"
-              name="vehicleorfreezerno"
+              name="vehicleOrFreezerNo"
               label="Vehicle Number "
               rules={[{ required: false, message: false }]}
             >
@@ -1436,13 +1442,13 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
               // disabled={isVehicleNoDisabled}
               disabled={transportOnchange === 'Freezer Box' ? false : true}
               placeholder="Select the Box Number"
-              options={datas.freezerbox.filter(f => f.isdeleted === false && (f.customerId === '' || f.customerId === undefined)).map(box=>({label:box.boxNumber,value:box.id}))}
+              options={datas.freezerbox.filter(f => !f.customerId).map(box=>({label:box.boxNumber,value:box.id}))}
               />
             </Form.Item>
 
             <Form.Item
               className="mb-2 w-full"
-              name="mobilenumber"
+              name="mobileNumber"
               label="Mobile Number"
               rules={[
                 { required: true, message: false },
@@ -1463,7 +1469,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
             <Form.Item
               className="mb-2"
-              name="location"
+              name="address"
               label="Address"
               rules={[{ required: true, message: false }]}
             >
@@ -1507,7 +1513,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
           <Form
             onFinish={ customerPay}
             form={payForm}
-            initialValues={{ date: dayjs(), paymentmode: 'Cash', type: 'Payment' }}
+            initialValues={{ date: dayjs(), paymentMode: 'Cash', type: 'Payment' }}
             layout="vertical"
           >
             <Form.Item name="type" className="mb-1 mt-3">
@@ -1555,7 +1561,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
             <Form.Item
               className="mb-0"
-              name="paymentmode"
+              name="paymentMode"
               label="Payment Mode"
               rules={[{ required: true, message: false }]}
             >
@@ -1600,7 +1606,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
             const date = item.date ? item.date.toString() : ''; 
             const total = item.total ? item.total.toString() : ''; 
             const billAmount = item.billamount ? item.billamount.toString() : item.amount.toString();
-            const paymentMode = item.paymentmode ? item.paymentmode.toString() : '';
+            const paymentMode = item.paymentMode ? item.paymentMode.toString() : '';
             const boxNumber = item.boxNumber ? item.boxNumber.toString() : '';
             const paymentStatus = item.paymentstatus ? item.paymentstatus.toString() : '';
             const partialAmount = item.partialamount ? item.partialamount.toString() : '';
@@ -1638,7 +1644,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       okButtonProps={{disabled:freezerBox.spinner}}>
        <Spin spinning={freezerBox.spinner}>
       <Form
-            // initialValues={{ transport: 'Self' }}
+            // initialValues={{ transportationType: 'Self' }}
             onFinish={freezerBox.editclick === true ? UpdateFreezerBox : CreateNewFreezerBox}
             // onFinish={updateCustomerDetails === true ? updateCustomer : CreateNewFreezerBox}
             form={freezerform}
@@ -1669,7 +1675,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
           style={{
             width: '100%',
           }}
-          options={datas.customers.filter(cs => cs.isdeleted === false && cs.transport === "Freezer Box").map(item => ({label:item.customername,value:item.id}))}
+          options={datas.customers.filter(cs => cs.transportationType === "Freezer Box").map(item => ({label:item.name,value:item.id}))}
         />
               </Form.Item> : ''
             }

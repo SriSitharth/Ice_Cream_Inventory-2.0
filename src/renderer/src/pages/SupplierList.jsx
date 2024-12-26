@@ -20,7 +20,7 @@ import {
 } from 'antd'
 import { MdProductionQuantityLimits } from "react-icons/md";
 import { IoCloseCircle } from "react-icons/io5";
-import { SolutionOutlined, PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
+import { SolutionOutlined, PlusOutlined, MinusCircleOutlined, ConsoleSqlOutlined } from '@ant-design/icons'
 import { IoMdAdd } from 'react-icons/io'
 import { MdOutlineModeEditOutline } from 'react-icons/md'
 import { PiExport } from 'react-icons/pi'
@@ -138,9 +138,9 @@ if(duplicateNames.length > 0){
 
     const supplierDatas = {
       ...value,
-      name:formatName(value.suppliername),
-      mobileNumber: value.mobilenumber,
-      address: value.location,
+      name:formatName(value.name),
+      mobileNumber: value.mobileNumber,
+      address: value.address,
       gender: 'Male',
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString(),
@@ -169,13 +169,20 @@ if(duplicateNames.length > 0){
     try {
 
       console.log(supplierDatas)
-      await addSupplier(supplierDatas)
-
-      const supplierCollectionRef = collection(db, 'supplier')
-      const supplierDocRef = await addDoc(supplierCollectionRef, supplierDatas)
-      const materialCollectionRef = collection(supplierDocRef, 'materialdetails')
+      const addedSupplier = await addSupplier(supplierDatas);
+      
       for (const materialItem of correctMaterialName) {
-        await addDoc(materialCollectionRef, {...materialItem,isdeleted:false,createddate:TimestampJs()});
+        console.log(materialItem)
+        await addSupplierAndMaterial({
+            name: materialItem.materialname,
+            unit: materialItem.unit,
+            supplierId: addedSupplier.id,
+            isDeleted: 0,
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString()
+        })
+
+        // await addDoc(materialCollectionRef, {...materialItem,isdeleted:false,createddate:TimestampJs()});
         // const materialExists = datas.storage.find(
         //   (storageItem) => storageItem.materialname === materialItem.materialname && storageItem.category === 'Material List' && storageItem.unit === materialItem.unit
         // )
@@ -224,7 +231,7 @@ if(duplicateNames.length > 0){
   }
 
   const showPayModal = (record) => {
-    setSupplierName(record.suppliername)
+    setSupplierName(record.name)
     payForm.resetFields()
     setSupplierPayId(record.id)
     setIsPayModelOpen(true)
@@ -261,12 +268,12 @@ const [supplierName,setSupplierName] = useState('');
       let {rawmaterial,status} = await getRawmaterial();
       let {paydetails} = await getSupplierPayDetailsById(record.id)
       if(status){
-      let filterBillOrders = rawmaterial.filter(data=> record.id === data.supplierid && data.isdeleted === false).map(data => ({...data,suppliername: record.suppliername}));
+      let filterBillOrders = rawmaterial.filter(data=> record.id === data.supplierid && data.isdeleted === false).map(data => ({...data,name: record.name}));
       let getPaydetials = paydetails.filter(paydata => paydata.isdeleted === false);
       
       let sortData = await latestFirstSort([...filterBillOrders,...getPaydetials]);
       setPayDetailsData(sortData);
-      setSupplierName(record.suppliername);
+      setSupplierName(record.name);
 
       // calculation
       const totalBalance = sortData.reduce((total, item) => {
@@ -566,10 +573,10 @@ const [supplierName,setSupplierName] = useState('');
     setEditSupplierModal(true)
     // Set the form fields with the correct values from the record
     form.setFieldsValue({
-      suppliername: record.suppliername,
+      name: record.name,
       // gender: record.gender,
-      location: record.location,
-      mobilenumber: record.mobilenumber,
+      address: record.address,
+      mobileNumber: record.mobileNumber,
       material: record.item
       // Ensure materialdetails is an array of objects with the expected structure
     });
@@ -597,7 +604,7 @@ const [supplierName,setSupplierName] = useState('');
  
  if(sameItem.length > 0) { return message.open({type:'warning',content:`Not allow same material ${sameItem.map(data=> { return data.materialname})}`})}
   
-  if(olddata.location === newdata.location && olddata.mobilenumber === newdata.mobilenumber && olddata.suppliername === newdata.suppliername && material.length === olddata.item.length && compareArrObj){
+  if(olddata.address === newdata.address && olddata.mobileNumber === newdata.mobileNumber && olddata.name === newdata.name && material.length === olddata.item.length && compareArrObj){
     message.open({content:'No changes found', type:'info'})
   }
   else{
@@ -639,7 +646,8 @@ const [supplierName,setSupplierName] = useState('');
     if(newMaterialItems.length > 0){
       for(const items of newMaterialItems){
         const {id,createddate,isdeleted,...newupdateddata} = items;
-        await addNewMaterialItem(supplerId,{...newupdateddata,updateddate:TimestampJs(),isdeleted:false})
+        console.log(supplerId,newupdateddata,items)
+        await addSupplierAndMaterial(supplerId,{...newupdateddata,updateddate:TimestampJs(),isdeleted:false})
         const materialExists = datas.storage.find((storageItem) => storageItem.materialname === newupdateddata.materialname && storageItem.category === 'Material List' && storageItem.unit === newupdateddata.unit)
         if (!materialExists) {
           await addStorage({
@@ -790,7 +798,7 @@ const [supplierName,setSupplierName] = useState('');
       ...col,
       onCell: (record) => ({
         record,
-        inputType: col.dataIndex === 'mobilenumber' ? 'number' : 'text',
+        inputType: col.dataIndex === 'mobileNumber' ? 'number' : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: isEditing(record)
@@ -809,10 +817,10 @@ const [supplierName,setSupplierName] = useState('');
       const index = newData.findIndex((item) => key.id === item.key)
       if (
         index != null &&
-        row.suppliername === key.suppliername &&
+        row.name === key.name &&
         // row.materialname === key.materialname &&
-        row.location === key.location &&
-        row.mobilenumber === key.mobilenumber
+        row.address === key.address &&
+        row.mobileNumber === key.mobileNumber
         // row.gender === key.gender
       ) {
         message.open({ type: 'info', content: 'No changes made' })
@@ -982,7 +990,7 @@ setSupplierTbLoading(false)
       ...col,
       onCell: (record) => ({
         record,
-        inputType: col.dataIndex === 'mobilenumber' ? 'number' : 'text',
+        inputType: col.dataIndex === 'mobileNumber' ? 'number' : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: isEditingExpandTable(record)
@@ -1140,10 +1148,10 @@ setSupplierTbLoading(false)
     const exportDatas = data.filter((item) => selectedRowKeys.includes(item.key))
     const excelDatas = exportDatas.map((pr, i) => ({
       No: i + 1,
-      Supplier: pr.suppliername,
+      Supplier: pr.name,
       // Gender: pr.gender,
-      Mobile: pr.mobilenumber,
-      Location: pr.location
+      Mobile: pr.mobileNumber,
+      address: pr.address
     }))
     jsonToExcel(excelDatas, `Supplier-List-${TimestampJs()}`)
     setSelectedRowKeys([])
@@ -1347,9 +1355,9 @@ setSupplierTbLoading(false)
       <Modal
         centered={true}
         maskClosable={
-          form.getFieldValue('suppliername') === undefined ||
-          form.getFieldValue('suppliername') === null ||
-          form.getFieldValue('suppliername') === ''
+          form.getFieldValue('name') === undefined ||
+          form.getFieldValue('name') === null ||
+          form.getFieldValue('name') === ''
             ? true
             : false
         }
@@ -1360,9 +1368,9 @@ setSupplierTbLoading(false)
         okButtonProps={{ disabled: supplierModalLoading }}
         onCancel={() => {
           if (
-            form.getFieldValue('suppliername') === undefined ||
-            form.getFieldValue('suppliername') === null ||
-            form.getFieldValue('suppliername') === ''
+            form.getFieldValue('name') === undefined ||
+            form.getFieldValue('name') === null ||
+            form.getFieldValue('name') === ''
           ) {
             setIsModalOpen(false)
             form.resetFields()
@@ -1379,7 +1387,7 @@ setSupplierTbLoading(false)
           >
             <Form.Item
               className="mb-2"
-              name="suppliername"
+              name="name"
               label="Name"
               rules={[{ required: true, message: false }]}
             >
@@ -1388,7 +1396,7 @@ setSupplierTbLoading(false)
 
             <Form.Item
               className="mb-2 w-full"
-              name="mobilenumber"
+              name="mobileNumber"
               label="Mobile Number"
               rules={[
                 { required: true, message: false },
@@ -1405,7 +1413,7 @@ setSupplierTbLoading(false)
 
             <Form.Item
               className="mb-2"
-              name="location"
+              name="address"
               label="Address"
               rules={[{ required: true, message: false }]}
             >
