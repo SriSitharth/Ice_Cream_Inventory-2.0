@@ -32,16 +32,16 @@ import { TimestampJs } from '../js-files/time-stamp'
 const { Search } = Input
 const { RangePicker } = DatePicker
 import dayjs from 'dayjs'
-import { getProductById } from '../firebase/data-tables/products'
-import { updateStorage } from '../firebase/data-tables/storage'
+// import { getProductById } from '../firebase/data-tables/products'
+// import { updateStorage } from '../firebase/data-tables/storage'
 import jsonToExcel from '../js-files/json-to-excel'
 import { MdAddShoppingCart } from 'react-icons/md'
 import {
   createDelivery,
   fetchItemsForDelivery,
   fetchPayDetailsForDelivery,
-  getDeliveryById,
-  updateDelivery,
+  // getDeliveryById,
+  // updateDelivery,
   updatePaydetailsChild
 } from '../firebase/data-tables/delivery'
 import { MdOutlineDoneOutline } from 'react-icons/md'
@@ -65,8 +65,10 @@ import { getFreezerbox, getFreezerboxById } from '../firebase/data-tables/freeze
 import TableHeight from '../components/TableHeight'
 import { ClockCircleOutlined } from '@ant-design/icons';
 
-import { addDelivery } from '../sql/delivery'
+import { addDelivery, getDeliveryById, updateDelivery, addDeliveryDetail } from '../sql/delivery'
 import { getCustomerById } from '../sql/customer'
+import { updateStorage } from '../sql/storage'
+import { getProductById } from '../sql/product'
 
 const { TextArea } = Input
 export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, customerUpdateMt }) {
@@ -100,7 +102,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     billingamount: 0,
     returnmodeltable: false,
     update: true,
-    boxnumber:''
+    boxNumber:''
   })
 
   useEffect(() => {
@@ -119,7 +121,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             const mobileNumber = result.status === 200 ? result.customer.mobileNumber : item.mobilenumber
             const gstNumber = result.status === 200 ? result.customer.gstin : item.gstin
             const address = result.status === 200 ? result.customer.address : item.location
-            const boxnumber = freezerboxResult.status === 200 && freezerboxResult !== '' ? freezerboxResult.freezerbox.boxnumber : '';
+            const boxNumber = freezerboxResult.status === 200 && freezerboxResult !== '' ? freezerboxResult.freezerbox.boxNumber : '';
             return {
               ...item,
               sno: index + 1,
@@ -128,7 +130,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               mobilenumber: mobileNumber,
               gstin:gstNumber,
               location: address,
-              boxnumber:boxnumber
+              boxNumber:boxNumber
             }
           }));
         
@@ -189,7 +191,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           String(record.billAmount).toLowerCase().includes(value.toLowerCase()) ||
           String(record.type).toLowerCase().includes(value.toLowerCase()) ||
           String(record.paymentStatus).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.boxnumber).toLowerCase().includes(value.toLowerCase())
+          String(record.boxNumber).toLowerCase().includes(value.toLowerCase())
         )
       }
     },
@@ -239,7 +241,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       showSorterTooltip: { target: 'sorter-icon' },
       render: (text,record) =>
         text === 'return' ? (
-          <span className='flex'><Tag color="red">Return</Tag><Tag color='blue' className={`${record.boxnumber === '' ? 'hidden': 'block'}`}>{record.boxnumber}</Tag></span>
+          <span className='flex'><Tag color="red">Return</Tag><Tag color='blue' className={`${record.boxNumber === '' ? 'hidden': 'block'}`}>{record.boxNumber}</Tag></span>
         ) : text === 'quick' ? (
           <Tag color="blue">Quick Sale</Tag>
         ) : text === 'booking' ? (
@@ -252,7 +254,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         }
           </span>
         ) : (
-          <span className='flex'><Tag color="green">Order</Tag> <Tag color='blue' className={`${record.boxnumber === '' ? 'hidden': 'block'}`}>{record.boxnumber}</Tag></span>
+          <span className='flex'><Tag color="green">Order</Tag> <Tag color='blue' className={`${record.boxNumber === '' ? 'hidden': 'block'}`}>{record.boxNumber}</Tag></span>
         ),
     },
     {
@@ -422,7 +424,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       ...col,
       onCell: (record) => ({
         record,
-        inputType: col.dataIndex === 'numberofpacks' ? 'number' : 'text',
+        inputType: col.dataIndex === 'numberOfPacks' ? 'number' : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: isEditing(record)
@@ -441,13 +443,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       const newData = [...data]
       const index = newData.findIndex((item) => key.id === item.key)
 
-      if (index != null && row.numberofpacks === key.numberofpacks) {
+      if (index != null && row.numberOfPacks === key.numberOfPacks) {
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKey('')
       } else {
         await updateDelivery(key.id, {
-          numberofpacks: row.numberofpacks,
-          updateddate: TimestampJs()
+          numberOfPacks: row.numberOfPacks,
         })
         await deliveryUpdateMt()
         message.open({ type: 'success', content: 'Updated Successfully' })
@@ -514,11 +515,11 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     
     if(paymenthistory.length > 0){
       paymenthistory.map(async paydata => {
-        await updatePaydetailsChild(id,paydata.id,{isdeleted:true});
+        await updatePaydetailsChild(id,paydata.id,{isDeleted:true});
        });
     };
 
-    await updateDelivery(id, { isdeleted: true, deleteddate: TimestampJs() })
+    await updateDelivery(id, { isDeleted: 1 })
     deliveryUpdateMt()
     message.open({ type: 'success', content: 'Deleted Successfully' })
   }
@@ -568,8 +569,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     },
     {
       title: <span className="text-[0.7rem]">Packs</span>,
-      dataIndex: 'numberofpacks',
-      key: 'numberofpacks',
+      dataIndex: 'numberOfPacks',
+      key: 'numberOfPacks',
       editable: TableEdiable.packs,
       render: (text) => <span className="text-[0.7rem]">{text}</span>,
       width:80
@@ -679,8 +680,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     },
     {
       title: <span className="text-[0.7rem]">Packs</span>,
-      dataIndex: 'numberofpacks',
-      key: 'numberofpacks',
+      dataIndex: 'numberOfPacks',
+      key: 'numberOfPacks',
       editable: TableEdiable.packs,
       render: (text) => <span className="text-[0.7rem]">{text}</span>,
       width:70
@@ -781,12 +782,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     try {
       // margin
       if (row.margin !== data.margin && TableEdiable.margin) {
-        let mrp = data.numberofpacks * data.productprice
+        let mrp = data.numberOfPacks * data.productprice
         updatedTempproduct = oldtemDatas.map((product) =>
           product.key === data.key
             ? {
                 ...product,
-                numberofpacks: data.numberofpacks,
+                numberOfPacks: data.numberOfPacks,
                 margin: row.margin,
                 price: customRound(mrp - (mrp * row.margin) / 100),
                 mrp: mrp,
@@ -809,15 +810,15 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       // piece price
       else if (row.productprice !== data.productprice && TableEdiable.pieceprice) {
         updatedTempproduct = oldtemDatas.map((product) => {
-          let mrpNormal = data.numberofpacks * data.productprice
-          let mrpData = row.productprice * data.numberofpacks
+          let mrpNormal = data.numberOfPacks * data.productprice
+          let mrpData = row.productprice * data.numberOfPacks
 
           let marginvalue = ((data.productprice - row.productprice) / data.productprice) * 100
           let price = mrpData - mrpData * (0 / 100)
           if (product.key === data.key) {
             return {
               ...product,
-              numberofpacks: data.numberofpacks,
+              numberOfPacks: data.numberOfPacks,
               margin: marginvalue,
               price: customRound(price),
               mrp: mrpNormal,
@@ -839,14 +840,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         setFirstValue(null)
       }
       // packs
-      else if (row.numberofpacks !== data.numberofpacks && TableEdiable.packs) {
+      else if (row.numberOfPacks !== data.numberOfPacks && TableEdiable.packs) {
         updatedTempproduct = oldtemDatas.map((product) => {
-          let mrpData = row.numberofpacks * data.productprice
+          let mrpData = row.numberOfPacks * data.productprice
           let price = mrpData - mrpData * (data.margin / 100)
           if (product.key === data.key) {
             return {
               ...product,
-              numberofpacks: row.numberofpacks,
+              numberOfPacks: row.numberOfPacks,
               margin: data.margin,
               price: customRound(price),
               mrp: mrpData,
@@ -870,12 +871,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       // price
       else if (row.price !== data.price && TableEdiable.price) {
         updatedTempproduct = oldtemDatas.map((product) => {
-          let mrpData = data.numberofpacks * data.productprice
+          let mrpData = data.numberOfPacks * data.productprice
           let price = row.price
           if (product.key === data.key) {
             return {
               ...product,
-              numberofpacks: data.numberofpacks,
+              numberOfPacks: data.numberOfPacks,
               margin: ((mrpData - row.price) / mrpData) * 100,
               price: customRound(price),
               mrp: mrpData,
@@ -899,7 +900,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       // all are same
       else if (
         row.margin === data.margin ||
-        row.numberofpacks === data.numberofpacks ||
+        row.numberOfPacks === data.numberOfPacks ||
         initialtype === data.returntype ||
         row.productprice === data.productprice ||
         row.price === data.price
@@ -936,14 +937,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     const productOp = datas.product
       .filter(
         (item, i, s) =>
-          item.isdeleted === false 
+          item.isDeleted === false 
         // && s.findIndex((item2) => item2.productname === item.productname) === i
       )
       .map((data) => ({ label: data.productname, value: data.productname }))
     setOption((pre) => ({ ...pre, product: productOp }))
 
     const optionscustomers = datas.customers
-      .filter((item) => item.isdeleted === false)
+      .filter((item) => item.isDeleted === false)
       .map((item) => ({ label: item.customername, value: item.id }))
     setOption((pre) => ({ ...pre, customer: optionscustomers }))
   }, [])
@@ -954,7 +955,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     // form2.resetFields(['productname'])
     // form2.resetFields(['flavour'])
     // form2.resetFields(['quantity'])
-    // form2.resetFields(['numberofpacks'])
+    // form2.resetFields(['numberOfPacks'])
     // setOption((pre) => ({ ...pre, customerstatus: false, tempproduct: [] }))
     // setTotalAmount(0)
     // setMarginValue({ amount: 0, discount: 0, percentage: 0 })
@@ -972,14 +973,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
   const customerOnchange = debounce(async (value, i) => {
 
-    let filterBoxs = datas.freezerbox.filter(data => data.customerid === value).map(box =>({label:box.boxnumber,value:box.id}));
+    let filterBoxs = datas.freezerbox.filter(data => data.customerId === value).map(box =>({label:box.boxNumber,value:box.id}));
     setOption(pre=>({...pre,freezerboxs:filterBoxs}));
 
   setFreezerBoxState(filterBoxs.length === 0 ? true : false)
     if (returnDelivery.state === false) {
       setlastOrderBtnState(true)
       // get last order data
-      let lastOrderDatas = datas.delivery.filter( (data) => data.customerid === value && data.type === 'order')
+      let lastOrderDatas = datas.delivery.filter( (data) => data.customerId === value && data.type === 'order')
       
       if (lastOrderDatas.length > 0) {
         
@@ -992,8 +993,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           let customerDetails = lastOrderDatas[0]
           let products = await Promise.all(
             items.map(async (item) => {
-              let { product, status } = await getProductById(item.id)
-              if (status) {
+              let product = await getProductById(item.id)
+              if (product) {
                 return {
                   ...item,
                   ...product
@@ -1016,8 +1017,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     form2.resetFields(['productname'])
     form2.resetFields(['flavour'])
     form2.resetFields(['quantity'])
-    form2.resetFields(['numberofpacks'])
-    form2.resetFields(['boxnumber'])
+    form2.resetFields(['numberOfPacks'])
+    form2.resetFields(['boxNumber'])
 
     if (lastOrderData.products.length > 0) {
     } else {
@@ -1033,16 +1034,16 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const productOnchange = debounce((value, i) => {
     // form2.resetFields(['flavour'])
     // form2.resetFields(['quantity'])
-    // form2.resetFields(['numberofpacks'])
+    // form2.resetFields(['numberOfPacks'])
     form5.resetFields(['marginvalue']);
    
-    let productid = datas.product.find(data => (data.productname === value) && (data.isdeleted === false)).id;
-    let numberofpackCount = datas.storage.find(data => (data.productid === productid) && data.isdeleted === false ).numberofpacks;
+    let productId = datas.product.find(data => (data.name === value) && (data.isDeleted === 0)).id;
+    let numberofpackCount = datas.storage.find(data => (data.productId === productId) && data.isDeleted === 0 ).numberOfPacks;
     setProductCount(numberofpackCount);
     
     // setMarginValue({ amount: 0, discount: 0, percentage: 0 })
     // const flavourOp = Array.from(
-    //   new Set(datas.product.filter((item) => item.isdeleted === false && item.productname === value)
+    //   new Set(datas.product.filter((item) => item.isDeleted === false && item.productname === value)
     //       .map((data) => data.flavour))).map((flavour) => ({ label: flavour, value: flavour }));
     // setOption((pre) => ({
     //   ...pre,
@@ -1056,14 +1057,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   //flavour onchange value
   const flavourOnchange = debounce(async (value, i) => {
     form2.resetFields(['quantity'])
-    form2.resetFields(['numberofpacks'])
+    form2.resetFields(['numberOfPacks'])
     form5.resetFields(['marginvalue'])
     setMarginValue({ amount: 0, discount: 0, percentage: 0 })
     const quantityOp = Array.from(
       new Set(
         datas.product.filter(
           (item) =>
-            item.isdeleted === false &&
+            item.isDeleted === false &&
             item.flavour === value &&
             item.productname === option.productvalue
         )
@@ -1082,7 +1083,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     // let [quantityvalue, units] = values.quantity.split(' ')
     const findPrice = await datas.product.find(
       (item) =>
-        item.isdeleted === false &&
+        item.isDeleted === false &&
         item.productname === values.productname 
         // && item.flavour === values.flavour &&
         // item.quantity === Number(quantityvalue) &&
@@ -1094,10 +1095,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: count,
       date: formattedDate,
       createddate: TimestampJs(),
-      mrp: findPrice * values.numberofpacks,
+      mrp: findPrice * values.numberOfPacks,
       productprice: findPrice,
       margin: 0,
-      price: findPrice * values.numberofpacks
+      price: findPrice * values.numberOfPacks
     }
 
     // console.log(newProduct);
@@ -1110,7 +1111,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         item.productname === newProduct.productname &&
         item.flavour === newProduct.flavour &&
         item.quantity === newProduct.quantity &&
-        // item.numberofpacks === newProduct.numberofpacks &&
+        // item.numberOfPacks === newProduct.numberOfPacks &&
         // item.date === newProduct.date &&
         item.returntype === newProduct.returntype
     )
@@ -1124,7 +1125,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       let netamt = compainData.map((data) => data.price).reduce((a, b) => a + b, 0)
 
       setOption((pre) => ({ ...pre, tempproduct: [...pre.tempproduct, newProduct] }))
-      setTotalAmount((pre) => pre + findPrice * values.numberofpacks)
+      setTotalAmount((pre) => pre + findPrice * values.numberOfPacks)
       setMarginValue((pre) => ({ ...pre, amount: netamt, paymentstaus: 'Paid' }))
       // let marginamount = totalamount * (0 / 100)
       // let finalamounts = customRound(totalamount - marginamount)
@@ -1147,7 +1148,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       // setOption((pre) => ({ ...pre, tempproduct: newData }));
 
       //old code
-      // setTotalAmount((pre) => pre + findPrice * values.numberofpacks)
+      // setTotalAmount((pre) => pre + findPrice * values.numberOfPacks)
       // setOption((pre) => ({ ...pre, tempproduct: [...pre.tempproduct, newProduct] }))
       // deliveryUpdateMt()
       // setMarginValue({ amount: 0, discount: 0, percentage: 0, paymentstaus: 'Paid' })
@@ -1185,13 +1186,13 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         .filter(
           (pr) =>
             temp.productname === pr.productname && 
-            pr.isdeleted === false 
+            pr.isDeleted === false 
             // && temp.flavour === pr.flavour &&
             // pr.quantity == temp.quantity.split(' ')[0] &&
             // pr.unit === temp.quantity.split(' ')[1]
         )
         .map((pr) => ({
-          numberofpacks: temp.numberofpacks,
+          numberOfPacks: temp.numberOfPacks,
           id: pr.id,
           returntype: temp.returntype,
           margin: temp.margin === '' ? 0 : temp.margin,
@@ -1199,65 +1200,66 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         })));
 
     // Partial amount (value)
-    let { partialamount,paymentmode } = form4.getFieldsValue()
+    let { partialamount,paymentMode } = form4.getFieldsValue()
     let { customername } = form2.getFieldsValue()
     // Create delivery new
     const newDelivery = returnDelivery.state === true ? {
-            customerid: customername,
+            customerId: customername,
             date: dayjs(form2.getFieldValue().date).format('DD/MM/YYYY'),
             total: totalamount,
             billamount: option.tempproduct.map((data) => data.price).reduce((a, b) => a + b, 0),
             paymentstatus: 'Return',
             partialamount: partialamount === undefined || partialamount === null ? 0 : partialamount,
-            isdeleted: false,
+            isDeleted: false,
             type: returnDelivery.state === true ? 'return' : 'order',
             createddate: TimestampJs(),
-            boxid:form2.getFieldsValue().boxnumber === undefined ? '' : form2.getFieldsValue().boxnumber
+            boxid:form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
           }
         : {
-            customerid: customername,
+            customerId: customername,
             date: dayjs(form2.getFieldValue().date).format('DD/MM/YYYY'),
             total: totalamount,
             billamount: marginValue.amount,
             // paymentstatus: marginValue.paymentstaus,
             paymentstatus: form4.getFieldsValue().paymentstatus,
             partialamount: partialamount === undefined || partialamount === null ? 0 : partialamount,
-            paymentmode: marginValue.paymentstaus === 'Unpaid' ? '' : paymentmode,
-            isdeleted: false,
+            paymentMode: marginValue.paymentstaus === 'Unpaid' ? '' : paymentMode,
+            isDeleted: false,
             type: returnDelivery.state === true ? 'return' : 'order',
             createddate: TimestampJs(),
-            boxid:form2.getFieldsValue().boxnumber === undefined ? '' : form2.getFieldsValue().boxnumber
+            boxid:form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
           }
           
           
     
     // console.log(newDelivery);
     try {
-      const deliveryCollectionRef = collection(db, 'delivery')
-      const deliveryDocRef = await addDoc(deliveryCollectionRef, newDelivery)
-      const itemsCollectionRef = collection(deliveryDocRef, 'items')
+      // const deliveryCollectionRef = collection(db, 'delivery')
+      // const deliveryDocRef = await addDoc(deliveryCollectionRef, newDelivery)
+      // const itemsCollectionRef = collection(deliveryDocRef, 'items')
       setOption((prev) => ({ ...prev, tempproduct: [] }))
       // console.log(productItems)
+      let deliveryRef = await addDelivery(newDelivery)
+
       for (const item of productItems) {
-        // console.log(item,productItems)
-        await addDoc(itemsCollectionRef, item)
+        console.log(itemsCollectionRef,item,deliveryRef.id)
+        await addDeliveryDetail(deliveryRef.id, item)
+        // await addDoc(itemsCollectionRef, item)
 
-        const { product, status } = await getProductById(item.id)
+        const product = await getProductById(item.id)
 
-        if (status === 200) {
-          const existingProduct = datas.storage.find( (storageItem) => storageItem.productid === product.id && storageItem.category === 'Product List');
+        if (product) {
+          const existingProduct = datas.storage.find( (storageItem) => storageItem.productId === product.id && storageItem.category === 'Product List');
 
           if (returnDelivery.state === true && item.returntype === 'normal') {
             await updateStorage(existingProduct.id, {
-              numberofpacks: existingProduct.numberofpacks + item.numberofpacks,
-              margin: item.margin === '' ? 0 : item.margin
+              numberOfPacks: existingProduct.numberOfPacks + item.numberOfPacks,
             })
           } else if (returnDelivery.state === true && item.returntype === 'damage') {
             // console.log('damage')
           } else {
             await updateStorage(existingProduct.id, {
-              numberofpacks: existingProduct.numberofpacks - item.numberofpacks,
-              margin: item.margin === '' ? 0 : item.margin
+              numberOfPacks: existingProduct.numberOfPacks - item.numberOfPacks,
             })
           }
         }
@@ -1356,7 +1358,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       Billed: item.billamount,
       Partial: item.partialamount,
       Status: item.paymentstatus,
-      Mode: item.paymentmode
+      Mode: item.paymentMode
     }));
     jsonToExcel(specificData, `Delivery-List-${TimestampJs()}`)
     setSelectedRowKeys([])
@@ -1371,7 +1373,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     for(let record of exportDatas){
     const { items, status } = await fetchItemsForDelivery(record.id)
     const { freezerbox } = await getFreezerboxById(record.boxid);
-    let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber;
+    let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber;
     if (status === 200) {
       let prData = datas.product.filter((item) => items.find((item2) => item.id === item2.id))
       let prItems = prData.flatMap((pr) => {
@@ -1383,10 +1385,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             quantity: `${pr.quantity} ${pr.unit}`,
             margin: matchingData.margin,
             price:
-                matchingData.numberofpacks * pr.price -
-                matchingData.numberofpacks * pr.price * (matchingData.margin / 100),
-            numberofpacks: matchingData.numberofpacks,
-            producttotalamount: matchingData.numberofpacks * pr.price,
+                matchingData.numberOfPacks * pr.price -
+                matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
+            numberOfPacks: matchingData.numberOfPacks,
+            producttotalamount: matchingData.numberOfPacks * pr.price,
             returntype: matchingData.returntype,
         }));
       });
@@ -1395,7 +1397,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         data: prItems,
         customerdetails: {
           ...record,
-          boxnumber: boxnumber
+          boxNumber: boxNumber
         },
       });
     }
@@ -1488,7 +1490,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     const optionsuppliers = datas.suppliers
       .filter(
         (item, i, self) =>
-          item.isdeleted === false &&
+          item.isDeleted === false &&
           i === self.findIndex((d) => d.materialname === item.materialname)
       )
       .map((item) => ({ label: item.materialname, value: item.materialname }))
@@ -1504,7 +1506,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       date: formattedDate,
       key: mtOption.count,
       createddate: TimestampJs(),
-      isdeleted: false,
+      isDeleted: false,
       quantity: values.quantity + ' ' + values.unit
     }
 
@@ -1538,7 +1540,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     mtOption.tempproduct.map(async (item, i) => {
       let { key, quantity, ...newMaterial } = item
       let quntity = Number(quantity.split(' ')[0])
-      await createDelivery({ ...newMaterial, quantity: quntity })
+      await addDelivery({ ...newMaterial, quantity: quntity })
     })
     usedmaterialUpdateMt()
     materialModelCancel()
@@ -1634,8 +1636,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     },
     {
       title: 'Qty',
-      key: 'numberofpacks',
-      dataIndex: 'numberofpacks',
+      key: 'numberOfPacks',
+      dataIndex: 'numberOfPacks',
       width: 140
     },
     {
@@ -1702,11 +1704,11 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                   quantity: `${item.quantity} ${item.unit}`,
                   margin: item2.margin,
                   price: customRound(
-                    item2.numberofpacks * item.price -
-                      item2.numberofpacks * item.price * (item2.margin / 100)
+                    item2.numberOfPacks * item.price -
+                      item2.numberOfPacks * item.price * (item2.margin / 100)
                   ),
-                  numberofpacks: item2.numberofpacks,
-                  producttotalamount: item2.numberofpacks * item.price
+                  numberOfPacks: item2.numberOfPacks,
+                  producttotalamount: item2.numberOfPacks * item.price
                 }
               })
           )
@@ -1737,7 +1739,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const onOpenDeliveryBill = debounce(async (data) => {
     
     let {freezerbox} = await getFreezerboxById(data.boxid);
-    let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber 
+    let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber 
 
     setDeliveryBill((pre) => ({
       ...pre,
@@ -1746,7 +1748,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       open: !deliveryBill.open,
       // open: !pre.open,
       returnmodeltable: data.type === 'return' ? true : false,
-      boxnumber:boxnumber
+      boxNumber:boxNumber
     }))
   }, 200)
 
@@ -1798,9 +1800,9 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                 )}
               />
             </Form.Item>
-          ) : dataIndex === 'numberofpacks' ? (
+          ) : dataIndex === 'numberOfPacks' ? (
             <Form.Item
-              name="numberofpacks"
+              name="numberOfPacks"
               style={{
                 margin: 0
               }}
@@ -2031,7 +2033,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const handleDownloadPdf = async (record) => {
     const { items, status } = await fetchItemsForDelivery(record.id)
     const { freezerbox } = await getFreezerboxById(record.boxid);
-    let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber;
+    let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber;
     if (status === 200) {
       let prData = datas.product.filter((item, i) => items.find((item2) => item.id === item2.id))
       
@@ -2044,10 +2046,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       //     quantity: pr.quantity + ' ' + pr.unit,
       //     margin: matchingData.margin,
       //     price:
-      //       matchingData.numberofpacks * pr.price -
-      //       matchingData.numberofpacks * pr.price * (matchingData.margin / 100),
-      //     numberofpacks: matchingData.numberofpacks,
-      //     producttotalamount: matchingData.numberofpacks * pr.price,
+      //       matchingData.numberOfPacks * pr.price -
+      //       matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
+      //     numberOfPacks: matchingData.numberOfPacks,
+      //     producttotalamount: matchingData.numberOfPacks * pr.price,
       //     returntype: matchingData.returntype
       //   }
       // });
@@ -2064,10 +2066,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             quantity: `${pr.quantity} ${pr.unit}`,
             margin: matchingData.margin,
             price:
-                matchingData.numberofpacks * pr.price -
-                matchingData.numberofpacks * pr.price * (matchingData.margin / 100),
-            numberofpacks: matchingData.numberofpacks,
-            producttotalamount: matchingData.numberofpacks * pr.price,
+                matchingData.numberOfPacks * pr.price -
+                matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
+            numberOfPacks: matchingData.numberOfPacks,
+            producttotalamount: matchingData.numberOfPacks * pr.price,
             returntype: matchingData.returntype,
         }));
       });
@@ -2079,7 +2081,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         isGenerate: true,
         customerdetails: {
           ...record,
-          boxnumber: boxnumber
+          boxNumber: boxNumber
         },
       }));}
       // console.log(record);
@@ -2135,15 +2137,15 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const lastOrderBtn = async () => {
     let itemsObject = lastOrderData.products.sort((a, b) => a.sno - b.sno).map((data, i) => ({
       createddate: TimestampJs(),
-      customername: lastOrderData.customerdetails.customerid,
+      customername: lastOrderData.customerdetails.customerId,
       date: form2.getFieldValue().date ? form2.getFieldValue().date.format('DD/MM/YYYY') : '',
       // flavour: data.flavour,
       key: i + 1,
       margin: data.margin,
-      mrp: data.numberofpacks * data.price,
-      numberofpacks: data.numberofpacks,
+      mrp: data.numberOfPacks * data.price,
+      numberOfPacks: data.numberOfPacks,
       price:
-        data.numberofpacks * data.price - (data.numberofpacks * data.price * data.margin) / 100,
+        data.numberOfPacks * data.price - (data.numberOfPacks * data.price * data.margin) / 100,
       productname: data.productname,
       productprice: data.price,
       // quantity: data.quantity + ' ' + data.unit,
@@ -2153,12 +2155,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     console.log(lastOrderData.products);
     
     let mrpValue = lastOrderData.products
-      .map((data, i) => data.numberofpacks * data.price)
+      .map((data, i) => data.numberOfPacks * data.price)
       .reduce((a, b) => a + b, 0)
     let netValue = lastOrderData.products
       .map(
         (data, i) =>
-          data.numberofpacks * data.price - (data.numberofpacks * data.price * data.margin) / 100
+          data.numberOfPacks * data.price - (data.numberOfPacks * data.price * data.margin) / 100
       )
       .reduce((a, b) => a + b, 0)
     setCount(lastOrderData.products.length + 1)
@@ -2195,7 +2197,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       type:'Payment',
       createddate: TimestampJs(),
       description: description === undefined || description === null ? '' : description,
-      isdeleted:false
+      isDeleted:false
     }
 
     let balanceAmount = deliveryBill.data.billamount - deliveryBill.data.partialamount
@@ -2213,7 +2215,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         if (newPayAmount === 0) {
           // Payed in full
           setPayModalState((pre) => ({ ...pre, btndisable: true }))
-          let updateData = { partialamount: 0, paymentstatus: 'Paid', updateddate: TimestampJs() }
+          let updateData = { partialamount: 0, paymentstatus: 'Paid' }
           await updateDelivery(deliveryBill.data.id, updateData)
           const DeliveryDocRef = doc(db, 'delivery', billId)
           const payDetailsRef = collection(DeliveryDocRef, 'paydetails')
@@ -2244,10 +2246,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     } finally {
       // Ensure the delivery update finishes
       setTimeout(async () => {
-        let { delivery, status } = await getDeliveryById(deliveryBill.prdata.id)
+        let delivery = await getDeliveryById(deliveryBill.prdata.id)
         // console.log(delivery);
 
-        if (status) {
+        if (delivery) {
           setDeliveryBill((pre) => ({
             ...pre,
             update: !deliveryBill.update,
@@ -2298,7 +2300,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     setPopupModal((pre) => ({ ...pre, payhistory: true }))
     // get data
     const { paymenthistory } = await fetchPayDetailsForDelivery(deliveryBill.prdata.id);
-    let filterdata = paymenthistory.filter(data => data.isdeleted === false)
+    let filterdata = paymenthistory.filter(data => data.isDeleted === false)
 console.log(filterdata);
 
     const sortedHistory = await oldestFirstSort(filterdata)
@@ -2314,7 +2316,7 @@ console.log(filterdata);
                 <Tag className="m-0" color="green">
                   {formatToRupee(data.amount)}
                 </Tag>{' '}
-                <Tag className="m-0">{data.paymentmode}</Tag> {data.description}
+                <Tag className="m-0">{data.paymentMode}</Tag> {data.description}
                 {/* <MdOutlineModeEditOutline 
       onClick={()=>{
         // click to get the data 
@@ -2477,11 +2479,11 @@ console.log(filterdata);
               </div>
 
               <div
-                  className={` ${invoiceDatas.customerdetails.boxnumber ? 'block' : 'hidden'}`}
+                  className={` ${invoiceDatas.customerdetails.boxNumber ? 'block' : 'hidden'}`}
                 >
                   <span className="font-bold">Box Number :</span>{' '}
                   <span>
-                    {invoiceDatas.customerdetails.boxnumber || 'N/A'}
+                    {invoiceDatas.customerdetails.boxNumber || 'N/A'}
                   </span>
                 </div>
 
@@ -2549,13 +2551,13 @@ console.log(filterdata);
                       {/* <td className=" border-b  pb-2">{item.flavour}</td> */}
                       {/* <td className=" border-b  pb-2">{item.quantity}</td> */}
                       <td className=" border-b  pb-2">{item.pieceamount}</td>
-                      <td className=" border-b  pb-2">{item.numberofpacks}</td>
+                      <td className=" border-b  pb-2">{item.numberOfPacks}</td>
                       <td className=" border-b  pb-2">{item.producttotalamount}</td>
                       <td className=" border-b  pb-2">{toDigit(item.margin)}%</td>
                       <td className=" border-b  pb-2">
                         {customRound(
-                          item.numberofpacks * item.pieceamount -
-                            (item.numberofpacks * item.pieceamount * item.margin) / 100
+                          item.numberOfPacks * item.pieceamount -
+                            (item.numberOfPacks * item.pieceamount * item.margin) / 100
                         )}
                       </td>
                     </tr>
@@ -2734,7 +2736,7 @@ console.log(filterdata);
                   partialamount: null,
                   price: 'Price',
                   paymentstatus: 'Paid',
-                  paymentmode: 'Cash'
+                  paymentMode: 'Cash'
                 }}
                 onFinish={addNewDelivery}
               >
@@ -2754,7 +2756,7 @@ console.log(filterdata);
                   {marginValue.paymentstaus !== 'Unpaid' && (
                     <Form.Item
                       className="mb-0 absolute top-[2rem] left-44"
-                      name="paymentmode"
+                      name="paymentMode"
                       rules={[{ required: true, message: 'Please select a payment method' }]}
                     >
                       <Radio.Group disabled={option.tempproduct.length <= 0 ? true : false}>
@@ -2897,7 +2899,7 @@ console.log(filterdata);
                   `
                   // ${returnDelivery.state ? 'hidden' : 'block'}
                   }
-                  name="boxnumber"
+                  name="boxNumber"
                   label="Box Number"
                   // rules={[{ required: true, message: false }]}
                 >
@@ -3004,7 +3006,7 @@ console.log(filterdata);
 
                 <Form.Item
                   className="mb-3"
-                  name="numberofpacks"
+                  name="numberOfPacks"
                   label="Number of Pieces"
                   rules={[{ required: true, message: false }]}
                 >
@@ -3066,7 +3068,7 @@ console.log(filterdata);
             <Tag color="blue" >
               {deliveryBill.data.customername}
             </Tag>
-            { deliveryBill.boxnumber === '' ? '' : <Tag color='pink'>{deliveryBill.boxnumber}</Tag>}
+            { deliveryBill.boxNumber === '' ? '' : <Tag color='pink'>{deliveryBill.boxNumber}</Tag>}
             </div>
 
             <span className="flex gap-x-1">
@@ -3096,9 +3098,9 @@ console.log(filterdata);
               </Tag>
               <Tag
                 color="green"
-                className={`${deliveryBill.data.paymentmode === '' || deliveryBill.data.paymentmode === undefined ? 'hidden' : 'block'}`}
+                className={`${deliveryBill.data.paymentMode === '' || deliveryBill.data.paymentMode === undefined ? 'hidden' : 'block'}`}
               >
-                {deliveryBill.data.paymentmode}
+                {deliveryBill.data.paymentMode}
               </Tag>
               <Tag
                 color={`${deliveryBill.data.bookingstatus === 'Cancelled' ? 'red' : 'green'}`}
@@ -3123,10 +3125,10 @@ console.log(filterdata);
                       items.map(async (data) => {
                         const existingProduct = datas.storage.find(
                           (storageItem) =>
-                            storageItem.productid === data.id && storageItem.category === 'Product List'
+                            storageItem.productId === data.id && storageItem.category === 'Product List'
                         )
                         await updateStorage(existingProduct.id, {
-                          numberofpacks: existingProduct.numberofpacks - data.numberofpacks,
+                          numberOfPacks: existingProduct.numberOfPacks - data.numberOfPacks,
                           updateddate: TimestampJs()
                         })
                       })
@@ -3175,10 +3177,10 @@ console.log(filterdata);
                     console.log(e)
                   } finally {
                     setTimeout(async () => {
-                      let { delivery, status } = await getDeliveryById(deliveryBill.data.id)
+                      let delivery = await getDeliveryById(deliveryBill.data.id)
                       // console.log(delivery);
 
-                      if (status) {
+                      if (delivery) {
                         setDeliveryBill((pre) => ({
                           ...pre,
                           update: !deliveryBill.update,
@@ -3343,7 +3345,7 @@ console.log(filterdata);
               <Form
                 onFinish={payModalState.type === 'create' ? quickSalePayMt : updateQuickSalePayMt}
                 form={quicksalepayForm}
-                initialValues={{ date: dayjs(), paymentmode: 'Cash' }}
+                initialValues={{ date: dayjs(), paymentMode: 'Cash' }}
                 layout="vertical">
                 <Form.Item
                   className=" absolute top-[-3rem]"
@@ -3374,7 +3376,7 @@ console.log(filterdata);
                 </Form.Item>
                 <Form.Item
                   className="mb-0"
-                  name="paymentmode"
+                  name="paymentMode"
                   label="Payment Mode"
                   rules={[{ required: true, message: false }]}
                 >
@@ -3663,7 +3665,7 @@ console.log(filterdata);
                           <td
                             className={` border-b text-center text-[16px]`}
                           >
-                            {item.numberofpacks}
+                            {item.numberOfPacks}
                           </td>
                           <td
                             className={` border-b text-center text-[16px]`}
@@ -3679,8 +3681,8 @@ console.log(filterdata);
                             className={` border-b text-center text-[16px]`}
                           >
                             {customRound(
-                              item.numberofpacks * item.pieceamount -
-                                (item.numberofpacks * item.pieceamount * item.margin) / 100
+                              item.numberOfPacks * item.pieceamount -
+                                (item.numberOfPacks * item.pieceamount * item.margin) / 100
                             )}
                           </td>
                         </tr>

@@ -51,3 +51,37 @@ export const updateFreezerbox = async (id, freezerboxData) => {
     throw error;
   }
 };
+
+export const getFreezerboxById = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Freezerbox/GetFreezerboxById`, {
+      params: { id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Freezerbox by Id fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching freezerbox by Id:', error.message);
+    throw error;
+  }
+};
+
+export const getFreezerboxByCustomerId = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Freezerbox/GetFreezerboxByCustomerId`, {
+      params: { id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Freezerbox by customer Id fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching freezerbox by customer Id:', error.message);
+    throw error;
+  }
+};

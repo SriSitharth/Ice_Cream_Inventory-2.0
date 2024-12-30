@@ -22,9 +22,9 @@ import { TimestampJs } from '../js-files/time-stamp'
 const { Search } = Input
 const { RangePicker } = DatePicker
 import dayjs from 'dayjs'
-import { createProduction, updateProduction } from '../firebase/data-tables/production'
+// import { createProduction, updateProduction } from '../firebase/data-tables/production'
 import jsonToExcel from '../js-files/json-to-excel'
-import { updateStorage } from '../firebase/data-tables/storage'
+// import { updateStorage } from '../firebase/data-tables/storage'
 // import { getProductById } from '../firebase/data-tables/products'
 import { PiWarningCircleFill } from 'react-icons/pi'
 import { latestFirstSort } from '../js-files/sort-time-date-sec'
@@ -32,6 +32,8 @@ import { MdOutlineModeEditOutline } from 'react-icons/md'
 import { chunk, debounce } from 'lodash'
 
 import { getProductById } from '../sql/product'
+import { updateStorage } from '../sql/storage'
+import { addProduction, updateProduction } from '../sql/production'
 
 export default function Production({ datas, productionUpdateMt, storageUpdateMt }) {
   const [form] = Form.useForm()
@@ -236,7 +238,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       ...col,
       onCell: (record) => ({
         record,
-        inputType: col.dataIndex === 'numberofpacks' ? 'number' : 'text',
+        inputType: col.dataIndex === 'numberOfPacks' ? 'number' : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: isEditing(record)
@@ -253,13 +255,12 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       const row = await form.validateFields()
       const newData = [...data]
       const index = newData.findIndex((item) => key.id === item.key)
-      if (index != null && row.numberofpacks === key.numberofpacks) {
+      if (index != null && row.numberOfPacks === key.numberOfPacks) {
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKey('')
       } else {
         await updateProduction(key.id, {
-          numberofpacks: row.numberofpacks,
-          updateddate: TimestampJs()
+          numberOfPacks: row.numberOfPacks,
         })
         await productionUpdateMt()
         message.open({ type: 'success', content: 'Updated Successfully' })
@@ -341,7 +342,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
   // delete
   const deleteProduct = async (data) => {
     const { id, ...newData } = data
-    await updateProduction(id, { isdeleted: true, deleteddate: TimestampJs() })
+    await updateProduction(id, { isDeleted: 1 })
     productionUpdateMt()
     message.open({ type: 'success', content: 'Deleted Successfully' })
   }
@@ -375,8 +376,8 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
     // },
     {
       title: <span className="text-[0.7rem]">Packs</span>,
-      dataIndex: 'numberofpacks',
-      key: 'numberofpacks',
+      dataIndex: 'numberOfPacks',
+      key: 'numberOfPacks',
       editable: true,
       render:(text)=> <span className="text-[0.7rem]">{text}</span>,
       width: 120
@@ -499,7 +500,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       ...col,
       onCell: (record) => ({
         record,
-        inputType: col.dataIndex === 'numberofpacks' ? 'number' : 'text',
+        inputType: col.dataIndex === 'numberOfPacks' ? 'number' : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: temisEditing(record)
@@ -516,11 +517,11 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       const row = await form3.validateFields()
       const newData = [...option.tempproduct]
       const index = newData.findIndex((item) => key.id === item.key)
-      if (index != null && row.numberofpacks === key.numberofpacks) {
+      if (index != null && row.numberOfPacks === key.numberOfPacks) {
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKey('')
       } else {
-        let updateData = newData.map(data => data.key === key.key ? {...data,numberofpacks:row.numberofpacks} : data );
+        let updateData = newData.map(data => data.key === key.key ? {...data,numberOfPacks:row.numberOfPacks} : data );
         setOption(pre=>({...pre,tempproduct:updateData}))
         message.open({ type: 'success', content: 'Updated Successfully' })
         setEditingKey('')
@@ -534,9 +535,9 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
   useEffect(() => {
     const productOp = datas.product
       .filter((item, i, s) =>
-       item.isdeleted === false)
+       item.isDeleted === 0)
       //  && s.findIndex((item2) => item2.productname === item.productname))
-       .map((data) => ({ label: data.productname, value: data.productname }));
+       .map((data) => ({ label: data.name, value: data.name }));
       
       setOption((pre) => ({ ...pre, product: productOp  }))
   }, []);
@@ -545,11 +546,11 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
   const productOnchange = debounce(async (value, i) => {
     form2.resetFields(['flavour'])
     form2.resetFields(['quantity'])
-    // form2.resetFields(['numberofpacks'])
+    // form2.resetFields(['numberOfPacks'])
     // const flavourOp = await Array.from(
     //   new Set(
     //     datas.product
-    //       .filter((item) => item.isdeleted === false && item.productname === value)
+    //       .filter((item) => item.isDeleted === false && item.productname === value)
     //       .map((data) => data.flavour))).map((flavour) => ({ label: flavour, value: flavour }));
    
           setOption((pre) => ({
@@ -564,12 +565,12 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
   //flavour onchange value
   const flavourOnchange = async (value, i) => {
     form2.resetFields(['quantity'])
-    form2.resetFields(['numberofpacks'])
+    form2.resetFields(['numberOfPacks'])
     const quantityOp = Array.from(
       new Set(
         datas.product.filter(
           (item) =>
-            item.isdeleted === false &&
+            item.isDeleted === false &&
             item.flavour === value &&
             item.productname === option.productvalue
         ))).map((q) => ({ label: q.quantity + ' ' + q.unit, value: q.quantity + ' ' + q.unit }))
@@ -581,13 +582,13 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
   const createTemProduction = async (values) => {
     setCount(count + 1)
     const formattedDate = values.date ? values.date.format('DD/MM/YYYY') : ''
-    const newProduct = { ...values, key: count, date: formattedDate, createddate: TimestampJs() }
+    const newProduct = { ...values, key: count, date: formattedDate, createdDate: TimestampJs() }
     const checkExsit = option.tempproduct.some(
       (item) =>
         item.productname === newProduct.productname &&
         item.flavour === newProduct.flavour &&
         item.quantity === newProduct.quantity &&
-        item.numberofpacks === newProduct.numberofpacks &&
+        item.numberOfPacks === newProduct.numberOfPacks &&
         item.date === newProduct.date
     )
     const checkSamePacks = option.tempproduct.some(
@@ -595,7 +596,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         item.productname === newProduct.productname &&
         item.flavour === newProduct.flavour &&
         item.quantity === newProduct.quantity &&
-        item.numberofpacks !== newProduct.numberofpacks &&
+        item.numberOfPacks !== newProduct.numberOfPacks &&
         item.date === newProduct.date &&
         item.key !== newProduct.key
     )
@@ -638,25 +639,25 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         
         // let quantityNumber = Number(quantity.split(' ')[0])
         
-        const existingProductList = datas.product.find((productItem) => productItem.productname === newProduction.productname && productItem.isdeleted === false
+        const existingProductList = datas.product.find((productItem) => productItem.name === newProduction.productname && productItem.isDeleted === 0
         // && productItem.flavour === newProduction.flavour &&  productItem.quantity === quantityNumber 
       )
         
-        await createProduction({
-          date: newProduction.date,
-          createddate: newProduction.createddate,
-          productid: existingProductList.id,
-          isdeleted: false,
-          numberofpacks: newProduction.numberofpacks
+        await addProduction({
+          date: new Date().toISOString(),
+          createdDate: new Date().toISOString(),
+          modifiedDate: new Date().toISOString(),
+          productId: existingProductList.id,
+          isDeleted: 0,
+          numberOfPacks: newProduction.numberOfPacks
         });
         
-        const existingProduct = datas.storage.find((storageItem) => storageItem.productid === existingProductList.id  && storageItem.category === 'Product List' )
+        const existingProduct = datas.storage.find((storageItem) => storageItem.productId === String(existingProductList.id)  && storageItem.category === 'Product List' )
         
         console.log(existingProduct);
         // setIsAddProductModal(false)
         await updateStorage(existingProduct.id, {
-          numberofpacks: existingProduct.numberofpacks + newProduction.numberofpacks,
-          updateddate:TimestampJs()
+          numberOfPacks: existingProduct.numberOfPacks + newProduction.numberOfPacks,
         })
       }
       message.open({ type: 'success', content: 'Production added successfully' })
@@ -707,7 +708,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       No: index + 1,
       Date: item.date,
       Name: item.productname,
-      Packs: item.numberofpacks,
+      Packs: item.numberOfPacks,
     }));
     jsonToExcel(specificData, `Production-List-${TimestampJs()}`)
     setSelectedRowKeys([])
@@ -723,7 +724,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
     const optionsuppliers = datas.suppliers
       .filter(
         (item, i, self) =>
-          item.isdeleted === false &&
+          item.isDeleted === false &&
           i === self.findIndex((d) => d.materialname === item.materialname)
       )
       .map((item) => ({ label: item.materialname, value: item.materialname }))
@@ -930,7 +931,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
 
                 <Form.Item
                   className="mt-7"
-                  name="numberofpacks"
+                  name="numberOfPacks"
                   label="Number of Pieces"
                   rules={[{ required: true, message: false }]}
                 >

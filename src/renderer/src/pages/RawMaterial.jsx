@@ -26,7 +26,7 @@ import { AiOutlineDelete } from 'react-icons/ai'
 import jsonToExcel from '../js-files/json-to-excel'
 import { createRawmaterial, fetchMaterials, updateRawmaterial } from '../firebase/data-tables/rawmaterial'
 import { TimestampJs } from '../js-files/time-stamp'
-import { createStorage, getStorage, updateStorage } from '../firebase/data-tables/storage'
+// import { createStorage, getStorage, updateStorage } from '../firebase/data-tables/storage'
 import dayjs from 'dayjs'
 import { getAllMaterialDetailsFromAllSuppliers, getMaterialDetailsById, getOneMaterialDetailsById } from '../firebase/data-tables/supplier'
 const { Search } = Input
@@ -42,6 +42,7 @@ import TableHeight from '../components/TableHeight'
 import './css/RawMaterial.css'
 
 import { addRawMaterial } from '../sql/rawmaterial'
+import { getStorages, updateStorage } from '../sql/storage'
 import { getSupplierById } from '../sql/supplier'
 
 export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateMt }) {
@@ -1094,6 +1095,9 @@ const addNewTemMaterial = async () => {
       const existingMaterial = await datas.storage.find((storageItem) => (storageItem.category === 'Material List' && storageItem.materialname?.trim().toLowerCase() === newmaterial.materialname?.trim().toLowerCase()) && storageItem.isdeleted === false);
       
       const material = {sno:newmaterial.sno,materialid:newmaterial.id,isdeleted:false,price:newmaterial.price,quantity:newmaterial.quantity,createddate:TimestampJs()}
+      
+      console.log("Mat Details",materialDbRef,material)
+
       await addDoc(materialDbRef,material)
       
       console.log(existingMaterial);
@@ -1762,8 +1766,8 @@ const materialBillColumn = [
                     }
                     options={mtOption.material}
                     onChange={async (_,value)=> {
-                      let {storage,status} = await getStorage();
-                      let material = status === 200 ? storage.filter(data => (data.category === 'Material List') && (data.isdeleted === false) &&  (data.materialname === value.label)) : []
+                      let storage = await getStorages();
+                      let material = storage.filter(data => (data.category === 'Material List') && (data.isDeleted === 1) &&  (data.materialname === value.label)) || []
                       setProductCount(material.length > 0 ? material[0].quantity : 0);
 
                       setUnitOnchange(value.unit)

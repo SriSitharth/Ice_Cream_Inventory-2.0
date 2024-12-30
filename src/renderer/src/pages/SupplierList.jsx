@@ -49,6 +49,7 @@ import './css/SupplierList.css'
 
 import { addSupplier } from '../sql/supplier';
 import { addStorage, updateStorage } from '../sql/storage';
+import { addSupplierPayment } from '../sql/supplier';
 import { getSupplierAndMaterials , addSupplierAndMaterial } from '../sql/supplierandmaterials';
 
 export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt }) {
@@ -79,7 +80,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
   async function fetchMaterialItems(){
     // let getAlldatas = await Promise.all(filteredData.map(async data=>{
     //   let {materials,status} = await getMaterialDetailsById(data.id);
-    //   return ({...data,item:materials.filter(data=> data.isdeleted === false)})
+    //   return ({...data,item:materials.filter(data=> data.isDeleted === false)})
     // }))
     setData(filteredData);
     setSupplierTbLoading(false)
@@ -182,7 +183,7 @@ if(duplicateNames.length > 0){
             modifiedDate: new Date().toISOString()
         })
 
-        // await addDoc(materialCollectionRef, {...materialItem,isdeleted:false,createddate:TimestampJs()});
+        // await addDoc(materialCollectionRef, {...materialItem,isDeleted:false,createddate:TimestampJs()});
         // const materialExists = datas.storage.find(
         //   (storageItem) => storageItem.materialname === materialItem.materialname && storageItem.category === 'Material List' && storageItem.unit === materialItem.unit
         // )
@@ -192,7 +193,7 @@ if(duplicateNames.length > 0){
         //     unit: materialItem.unit,
         //     alertcount: 0,
         //     quantity: 0,
-        //     isdeleted: false,
+        //     isDeleted: false,
         //     category: 'Material List',
         //     createddate: TimestampJs()
         //   })
@@ -241,13 +242,15 @@ if(duplicateNames.length > 0){
   
   const supplierPay = async (value) => {
     setPayModalLoading(true)
-    let { date, description, ...Datas } = value
+    let { date, decription, ...Datas } = value
     let formateDate = dayjs(date).format('DD/MM/YYYY')
-    const payData = { ...Datas, date: formateDate, description: description || '', createddate:TimestampJs(), collectiontype:'supplier',supplierid:supplierPayId, type: 'Payment',isdeleted:false }
+    const payData = { ...Datas, date: new Date().toISOString(), modifiedDate: new Date().toISOString(), decription: decription || '', createdDate:new Date().toISOString(), collectionType:'supplier',supplierId:supplierPayId, type: 'Payment',isDeleted:0 }
     try {
-      const customerDocRef = doc(db, 'supplier', supplierPayId)
-      const payDetailsRef = collection(customerDocRef, 'paydetails')
-      await addDoc(payDetailsRef, payData)
+      // const customerDocRef = doc(db, 'supplier', supplierPayId)
+      // const payDetailsRef = collection(customerDocRef, 'paydetails')
+      // await addDoc(payDetailsRef, payData)
+      console.log(payData)
+      await addSupplierPayment(payData)
     } catch (e) {
       console.log(e)
     } finally {
@@ -268,8 +271,8 @@ const [supplierName,setSupplierName] = useState('');
       let {rawmaterial,status} = await getRawmaterial();
       let {paydetails} = await getSupplierPayDetailsById(record.id)
       if(status){
-      let filterBillOrders = rawmaterial.filter(data=> record.id === data.supplierid && data.isdeleted === false).map(data => ({...data,name: record.name}));
-      let getPaydetials = paydetails.filter(paydata => paydata.isdeleted === false);
+      let filterBillOrders = rawmaterial.filter(data=> record.id === data.supplierId && data.isDeleted === false).map(data => ({...data,name: record.name}));
+      let getPaydetials = paydetails.filter(paydata => paydata.isDeleted === false);
       
       let sortData = await latestFirstSort([...filterBillOrders,...getPaydetials]);
       setPayDetailsData(sortData);
@@ -401,9 +404,9 @@ const [supplierName,setSupplierName] = useState('');
     },
     {
       title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      render: (text, record) => (record.description === undefined ? '-' : record.description)
+      dataIndex: 'decription',
+      key: 'decription',
+      render: (text, record) => (record.decription === undefined ? '-' : record.decription)
     }
   ];
 
@@ -591,7 +594,7 @@ const [supplierName,setSupplierName] = useState('');
   let {id,...olddata} = editBtnData;
   let supplerId = id
   let {material,...newdata} = form.getFieldValue();
-  let oldmaterial = olddata.item.filter(data => data.isdeleted === false);
+  let oldmaterial = olddata.item.filter(data => data.isDeleted === false);
 
   let missingIds = await getMissingIds(olddata.item,material)
   // let missingIds = await material.filter(aObj => !olddata.item.some(bObj => aObj.id === bObj.id));
@@ -616,7 +619,7 @@ const [supplierName,setSupplierName] = useState('');
     // update items
     if(compareArrObj === false){
       for(const items of updatedMaterialItems){
-        const {id,createddate,isdeleted,...newupdateddata} = items;
+        const {id,createddate,isDeleted,...newupdateddata} = items;
         const itemId = id;
         await updateMaterialItsms(supplerId,itemId,{...newupdateddata,updateddate:TimestampJs()})
         
@@ -645,9 +648,9 @@ const [supplierName,setSupplierName] = useState('');
     // add new items 
     if(newMaterialItems.length > 0){
       for(const items of newMaterialItems){
-        const {id,createddate,isdeleted,...newupdateddata} = items;
+        const {id,createddate,isDeleted,...newupdateddata} = items;
         console.log(supplerId,newupdateddata,items)
-        await addSupplierAndMaterial(supplerId,{...newupdateddata,updateddate:TimestampJs(),isdeleted:false})
+        await addSupplierAndMaterial(supplerId,{...newupdateddata,updateddate:TimestampJs(),isDeleted:false})
         const materialExists = datas.storage.find((storageItem) => storageItem.materialname === newupdateddata.materialname && storageItem.category === 'Material List' && storageItem.unit === newupdateddata.unit)
         if (!materialExists) {
           await addStorage({
@@ -668,7 +671,7 @@ const [supplierName,setSupplierName] = useState('');
     // delete the items
     if(missingIds.length > 0){
       missingIds.map(async id=>{
-        await updateMaterialItsms(supplerId,id,{isdeleted:true,updateddate:TimestampJs()})
+        await updateMaterialItsms(supplerId,id,{isDeleted:true,updateddate:TimestampJs()})
       })
     }
 
@@ -918,7 +921,7 @@ const [supplierName,setSupplierName] = useState('');
 
 const deleteExpantableTableMaterial =async (record)=>{
   setSupplierTbLoading(true)
-await updateMaterialItsms(expandTableSupplierId,record.id,{  isdeleted:true,updateddate: TimestampJs()});
+await updateMaterialItsms(expandTableSupplierId,record.id,{  isDeleted:true,updateddate: TimestampJs()});
 setSupplierTbLoading(false)
 }
 
@@ -1020,7 +1023,7 @@ setSupplierTbLoading(false)
           }} 
       pagination={false}
       columns={mergedColumnsExpandTable} 
-      dataSource={record.item.filter(data=> data.isdeleted === false)}
+      dataSource={record.item.filter(data=> data.isDeleted === false)}
       rowClassName="editable-row"
       scroll={{ x: 200,y:200}}
       /></Form>
@@ -1131,11 +1134,11 @@ setSupplierTbLoading(false)
     let {paydetails,status} = await getSupplierPayDetailsById(data.id);
     if(paydetails.length > 0){
       paydetails.map(async paydata => {
-        await updatePaydetailsChildSupplier(id,paydata.id,{isdeleted:true});
+        await updatePaydetailsChildSupplier(id,paydata.id,{isDeleted:true});
        });
     };
     await updateSupplier(id, {
-      isdeleted: true,
+      isDeleted: true,
       // deletedby: 'admin',
       deleteddate: TimestampJs()
     });
@@ -1344,7 +1347,7 @@ setSupplierTbLoading(false)
           }} 
       pagination={false}
       columns={mergedColumnsExpandTable} 
-      // dataSource={record.item.filter(data=> data.isdeleted === false)}
+      // dataSource={record.item.filter(data=> data.isDeleted === false)}
       rowClassName="editable-row"
       scroll={{ x: 300,y:200}}
       /></Form>
@@ -1561,7 +1564,7 @@ setSupplierTbLoading(false)
                 placeholder="Enter the Amount"
               />
             </Form.Item>
-            <Form.Item className="mb-1" name="description" label="Description">
+            <Form.Item className="mb-1" name="decription" label="Description">
               <TextArea rows={4} placeholder="Write the Description" />
             </Form.Item>
 
