@@ -134,8 +134,9 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         return dateB.isAfter(dateA) ? -1 : 1
       },
       // defaultSortOrder: 'descend',
+      render: (text) => dayjs(text).format('DD/MM/YYYY'),
       editable: false,
-      width: 155
+      width: 115
     },
     {
       title: 'Product',

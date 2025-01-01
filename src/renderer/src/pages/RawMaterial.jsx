@@ -44,6 +44,7 @@ import './css/RawMaterial.css'
 import { addRawMaterial } from '../sql/rawmaterial'
 import { getStorages, updateStorage } from '../sql/storage'
 import { getSupplierById } from '../sql/supplier'
+import { getMaterialsBySupplierId } from '../sql/supplierandmaterials'
 
 export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateMt }) {
   //states
@@ -104,25 +105,26 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
   // Dropdown select
   useEffect(() => {
     async function process(params) {
-      addmaterialaddform.resetFields(['materialname'])
+      addmaterialaddform.resetFields(['materialName'])
       setUnitOnchange('')
       if (selectedSupplierName) {
         // const filteredMaterials = await datas.suppliers
         //   .filter((supplier) => supplier.id === selectedSupplierName)
         //   .map((supplier) => ({
-        //     value: supplier.materialname,
-        //     label: supplier.materialname,
+        //     value: supplier.materialName,
+        //     label: supplier.materialName,
         //     key: supplier.id
         //   }));
-          const filteredMaterials = await datas.suppliers.filter((supplier) => supplier.id === selectedSupplierName)[0].materials.filter(data=> data.isdeleted === false).map(data=>({
-            label:data.materialname,
+        console.log(selectedSupplierName)
+          const filteredMaterials = await getMaterialsBySupplierId(selectedSupplierName).then((materials) => materials.map(data=>({
+            label:data.name,
             value:data.id,
             key:data.id,
             unit:data.unit
-          }));
-          
+          }))
+        )
         setMaterials(filteredMaterials);
-        form.resetFields(['materialname', 'quantity', 'unit', 'price', 'paymentstatus'])
+        form.resetFields(['materialName', 'quantity', 'unit', 'price', 'paymentstatus'])
       } else {
         setMaterials([])
       }
@@ -164,8 +166,8 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     },
     {
       title: <span className="text-[0.8rem]">Product</span>,
-      dataIndex: 'materialname',
-      key: 'materialname',
+      dataIndex: 'name',
+      key: 'name',
       editable: false,
       render: (text) => <span className="text-[0.8rem]">{text}</span>
     },
@@ -335,9 +337,9 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       
   // create the new add material entry
   const AddTemMaterial = async (values) => {
-
-    let {material,status} = await getOneMaterialDetailsById(values.suppliername,values.materialname);
-    let exsitingData = addMaterialMethod.temperorarydata.some(data => data.id === values.materialname);
+    console.log(values);
+    let {material,status} = await getOneMaterialDetailsById(values.suppliername,values.materialName);
+    let exsitingData = addMaterialMethod.temperorarydata.some(data => data.id === values.materialName);
 
     // supplier data
     let supplierDatas = { 
@@ -365,26 +367,26 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       if (form.getFieldValue('partialamount') === '0') {
         return message.open({ type: 'warning', content: 'Please enter a valid amount' })
       } else {
-        const { date, materialname, suppliername, ...otherValues } = await values
+        const { date, materialName, suppliername, ...otherValues } = await values
         const formattedDate = date ? dayjs(date).format('DD/MM/YYYY') : null
 
         await createRawmaterial({
           supplierid: suppliername,
-          materialid: materialname,
+          materialid: materialName,
           ...otherValues,
           date: formattedDate,
           partialamount: otherValues.partialamount || 0,
-          createddate: TimestampJs(),
-          isdeleted: false,
+          createdDate: TimestampJs(),
+          isDeleted: false,
           type: 'Added'
         });
          
-        const materialData = await getOneMaterialDetailsById (suppliername,materialname)
+        const materialData = await getOneMaterialDetailsById (suppliername,materialName)
         
         const existingMaterial = datas.storage.find(
           (storageItem) =>
             storageItem.category === 'Material List' &&
-            storageItem.materialname?.trim().toLowerCase() === materialData.material.materialname?.trim().toLowerCase() &&
+            storageItem.materialName?.trim().toLowerCase() === materialData.material.materialName?.trim().toLowerCase() &&
             storageItem.unit?.trim().toLowerCase() === materialData.material.unit?.trim().toLowerCase()
         );
         if (existingMaterial) {
@@ -417,7 +419,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       render: (_, __, index) => index + 1,
       filteredValue: [searchText], 
       onFilter: (value, record) => {
-        let supplierName = record.supplier !== undefined ? record.supplier.suppliername : undefined
+        let supplierName = record.name || undefined
         return (
           String(record.date).toLowerCase().includes(value.toLowerCase()) ||
           String(supplierName).toLowerCase().includes(value.toLowerCase()) ||
@@ -440,6 +442,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
         return dateB.isAfter(dateA) ? -1 : 1
       },
       // defaultSortOrder: 'descend',115
+      render: (text) => dayjs(text).format('DD/MM/YYYY'),
       width: 155
     },
     {
@@ -736,7 +739,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
   // delete
   const deleteProduct = async (data) => {
     const { id, ...newData } = data
-    await updateRawmaterial(id, { isdeleted: true, deletedby: 'admin', deleteddate: TimestampJs() })
+    await updateRawmaterial(id, { isDeleted: true, deletedby: 'admin', deleteddate: TimestampJs() })
     rawmaterialUpdateMt()
     message.open({ type: 'success', content: 'Deleted Successfully' })
   }
@@ -765,8 +768,8 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     },
     {
       title: <span className='text-[0.7rem]'>Material</span>,
-      dataIndex: 'materialname',
-      key: 'materialname',
+      dataIndex: 'materialName',
+      key: 'materialName',
       editable: false,
       render:(text) => <span className='text-[0.7rem]'>{text}</span>,
     },
@@ -898,10 +901,10 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       // const optionsuppliers = datas.suppliers
       // .filter(
       //   (item, i, self) =>
-      //     item.isdeleted === false &&
-      //     i === self.findIndex((d) => d.materialname === item.materialname)
+      //     item.isDeleted === false &&
+      //     i === self.findIndex((d) => d.materialName === item.materialName)
       // )
-      // .map((item) => ({ label: item.materialname, value: item.materialname }))
+      // .map((item) => ({ label: item.materialName, value: item.materialName }))
     
    
     const optionsuppliersr = await Promise.all(datas.suppliers.map(async data => (await getMaterialDetailsById(data.id))));
@@ -913,7 +916,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
 
     let flattenedMaterials = listOfMaterial.flat();
     
-    let uniqueMaterials = flattenedMaterials.filter((material, index, self) => index === self.findIndex( (t) =>  t.materialname.trim().toLowerCase() === material.materialname.trim().toLowerCase() && t.unit.trim().toLowerCase() === material.unit.trim().toLowerCase())).map(data=>({label:data.materialname,value:data.materialname,unit:data.unit,key:data.id}));
+    let uniqueMaterials = flattenedMaterials.filter((material, index, self) => index === self.findIndex( (t) =>  t.materialName.trim().toLowerCase() === material.materialName.trim().toLowerCase() && t.unit.trim().toLowerCase() === material.unit.trim().toLowerCase())).map(data=>({label:data.materialName,value:data.materialName,unit:data.unit,key:data.id}));
     
     setMtOption((pre) => ({ ...pre, material: uniqueMaterials }));
     // console.log(uniqueMaterials);
@@ -928,15 +931,16 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     const formattedDate = values.date ? values.date.format('DD/MM/YYYY') : ''
     const newMaterial = {
       ...values,
-      date: formattedDate,
+      date: new Date().toISOString(),
       key: mtOption.count,
-      createddate: TimestampJs(),
-      isdeleted: false,
+      createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
+      isDeleted: false,
       quantity: values.quantity + ' ' + unitOnchange
     }
     console.log(mtOption.tempproduct, newMaterial)
 
-    const checkExist = mtOption.tempproduct.find((item) => item.materialname === newMaterial.materialname && item.date === newMaterial.date);
+    const checkExist = mtOption.tempproduct.find((item) => item.materialName === newMaterial.materialName && item.date === newMaterial.date);
 
     if (checkExist) {
       message.open({ type: 'warning', content: 'Product is already added' })
@@ -959,10 +963,10 @@ const addNewTemMaterial = async () => {
   try {
     let materialDetailData = mtOption.tempproduct.map(data => ({
       date: data.date,
-      isdeleted: false,
+      isDeleted: false,
       type: usedmaterialform.getFieldValue().type,
       paymentstatus: usedmaterialform.getFieldValue().type === 'Return' ? 'Returned' : 'Used',
-      createddate: TimestampJs(),
+      createdDate: TimestampJs(),
     }))[0];
 
     const supplierDbRef = collection(db, 'rawmaterial');
@@ -976,20 +980,20 @@ const addNewTemMaterial = async () => {
       // Use a for loop to process one by one
       for (let data of mtOption.tempproduct) {
         let matchingMaterial = materials.find(material =>
-          material.materialname === data.materialname &&
+          material.materialName === data.materialName &&
           material.unit === data.quantity.split(' ')[1] &&
-          data.isdeleted === false
+          data.isDeleted === false
         );
 
-        if (matchingMaterial && !processedProducts.has(data.materialname)) {
-          processedProducts.add(data.materialname); // Mark as processed
+        if (matchingMaterial && !processedProducts.has(data.materialName)) {
+          processedProducts.add(data.materialName); // Mark as processed
 
           let materialItem = {
             sno: i++,
             supplierid: matchingMaterial.supplierId,
             materialid: matchingMaterial.materialId,
             quantity: Number(data.quantity.split(' ')[0]),
-            isdeleted: false
+            isDeleted: false
           };
 
           // Add each material item to the database one by one
@@ -997,7 +1001,7 @@ const addNewTemMaterial = async () => {
 
           // Update storage based on the material type (Return/Used)
           let existingMaterial = datas.storage.find(storage =>
-            storage.materialname === data.materialname && storage.category === 'Material List'
+            storage.materialName === data.materialName && storage.category === 'Material List'
           );
 
           if (data.type === 'Return') {
@@ -1070,8 +1074,8 @@ const addNewTemMaterial = async () => {
   // do not touch
   const AddNewMaterial = async ()=>{
     
-    let supplierObject = {...addMaterialMethod.supplierdata, partialamount:addmaterialpaymentform.getFieldsValue().partialamount === undefined ? 0 : addmaterialpaymentform.getFieldsValue().partialamount, paymentmode:addmaterialpaymentform.getFieldsValue().paymentstatus === 'Unpaid' ? '' : addmaterialpaymentform.getFieldsValue().paymentmode, paymentstatus:addmaterialpaymentform.getFieldsValue().paymentstatus, type:"Added", isdeleted:false, createddate:TimestampJs()};
-    let materialArray= addMaterialMethod.temperorarydata.map((data, index) => ({sno:index + 1,id:data.id,isdeleted:false,price:data.price,quantity:data.quantity,createddate:TimestampJs(),materialname:data.materialname}));
+    let supplierObject = {...addMaterialMethod.supplierdata, partialamount:addmaterialpaymentform.getFieldsValue().partialamount === undefined ? 0 : addmaterialpaymentform.getFieldsValue().partialamount, paymentmode:addmaterialpaymentform.getFieldsValue().paymentstatus === 'Unpaid' ? '' : addmaterialpaymentform.getFieldsValue().paymentmode, paymentstatus:addmaterialpaymentform.getFieldsValue().paymentstatus, type:"Added", isDeleted:false, createdDate:TimestampJs()};
+    let materialArray= addMaterialMethod.temperorarydata.map((data, index) => ({sno:index + 1,id:data.id,isDeleted:false,price:data.price,quantity:data.quantity,createdDate:TimestampJs(),materialName:data.materialName}));
     let totalprice = materialArray.map(data=> data.price).reduce((a,b)=> a + b,0);
 
     if(radioBtn.value === 'Partial' && addmaterialpaymentform.getFieldsValue().partialamount <=0 ){
@@ -1092,9 +1096,9 @@ const addNewTemMaterial = async () => {
       
       // console.log(addMaterialMethod.temperorarydata);
 
-      const existingMaterial = await datas.storage.find((storageItem) => (storageItem.category === 'Material List' && storageItem.materialname?.trim().toLowerCase() === newmaterial.materialname?.trim().toLowerCase()) && storageItem.isdeleted === false);
+      const existingMaterial = await datas.storage.find((storageItem) => (storageItem.category === 'Material List' && storageItem.materialName?.trim().toLowerCase() === newmaterial.materialName?.trim().toLowerCase()) && storageItem.isDeleted === false);
       
-      const material = {sno:newmaterial.sno,materialid:newmaterial.id,isdeleted:false,price:newmaterial.price,quantity:newmaterial.quantity,createddate:TimestampJs()}
+      const material = {sno:newmaterial.sno,materialid:newmaterial.id,isDeleted:false,price:newmaterial.price,quantity:newmaterial.quantity,createdDate:TimestampJs()}
       
       console.log("Mat Details",materialDbRef,material)
 
@@ -1111,18 +1115,18 @@ const addNewTemMaterial = async () => {
         
         console.log(newmaterial,{alertcount:0,
           category:"Material List",
-          createddate:TimestampJs(),
-          isdeleted:false,
-          materialname:newmaterial.materialname,
+          createdDate:TimestampJs(),
+          isDeleted:false,
+          materialName:newmaterial.materialName,
           quantity:newmaterial.quantity,
           unit:newmaterial.unit,
          });
         
         // await createStorage({alertcount:0,
         //                      category:"Material List",
-        //                      createddate:TimestampJs(),
-        //                      isdeleted:false,
-        //                      materialname:newmaterial.materialname,
+        //                      createdDate:TimestampJs(),
+        //                      isDeleted:false,
+        //                      materialName:newmaterial.materialName,
         //                      quantity:newmaterial.quantity,
         //                      unit:newmaterial.unit,
         //                     })
@@ -1152,13 +1156,13 @@ const addNewTemMaterial = async () => {
 
       await addMaterialMethod.temperorarydata.forEach(async material =>{
       const materialdata = {material}
-      const existingMaterial = datas.storage.find((storageItem) => storageItem.category === 'Material List' && storageItem.materialname?.trim().toLowerCase() === material.materialname?.trim().toLowerCase() && storageItem.unit?.trim().toLowerCase() === material.unit?.trim().toLowerCase())
+      const existingMaterial = datas.storage.find((storageItem) => storageItem.category === 'Material List' && storageItem.materialName?.trim().toLowerCase() === material.materialName?.trim().toLowerCase() && storageItem.unit?.trim().toLowerCase() === material.unit?.trim().toLowerCase())
       console.log(material);
       console.log(existingMaterial);     
                             }); 
 
      const existingMaterial = datas.storage.filter(storage=> addMaterialMethod.temperorarydata.find(mateial => storage.category === 'Material List' &&
-                              storage.materialname?.trim().toLowerCase() ===mateial.materialname?.trim().toLowerCase() &&
+                              storage.materialName?.trim().toLowerCase() ===mateial.materialName?.trim().toLowerCase() &&
                               storage.unit?.trim().toLowerCase() ===mateial.unit?.trim().toLowerCase()));
        */ 
     }
@@ -1188,8 +1192,8 @@ const addNewTemMaterial = async () => {
   //       paymentmode: addmaterialpaymentform.getFieldsValue().paymentstatus === 'Unpaid' ? '' : addmaterialpaymentform.getFieldsValue().paymentmode,
   //       paymentstatus: addmaterialpaymentform.getFieldsValue().paymentstatus,
   //       type: "Added",
-  //       isdeleted: false,
-  //       createddate: TimestampJs(),
+  //       isDeleted: false,
+  //       createdDate: TimestampJs(),
   //     };
   
   //     // New Material Add
@@ -1207,7 +1211,7 @@ const addNewTemMaterial = async () => {
   //       // Check if material exists in storage
   //       let existingMaterial = await datas.storage.find((storageItem) =>
   //         storageItem.category === 'Material List' &&
-  //         storageItem.materialname?.trim().toLowerCase() === newmaterial.materialname?.trim().toLowerCase() &&
+  //         storageItem.materialName?.trim().toLowerCase() === newmaterial.materialName?.trim().toLowerCase() &&
   //         storageItem.unit?.trim().toLowerCase() === newmaterial.unit?.trim().toLowerCase()
   //       );
   
@@ -1331,8 +1335,8 @@ const materialBillColumn = [
     // },
     {
       title: 'Material Name',
-      dataIndex: 'materialname',
-      key: 'materialname',
+      dataIndex: 'materialName',
+      key: 'materialName',
       editable: true,
       render:(text)=>{
        return text
@@ -1462,11 +1466,11 @@ const materialBillColumn = [
           console.log('add new material')
           // form.submit()
           // const formValues = form.getFieldsValue()
-          // const { materialname, quantity } = formValues
+          // const { materialName, quantity } = formValues
           // const quantityNumber = parseFloat(quantity)
           // const existingMaterial = datas.storage.find(
           //   (storageItem) =>
-          //     storageItem.materialname === materialname && storageItem.category === 'Material List'
+          //     storageItem.materialName === materialName && storageItem.category === 'Material List'
           // )
           // if (existingMaterial) {
           //   // Update the storage with the new quantity
@@ -1584,7 +1588,7 @@ const materialBillColumn = [
                     .toLowerCase()
                     .localeCompare((optionB?.label ?? '').toLowerCase())
                 }
-                options={datas.suppliers.filter(data=>data.isdeleted === false).map(sp =>({value:sp.id,label:sp.suppliername}))}
+                options={datas.suppliers.filter(data=>data.isDeleted === 0).map(sp =>({value:sp.id,label:sp.name}))}
                 onChange={(value,i) => supplierOnchange(value,i)}
               />
             </Form.Item>
@@ -1602,7 +1606,7 @@ const materialBillColumn = [
 
             <Form.Item
               className="mb-0"
-              name="materialname"
+              name="materialName"
               label="Material Name"
               rules={[{ required: true, message: false }]}
             >
@@ -1751,7 +1755,7 @@ const materialBillColumn = [
                 
                 <Form.Item
                   // className="mb-2"
-                  name="materialname"
+                  name="materialName"
                   label="Material Name"
                   rules={[{ required: true, message: false }]}
                 >
@@ -1767,7 +1771,7 @@ const materialBillColumn = [
                     options={mtOption.material}
                     onChange={async (_,value)=> {
                       let storage = await getStorages();
-                      let material = storage.filter(data => (data.category === 'Material List') && (data.isDeleted === 1) &&  (data.materialname === value.label)) || []
+                      let material = storage.filter(data => (data.category === 'Material List') && (data.isDeleted === 1) &&  (data.materialName === value.label)) || []
                       setProductCount(material.length > 0 ? material[0].quantity : 0);
 
                       setUnitOnchange(value.unit)

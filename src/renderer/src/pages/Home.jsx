@@ -31,9 +31,9 @@ import {
   getAllPayDetailsFromAllDelivery
   // getDeliveryUsingDates
 } from '../firebase/data-tables/delivery'
-import { getEmployeeById } from '../firebase/data-tables/employee'
-import { getCustomerById } from '../firebase/data-tables/customer'
-import { getSupplierById, getOneMaterialDetailsById } from '../firebase/data-tables/supplier'
+// import { getEmployeeById } from '../firebase/data-tables/employee'
+// import { getCustomerById } from '../firebase/data-tables/customer'
+import { getOneMaterialDetailsById } from '../firebase/data-tables/supplier'
 import { jsPDF } from 'jspdf'
 const { RangePicker } = DatePicker
 import { debounce } from 'lodash'
@@ -57,6 +57,10 @@ import TableHeight from '../components/TableHeight'
 // import { lastestFirstSort } from '../js-files/sort-time-date-sec'
 
 dayjs.extend(isSameOrAfter)
+
+import { getCustomerById } from '../sql/customer'
+import { getSupplierById } from '../sql/supplier'
+import { getEmployeeById } from '../sql/employee'
 
 export default function Home({ datas }) {
   const today = dayjs(DatestampJs(), 'DD/MM/YYYY')
@@ -103,7 +107,7 @@ export default function Home({ datas }) {
     edprice: true,
     edpacks: true,
     customername: '',
-    mobilenumber: ''
+    mobileNumber: ''
   })
 
   const quotationTempTable = [
@@ -464,24 +468,22 @@ export default function Home({ datas }) {
 
       const initialData = await Promise.all(
         datas.delivery
-          .filter((data) => !data.isdeleted && data.date === today.format('DD/MM/YYYY'))
+          .filter((data) => !data.isDeleted && data.date === today.format('DD/MM/YYYY'))
           .map(async (item, index) => {
-            const result = await getCustomerById(item.customerid)
-            const customerName =
-              result.status === 200 ? result.customer.customername : item.customername
-            const mobileNumber =
-              result.status === 200 ? result.customer.mobilenumber : item.mobilenumber
-            const gstNumber = result.status === 200 ? result.customer.gstin : item.gstin
-            const address = result.status === 200 ? result.customer.location : item.location
+            const result = await getCustomerById(item.customerId)
+            const customerName = result.name || item.customername
+            const mobileNumber = result.mobileNumber || item.mobileNumber
+            const gstNumber = result.gstin || item.gstin
+            const address = result.address || item.address
 
             return {
               ...item,
               sno: index + 1,
               key: item.id || index,
               customername: customerName,
-              mobilenumber: mobileNumber,
+              mobileNumber: mobileNumber,
               gstin: gstNumber,
-              location: address
+              address: address
             }
           })
       )
@@ -491,23 +493,21 @@ export default function Home({ datas }) {
 
       const initialDeliveryData = await Promise.all(
         datas.delivery
-          .filter((data) => !data.isdeleted)
+          .filter((data) => !data.isDeleted)
           .map(async (item, index) => {
-            const result = await getCustomerById(item.customerid)
-            const customerName =
-              result.status === 200 ? result.customer.customername : item.customername
-            const mobileNumber =
-              result.status === 200 ? result.customer.mobilenumber : item.mobilenumber
-            const gstNumber = result.status === 200 ? result.customer.gstin : item.gstin
-            const address = result.status === 200 ? result.customer.location : item.location
+            const result = await getCustomerById(item.customerId)
+            const customerName = result.name || item.customername
+            const mobileNumber = result.mobileNumber || item.mobileNumber
+            const gstNumber = result.gstin || item.gstin
+            const address = result.address || item.address
             return {
               ...item,
               sno: index + 1,
               key: item.id || index,
               customername: customerName,
-              mobilenumber: mobileNumber,
+              mobileNumber: mobileNumber,
               gstin: gstNumber,
-              location: address
+              address: address
             }
           })
       )
@@ -532,22 +532,20 @@ export default function Home({ datas }) {
 
       const newFilteredDelivery = await Promise.all(
         datas.delivery
-          .filter((product) => !product.isdeleted && isWithinRange(product.date))
+          .filter((product) => !product.isDeleted && isWithinRange(product.date))
           .map(async (item) => {
-            const result = await getCustomerById(item.customerid)
-            const customerName =
-              result.status === 200 ? result.customer.customername : item.customername
-            const mobileNumber =
-              result.status === 200 ? result.customer.mobilenumber : item.mobilenumber
-            const gstNumber = result.status === 200 ? result.customer.gstin : item.gstin
-            const address = result.status === 200 ? result.customer.location : item.location
+            const result = await getCustomerById(item.customerId)
+            const customerName = result.name || item.customername
+            const mobileNumber = result.mobileNumber || item.mobileNumber
+            const gstNumber = result.gstin || item.gstin
+            const address = result.address || item.address
             return {
               ...item,
               key: item.id,
               customername: customerName,
-              mobilenumber: mobileNumber,
+              mobileNumber: mobileNumber,
               gstin: gstNumber,
-              location: address
+              address: address
             }
           })
       )
@@ -558,12 +556,12 @@ export default function Home({ datas }) {
 
       const newFilteredRawmaterials = await Promise.all(
         datas.rawmaterials
-          .filter((rawmaterial) => !rawmaterial.isdeleted && isWithinRange(rawmaterial.date))
+          .filter((rawmaterial) => !rawmaterial.isDeleted && isWithinRange(rawmaterial.date))
           .map(async (item) => {
             let supplierName
             if (item.type === 'Added') {
-              const result = await getSupplierById(item.supplierid)
-              supplierName = result.status === 200 ? result.supplier.suppliername : ''
+              const result = await getSupplierById(item.supplierId)
+              supplierName = result.name || ''
             }
             return {
               ...item,
@@ -582,7 +580,7 @@ export default function Home({ datas }) {
           deliverys
             .filter(
               (data) =>
-                !data.isdeleted &&
+                !data.isDeleted &&
                 isWithinRange(data.date) &&
                 (((data.collectiontype === 'delivery' ||
                   data.collectiontype === 'customer') && data.type === 'Payment') ||
@@ -591,22 +589,22 @@ export default function Home({ datas }) {
             )
             .map(async (data) => {
               let name = ''
-              if (data.customerid) {
-                const result = await getCustomerById(data.customerid)
-                if (result.status) {
-                  name = result.customer.customername
+              if (data.customerId) {
+                const result = await getCustomerById(data.customerId)
+                if (result) {
+                  name = result.name
                 }
               }
               if (data.deliveryid) {
                 const result = await getDeliveryById(data.deliveryid)
-                if (result.status) {
-                  name = result.delivery.customername
+                if (result) {
+                  name = result.name
                 }
               }
-              if (data.employeeid) {
-                const result = await getEmployeeById(data.employeeid)
-                if (result.status) {
-                  name = result.employee.employeename
+              if (data.employeeId) {
+                const result = await getEmployeeById(data.employeeId)
+                if (result) {
+                  name = result.name
                 }
               }
               return {
@@ -642,24 +640,24 @@ export default function Home({ datas }) {
             .map(async (data) => {
               let name = ''
 
-              if (data.supplierid) {
-                const result = await getSupplierById(data.supplierid)
-                if (result.status) {
-                  name = result.supplier.suppliername
+              if (data.supplierId) {
+                const result = await getSupplierById(data.supplierId)
+                if (result) {
+                  name = result.name
                 }
               }
 
-              if (data.employeeid) {
-                const result = await getEmployeeById(data.employeeid)
-                if (result.status) {
-                  name = result.employee.employeename
+              if (data.employeeId) {
+                const result = await getEmployeeById(data.employeeId)
+                if (result) {
+                  name = result.name
                 }
               }
 
-              if (data.customerid) {
-                const result = await getCustomerById(data.customerid)
-                if (result.status) {
-                  name = result.customer.customername
+              if (data.customerId) {
+                const result = await getCustomerById(data.customerId)
+                if (result) {
+                  name = result.name
                 }
               }
 
@@ -681,7 +679,7 @@ export default function Home({ datas }) {
 
       const newFilteredSpending = await Promise.all(
         datas.spending
-          .filter((spend) => !spend.isdeleted && isWithinRange(spend.date))
+          .filter((spend) => !spend.isDeleted && isWithinRange(spend.date))
           .map(async (item) => ({
             ...item,
             key: item.id,
@@ -705,11 +703,11 @@ export default function Home({ datas }) {
     
     setSelectedRecord(null);
     let itemsWithProductNames = []
-    if (record.customerid) {
+    if (record.customerId) {
       const { items, status } = await fetchItemsForDelivery(record.id)
       if (status === 200) {
         itemsWithProductNames = items.map((item) => {
-          const product = datas.product.find((product) => product.id === item.id && product.isdeleted === false);
+          const product = datas.product.find((product) => product.id === item.id && product.isDeleted === false);
           return {
             ...item,
             productname: product ? product.productname : ''
@@ -717,13 +715,13 @@ export default function Home({ datas }) {
             // quantity: product ? product.quantity : ''
           }
         })};
-    } else if (record.supplierid) {
+    } else if (record.supplierId) {
       const { materialitem, status } = await fetchMaterials(record.id)
       if (status === 200) {
         itemsWithProductNames = await Promise.all(
           materialitem.map(async (item, i) => {
             let { material, status } = await getOneMaterialDetailsById(
-              record.supplierid,
+              record.supplierId,
               item.materialid)
             return {
               sno: materialitem[i].sno, //add on sno(10/10/24, 5.52 pm)
@@ -739,7 +737,7 @@ export default function Home({ datas }) {
       const { items, status } = await fetchItemsForDelivery(record.id)
       if (status === 200) {
         itemsWithProductNames = items.map((item) => {
-          const product = datas.product.find((product) => product.id === item.id && product.isdeleted === false)
+          const product = datas.product.find((product) => product.id === item.id && product.isDeleted === false)
           return {
             ...item,
             productname: product ? product.productname : ''
@@ -936,11 +934,11 @@ export default function Home({ datas }) {
 
   const handleDownloadPdf = async (record) => {
     const { items, status } = await fetchItemsForDelivery(record.id)
-    const result = await getCustomerById(record.customerid)
+    const result = await getCustomerById(record.customerId)
     const { freezerbox } = await getFreezerboxById(record.boxid);
     let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber;
-    const gstin = result.customer?.gstin || ''
-    const location = result.customer?.location || ''
+    const gstin = result.gstin || ''
+    const address = result.address || ''
     if (status === 200) {
       let prData = datas.product.filter((item, i) => items.find((item2) => item.id === item2.id))
       // let prItems = await prData.map((pr, i) => {
@@ -986,7 +984,7 @@ export default function Home({ datas }) {
         customerdetails: {
           ...record,
           gstin: gstin,
-          location: location,
+          address: address,
           boxnumber: boxnumber
         }
       }))
@@ -997,9 +995,9 @@ export default function Home({ datas }) {
 
   // const handlePrint = async (record) => {
   //   const { items, status } = await fetchItemsForDelivery(record.id)
-  //   const result = await getCustomerById(record.customerid)
+  //   const result = await getCustomerById(record.customerId)
   //   const gstin = result.customer?.gstin || ''
-  //   const location = result.customer?.location || ''
+  //   const address = result.customer?.address || ''
   //   if (status === 200) {
   //     let prData = datas.product.filter((item, i) => items.find((item2) => item.id === item2.id))
   //     let prItems = await prData.map((pr, i) => {
@@ -1026,7 +1024,7 @@ export default function Home({ datas }) {
   //       customerdetails: {
   //         ...record,
   //         gstin: gstin,
-  //         location: location
+  //         address: address
   //       }
   //     }))
   //   }
@@ -1040,12 +1038,12 @@ export default function Home({ datas }) {
       }
       const { freezerbox } = await getFreezerboxById(record.boxid);
       let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber;
-      const result = await getCustomerById(record.customerid)
+      const result = await getCustomerById(record.customerId)
       const gstin = result.customer?.gstin || ''
-      const location = result.customer?.location || ''
+      const address = result.customer?.address || ''
 
       let prData = datas.product.filter((item) => items.find((item2) => item.id === item2.id))
-      // let prData = datas.product.filter((item) => item.isdeleted === false)
+      // let prData = datas.product.filter((item) => item.isDeleted === false)
 
       let prItems = prData.flatMap((pr, i) => {
         // Get all matching items with the same id
@@ -1075,7 +1073,7 @@ export default function Home({ datas }) {
         customerdetails: {
           ...record,
           gstin,
-          location,
+          address,
           boxnumber
         }
       }))
@@ -1094,15 +1092,15 @@ export default function Home({ datas }) {
         quotationft.customername === null || quotationft.customername === ''
           ? undefined
           : quotationft.customername,
-      mobilenumber:
-        quotationft.mobilenumber === null || quotationft.mobilenumber === ''
+      mobileNumber:
+        quotationft.mobileNumber === null || quotationft.mobileNumber === ''
           ? undefined
-          : quotationft.mobilenumber,
+          : quotationft.mobileNumber,
       date,
       gstin: '',
       total: quotationft.mrpamount,
       billamount: quotationft.totalamount,
-      location: '',
+      address: '',
       partialamount: 0
     }
     // product items
@@ -1151,15 +1149,15 @@ export default function Home({ datas }) {
         quotationft.customername === null || quotationft.customername === ''
           ? undefined
           : quotationft.customername,
-      mobilenumber:
-        quotationft.mobilenumber === null || quotationft.mobilenumber === ''
+      mobileNumber:
+        quotationft.mobileNumber === null || quotationft.mobileNumber === ''
           ? undefined
-          : quotationft.mobilenumber,
+          : quotationft.mobileNumber,
       date,
       gstin: '',
       total: quotationft.mrpamount,
       billamount: quotationft.totalamount,
-      location: '',
+      address: '',
       partialamount: 0
     };
     // product items
@@ -1186,7 +1184,7 @@ export default function Home({ datas }) {
     //   data: items,
     //   isGenerate: false,
     //   customerdetails: cusotmerData,
-    //   location: ''
+    //   address: ''
     // });
     // await setInvoiceDatas((pre) => ({
     //   ...pre,
@@ -1721,7 +1719,7 @@ export default function Home({ datas }) {
     const productOp = datas.product
       .filter(
         (item, i, s) =>
-          item.isdeleted === false &&
+          item.isDeleted === false &&
           s.findIndex((item2) => item2.productname === item.productname) === i
       )
       .map((data) => ({ label: data.productname, value: data.productname }))
@@ -1735,7 +1733,7 @@ export default function Home({ datas }) {
     const flavourOp = Array.from(
       new Set(
         datas.product
-          .filter((item) => item.isdeleted === false && item.productname === value)
+          .filter((item) => item.isDeleted === false && item.productname === value)
           .map((data) => data.flavour)
       )
     ).map((flavour) => ({ label: flavour, value: flavour }))
@@ -1756,7 +1754,7 @@ export default function Home({ datas }) {
       new Set(
         datas.product.filter(
           (item) =>
-            item.isdeleted === false &&
+            item.isDeleted === false &&
             item.flavour === value &&
             item.productname === option.productvalue
         )
@@ -1772,7 +1770,7 @@ export default function Home({ datas }) {
 
     // let [quantityvalue, units] = values.quantity.split(' ')
     const findPrice = await datas.product.find(
-      (item) => item.isdeleted === false && item.productname === values.productname
+      (item) => item.isDeleted === false && item.productname === values.productname
       // && item.flavour === values.flavour &&
       // item.quantity === Number(quantityvalue) &&
       // item.unit === units
@@ -1895,7 +1893,7 @@ export default function Home({ datas }) {
       edprice: true,
       edpacks: true,
       customername: '',
-      mobilenumber: ''
+      mobileNumber: ''
     })
     setQuotationModalOpen(false)
     marginform.resetFields(['marginvalue'])
@@ -2081,10 +2079,10 @@ export default function Home({ datas }) {
                 </div>
 
                 <div
-                  className={`${invoiceDatas.customerdetails.mobilenumber === '' || invoiceDatas.customerdetails.mobilenumber === undefined ? 'hidden' : 'block'}`}
+                  className={`${invoiceDatas.customerdetails.mobileNumber === '' || invoiceDatas.customerdetails.mobileNumber === undefined ? 'hidden' : 'block'}`}
                 >
                   <span className="font-bold">Mobile Number : </span>{' '}
-                  <span>{invoiceDatas.customerdetails.mobilenumber}</span>
+                  <span>{invoiceDatas.customerdetails.mobileNumber}</span>
                 </div>
 
                 <div className={`${gstin === true ? 'block' : 'hidden'}`}>
@@ -2099,12 +2097,12 @@ export default function Home({ datas }) {
                     </span>
                   </div>
                   <div
-                    className={` ${invoiceDatas.customerdetails.location !== '' ? 'block' : 'hidden'}`}
+                    className={` ${invoiceDatas.customerdetails.address !== '' ? 'block' : 'hidden'}`}
                   >
                     <span className="font-bold">Customer Address :</span>{' '}
                     <span>
-                      {invoiceDatas.customerdetails.location
-                        ? invoiceDatas.customerdetails.location
+                      {invoiceDatas.customerdetails.address
+                        ? invoiceDatas.customerdetails.address
                         : 'N/A'}
                     </span>
                   </div>
@@ -2558,7 +2556,7 @@ Authorised Signature
                     <br />
                     <span className={`font-medium block pl-4`}>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? invoiceDatas.customerdetails.location
+                        ? invoiceDatas.customerdetails.address
                         : null}{' '}
                     </span>
                   </address>
@@ -2843,7 +2841,7 @@ Authorised Signature
                   >
                     Distination &#160;&#160;: <span className={`font-semibold`}>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? invoiceDatas.customerdetails.location
+                        ? invoiceDatas.customerdetails.address
                         : null}{' '}
                     </span>
                     <br />
@@ -3089,11 +3087,11 @@ Authorised Signature
               <Descriptions.Item label="Date">{selectedRecord.date}</Descriptions.Item>
               <Descriptions.Item label="Gross Amount">{selectedRecord.total}</Descriptions.Item>
               <Descriptions.Item label="Net Amount">{selectedRecord.billamount}</Descriptions.Item>
-              {selectedRecord.mobilenumber && (
-                <Descriptions.Item label="Mobile">{selectedRecord.mobilenumber}</Descriptions.Item>
+              {selectedRecord.mobileNumber && (
+                <Descriptions.Item label="Mobile">{selectedRecord.mobileNumber}</Descriptions.Item>
               )}
-              {selectedRecord.location && (
-                <Descriptions.Item label="Location">{selectedRecord.location}</Descriptions.Item>
+              {selectedRecord.address && (
+                <Descriptions.Item label="Location">{selectedRecord.address}</Descriptions.Item>
               )}
             </Descriptions>
             <div className="mt-2">
@@ -3326,12 +3324,12 @@ Authorised Signature
 
                   <Form.Item
                     className="mb-1"
-                    name="mobilenumber"
+                    name="mobileNumber"
                     // label="Mobile Number"
                   >
                     <InputNumber
                       type="number"
-                      onChange={(e) => setQuotationFt((pre) => ({ ...pre, mobilenumber: e }))}
+                      onChange={(e) => setQuotationFt((pre) => ({ ...pre, mobileNumber: e }))}
                       placeholder="Mobile No"
                       className="w-full"
                       min={0}

@@ -35,6 +35,23 @@ export const addEmployee = async (employeeData) => {
   }
 };
 
+export const getEmployeeById = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Employee/GetEmployeeById`, {
+      params: { id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Employee fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching employee by ID:', error.message);
+    throw error;
+  }
+};
+
 export const updateEmployee = async (id, employeeData) => {
   try {
     const response = await axios.put(`${API_BASE_URL}/Employee/UpdateEmployee`, employeeData, {

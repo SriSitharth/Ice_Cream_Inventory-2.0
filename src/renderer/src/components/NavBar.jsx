@@ -35,9 +35,13 @@ import { TiCancel } from 'react-icons/ti'
 import { PiGarageBold, PiWarningCircleFill } from 'react-icons/pi'
 import { debounce } from 'lodash'
 import { createSpending } from '../firebase/data-tables/spending'
-import { updateStorage } from '../firebase/data-tables/storage'
+// import { updateStorage } from '../firebase/data-tables/storage'
 import { customRound } from '../js-files/round-amount'
 import '../components/css/NavBar.css'
+
+import { addCustomerPayment } from '../sql/customer';
+import { addSpending } from '../sql/spending';
+import { updateStorage } from '../sql/storage';
 
 export default function NavBar({
   navPages,
@@ -118,8 +122,8 @@ export default function NavBar({
     },
     {
       title: <span className="text-[0.7rem]">Packs</span>,
-      dataIndex: 'numberofpacks',
-      key: 'numberofpacks',
+      dataIndex: 'numberOfPacks',
+      key: 'numberOfPacks',
       render: (text) => <span className="text-[0.7rem]">{text}</span>,
       editable:qucikSaleTableEdiable.packs,
       width:90
@@ -194,13 +198,13 @@ export default function NavBar({
     const productData = datas.product
       .filter(
         (item, i, s) =>
-          item.isdeleted === false 
+          item.isDeleted === false 
         // &&  s.findIndex((item2) => item2.productname === item.productname) === i
       )
       .map((data) => ({ lable: data.productname, value: data.productname }))
 
     const customersData = datas.customers
-      .filter((item) => item.isdeleted === false)
+      .filter((item) => item.isDeleted === false)
       .map((item) => ({ label: item.customername, value: item.customername }))
     setIsQuickSale((pre) => ({ ...pre, proption: productData, customeroption: customersData }))
   }, [isQuickSale.dataloading])
@@ -208,10 +212,10 @@ export default function NavBar({
   const[productCount,setProductCount] = useState(0);
   const productOnchange = async (value) => {
     // const flavourData = await Array.from( new Set( datas.product
-    //       .filter((item) => item.isdeleted === false && item.productname === value)
+    //       .filter((item) => item.isDeleted === false && item.productname === value)
     //       .map((data) => data.flavour))).map((flavour) => ({ label: flavour, value: flavour }));
-    let productid = datas.product.find(data => (data.productname === value) && (data.isdeleted === false)).id;
-    let numberofpackCount = datas.storage.find(data => (data.productid === productid) && data.isdeleted === false ).numberofpacks;
+    let productid = datas.product.find(data => (data.productname === value) && (data.isDeleted === false)).id;
+    let numberofpackCount = datas.storage.find(data => (data.productid === productid) && data.isDeleted === false ).numberOfPacks;
     setProductCount(numberofpackCount);
     setIsQuickSale((pre) => ({
       ...pre,
@@ -222,7 +226,7 @@ export default function NavBar({
     }));
     quickSaleForm.resetFields(['quantity']);
     quickSaleForm.resetFields(['flavour']);
-    quickSaleForm.resetFields(['numberofpacks']);
+    quickSaleForm.resetFields(['numberOfPacks']);
   };
 
   const flavourOnchange = async (value) => {
@@ -230,7 +234,7 @@ export default function NavBar({
       new Set(
         datas.product.filter(
           (item) =>
-            item.isdeleted === false &&
+            item.isDeleted === false &&
             item.flavour === value &&
             item.productname === isQuickSale.flavervalue
         )
@@ -238,7 +242,7 @@ export default function NavBar({
     ).map((q) => ({ label: q.quantity + ' ' + q.unit, value: q.quantity + ' ' + q.unit }))
     setIsQuickSale((pre) => ({ ...pre, quntityoption: quantityData, quantityinputstatus: false }))
     quickSaleForm.resetFields(['quantity'])
-    quickSaleForm.resetFields(['numberofpacks'])
+    quickSaleForm.resetFields(['numberOfPacks'])
   }
 
   const QuickSaleTemAdd = async (values, i) => {
@@ -270,19 +274,19 @@ export default function NavBar({
     const temdata = datas.product.filter(
         (pr) =>
           pr.productname === inputDatas.productname &&
-          pr.isdeleted === false 
+          pr.isDeleted === false 
           // && pr.flavour === inputDatas.flavour &&
           // pr.quantity === inputDatas.quantity &&
           // pr.unit === inputDatas.unit
         ).map((data) => ({
         ...data,
-        numberofpacks: inputDatas.numberofpacks,
+        numberOfPacks: inputDatas.numberOfPacks,
         quantity: values.quantity,
         sno: isQuickSale.count,
-        mrp: values.numberofpacks * data.price,
+        mrp: values.numberOfPacks * data.price,
         margin: 0,
         productprice: data.price,
-        price: values.numberofpacks * data.price,
+        price: values.numberOfPacks * data.price,
         key: isQuickSale.count}));
 
     // setIsQuickSale((pre) => ({ ...pre, temdata: [...pre.temdata, ...temdata] }))
@@ -328,7 +332,7 @@ export default function NavBar({
     // quickSaleForm.resetFields(['productname'])
     // quickSaleForm.resetFields(['quantity'])
     // quickSaleForm.resetFields(['flavour'])
-    // quickSaleForm.resetFields(['numberofpacks'])
+    // quickSaleForm.resetFields(['numberOfPacks'])
 
     const isFutureDate = value && dayjs(value).isAfter(dayjs())
 
@@ -398,7 +402,7 @@ export default function NavBar({
       // setIsQuickSale(pre => ({...pre}))
       const productItems = isQuickSale.temdata.map((data, index) => ({
         id: data.id,
-        numberofpacks: data.numberofpacks,
+        numberOfPacks: data.numberOfPacks,
         margin: data.margin,
         productprice: data.productprice,
         sno: index + 1,
@@ -412,10 +416,9 @@ export default function NavBar({
             (storageItem) =>
               storageItem.productid === data.id && storageItem.category === 'Product List'
           )
-          // console.log(existingProduct.id,{numberofpacks: existingProduct.numberofpacks - data.numberofpacks,updateddate:TimestampJs()});
+          // console.log(existingProduct.id,{numberOfPacks: existingProduct.numberOfPacks - data.numberOfPacks,updateddate:TimestampJs()});
           await updateStorage(existingProduct.id, {
-            numberofpacks: existingProduct.numberofpacks - data.numberofpacks,
-            updateddate: TimestampJs()
+            numberOfPacks: existingProduct.numberOfPacks - data.numberOfPacks
           })
         })
         await storageUpdateMt()
@@ -436,7 +439,7 @@ export default function NavBar({
         total: isQuickSale.total,
         type: isQuickSale.type,
         bookingstatus: isQuickSale.type === "booking" ? "" : null,
-        isdeleted: false,
+        isDeleted: false,
         paymentmode: qickSaleForm3Value.paymentstatus === 'Unpaid' ? '' : isQuickSale.paymentmode,
         createddate: TimestampJs(),
         date: dayjs().format('DD/MM/YYYY'),
@@ -456,7 +459,7 @@ export default function NavBar({
         // collectiontype:'delivery',
         collectiontype:'firstpartial',
         type:'firstpartial',
-        isdeleted:false
+        isDeleted:false
       }
 
       try {
@@ -545,7 +548,7 @@ export default function NavBar({
 
   useEffect(() => {
     let employeeOtSet = datas.customers
-      .filter((data) => data.isdeleted === false)
+      .filter((data) => data.isDeleted === false)
       .map((data) => ({ label: data.customername, value: data.id }))
     setIsSpendingModalOpen((pre) => ({ ...pre, employeeoption: employeeOtSet }))
   }, [!isSpendingModalOpen.model])
@@ -556,7 +559,7 @@ export default function NavBar({
     const customerSpendingData = {
       ...spendDatas,
       createddate: TimestampJs(),
-      isdeleted: false,
+      isDeleted: false,
       collectiontype: "customer",
       customerid: empid || null,
       type: "Spend",
@@ -571,7 +574,7 @@ export default function NavBar({
     const generalSpendingData = {
       ...spendDatas,
       createddate: TimestampJs(),
-      isdeleted: false,
+      isDeleted: false,
       description:
         spendDatas.description === '' ||
         spendDatas.description === undefined ||
@@ -583,12 +586,16 @@ export default function NavBar({
     try {
       setSpendSpin(true)
       if (spendDatas.spendingtype === 'Customer') {
-      const employeeDocRef = doc(db, 'customer', empid)
-      const payDetialsRef = collection(employeeDocRef, 'paydetails')
-      await addDoc(payDetialsRef, customerSpendingData)
+      // const employeeDocRef = doc(db, 'customer', empid)
+      // const payDetialsRef = collection(employeeDocRef, 'paydetails')
+      // await addDoc(payDetialsRef, customerSpendingData)
+
+      await addCustomerPayment(customerSpendingData)
+      
       }else{
-        console.log(spendDatas.spendingtype,spendDatas.name)
-        await createSpending(generalSpendingData)
+        // console.log(spendDatas.spendingtype,spendDatas.name)
+        // await createSpending(generalSpendingData)
+        await addSpending(generalSpendingData)
         await spendingUpdateMt()
       }
       setIsSpendingModalOpen((pre) => ({ ...pre, model: false }))
@@ -616,7 +623,7 @@ export default function NavBar({
     ...restProps
   }) => {
     const inputNode =
-      dataIndex === 'numberofpacks' ? (
+      dataIndex === 'numberOfPacks' ? (
         <InputNumber size="small" type="number" className="w-[4rem]" min={1} 
           onFocus={(e)=>{
             if (firstValue === null) {
@@ -752,7 +759,7 @@ export default function NavBar({
     let updatedTempproduct;
     try {
       
-      if(row.margin === data.margin || row.numberofpacks === data.numberofpacks || row.price === data.price || row.productprice === data.productprice)
+      if(row.margin === data.margin || row.numberOfPacks === data.numberOfPacks || row.price === data.price || row.productprice === data.productprice)
       {
         message.open({content:'No changes made', type:'info'});
         setIsQuickSale((pre) => ({ ...pre,  editingKeys: []}));
@@ -763,7 +770,7 @@ export default function NavBar({
       {
           updatedTempproduct = tempdata.map((item) => {
           if (item.key === data.key) {
-            let mrpData = data.productprice * data.numberofpacks
+            let mrpData = data.productprice * data.numberOfPacks
             let price = mrpData - mrpData * (row.margin / 100)
             let calculatedMargin = row.margin
             if (row.price !== undefined) {
@@ -773,7 +780,7 @@ export default function NavBar({
             return {
               ...item,
               productprice: data.productprice,
-              numberofpacks: data.numberofpacks,
+              numberOfPacks: data.numberOfPacks,
               margin: row.margin,
               mrp: mrpData,
               price: price
@@ -792,12 +799,12 @@ export default function NavBar({
       {
         updatedTempproduct = tempdata.map((item) => {
           if (item.key === data.key) {
-            let mrpData = data.productprice * row.numberofpacks
+            let mrpData = data.productprice * row.numberOfPacks
             let price = mrpData - mrpData * (data.margin / 100)
             return {
               ...item,
               productprice: data.productprice,
-              numberofpacks: row.numberofpacks,
+              numberOfPacks: row.numberOfPacks,
               margin: data.margin,
               mrp: mrpData,
               price: price,
@@ -816,12 +823,12 @@ export default function NavBar({
       {
         updatedTempproduct = tempdata.map((item) => {
           if (item.key === data.key) {
-            let mrpData = data.productprice * data.numberofpacks
+            let mrpData = data.productprice * data.numberOfPacks
             let price = row.price
             return {
               ...item,
               productprice: data.productprice,
-              numberofpacks: data.numberofpacks,
+              numberOfPacks: data.numberOfPacks,
               margin: ((mrpData - row.price) / mrpData) * 100,
               mrp: mrpData,
               price: price,
@@ -841,8 +848,8 @@ export default function NavBar({
       {
         updatedTempproduct = tempdata.map((item) => {
           if (item.key === data.key) {
-            let mrpNormal = data.productprice * data.numberofpacks
-            let mrpData = row.productprice * data.numberofpacks
+            let mrpNormal = data.productprice * data.numberOfPacks
+            let mrpData = row.productprice * data.numberOfPacks
             
             let marginvalue = ((data.productprice -  row.productprice) / data.productprice) * 100
             let price = mrpData - mrpData * (0 / 100)
@@ -852,7 +859,7 @@ export default function NavBar({
               ...item,
               // productprice: data.productprice,
               productprice: data.productprice,
-              numberofpacks: data.numberofpacks,
+              numberOfPacks: data.numberOfPacks,
               margin: marginvalue,
               mrp: mrpNormal,
               price: price,
@@ -864,13 +871,13 @@ export default function NavBar({
         
         // updatedTempproduct = await tempdata.map((item) => {
         //   if (item.key === data.key) {
-        //     let mrpData = row.productprice * data.numberofpacks
+        //     let mrpData = row.productprice * data.numberOfPacks
         //     let price = mrpData - mrpData * (data.margin / 100)
         //     return {
         //       ...item,
         //       // productprice: data.productprice,
         //       productprice: row.productprice,
-        //       numberofpacks: data.numberofpacks,
+        //       numberOfPacks: data.numberOfPacks,
         //       margin: data.margin,
         //       mrp: mrpData,
         //       price: price,
@@ -892,7 +899,7 @@ export default function NavBar({
 
       // const row = await form.validateFields()
       // const oldtemDatas = isQuickSale.temdata
-      // const checkDatas = oldtemDatas.some( (item) =>  item.key === data.key && item.margin === row.margin &&  item.productprice === row.productprice && item.numberofpacks === row.numberofpacks && item.price === row.price);
+      // const checkDatas = oldtemDatas.some( (item) =>  item.key === data.key && item.margin === row.margin &&  item.productprice === row.productprice && item.numberOfPacks === row.numberOfPacks && item.price === row.price);
       
       // if (checkDatas) {
       //   message.open({ type: 'info', content: 'No Changes made' })
@@ -902,7 +909,7 @@ export default function NavBar({
       // else{ 
       //   const updatedTempproduct = oldtemDatas.map((item) => {
       //     if (item.key === data.key) {
-      //       let mrpData = row.productprice * row.numberofpacks
+      //       let mrpData = row.productprice * row.numberOfPacks
       //       let price = mrpData - mrpData * (row.margin / 100)
       //       let calculatedMargin = row.margin
       //       if (row.price !== undefined) {
@@ -912,7 +919,7 @@ export default function NavBar({
       //       return {
       //         ...item,
       //         productprice: row.productprice,
-      //         numberofpacks: row.numberofpacks,
+      //         numberOfPacks: row.numberOfPacks,
       //         margin: row.margin,
       //         mrp: mrpData,
       //         price: price
@@ -1363,7 +1370,7 @@ export default function NavBar({
                 <span className='absolute left-1/2 top-1/2 -translate-x-2 translate-y-[6px]'><Tag className='w-full flex justify-between items-center' size='small' color={productCount <= 0 ? 'red' : 'green'}  ><PiGarageBold size={16} /> {productCount <= 0 ? 0 : productCount} </Tag></span>
                 <Form.Item
                   className="mb-3"
-                  name="numberofpacks"
+                  name="numberOfPacks"
                   label="Number of Pieces"
                   rules={[{ required: true, message: false }]}
                 >

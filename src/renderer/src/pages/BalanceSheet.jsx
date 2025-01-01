@@ -63,7 +63,7 @@ export default function BalanceSheet({ datas }) {
     setBalanceTbLoading(true)
     const initialData = await Promise.all(
       datas.customers
-        .filter((data) => data.isDeleted === false)
+        .filter((data) => data.isDeleted === 0)
         .map(async (item, index) => {
           const customerDeliveries = (datas.delivery || []).filter(
             (delivery) => delivery.customerId === item.id && !delivery.isDeleted
@@ -169,14 +169,14 @@ export default function BalanceSheet({ datas }) {
           .filter((data) => !data.isDeleted)
           .map(async (item, index) => {
             const result = await getCustomerById(item.customerId)
-            const customerName = result.name || item.customername
-            const mobileNumber = result.mobileNumber || item.mobilenumber
+            const customerName = result.name || item.name
+            const mobileNumber = result.mobileNumber || item.mobileNumber
             return {
               ...item,
               sno: index + 1,
               key: item.id || index,
-              customername: customerName,
-              mobilenumber: mobileNumber
+              name: customerName,
+              mobileNumber: mobileNumber
             }
           })
       )
@@ -207,8 +207,8 @@ export default function BalanceSheet({ datas }) {
       render: (_, __, index) => index + 1,
       onFilter: (value, record) => {
         return (
-          String(record.customername).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.mobilenumber).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.name).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
           String(record.balance).toLowerCase().includes(value.toLowerCase()) ||
           String(record.bookstatus).toLowerCase().includes(value.toLowerCase())
         )
@@ -216,15 +216,15 @@ export default function BalanceSheet({ datas }) {
     },
     {
       title: 'Customer',
-      dataIndex: 'customername',
-      key: 'customername',
-      sorter: (a, b) => a.customername.localeCompare(b.customername),
+      dataIndex: 'name',
+      key: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name),
       defaultSortOrder: 'ascend'
     },
     {
       title: 'Mobile',
-      dataIndex: 'mobilenumber',
-      key: 'mobilenumber',
+      dataIndex: 'mobileNumber',
+      key: 'mobileNumber',
       width: 100
     },
     {

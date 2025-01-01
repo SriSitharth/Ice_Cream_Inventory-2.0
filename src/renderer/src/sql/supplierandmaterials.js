@@ -34,3 +34,20 @@ export const addSupplierAndMaterial = async (supplierData) => {
     throw error;
   }
 };
+
+export const getMaterialsBySupplierId = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/SupplierAndMaterial/getMaterialsBySupplierId`, {
+      params: { id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Materials fetched by supplier id successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching materials by supplier id:', error.message);
+    throw error;
+  }
+};
