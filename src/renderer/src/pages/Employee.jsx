@@ -208,7 +208,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
                 if (paydetails) {
                   let checkPayData = paydetails.filter((item) => item.isDeleted === 1)
                   console.log(checkPayData,paydetails)
-                  // let lastestSort = await latestFirstSort(checkPayData.filter(paydata => !paydata.isDeleted));
+                  let lastestSort = await latestFirstSort(checkPayData.filter(paydata => !paydata.isDeleted));
                   const totalPayment = checkPayData.reduce((total, item) => {
                     if (item.type === 'Payment') {
                       return total + (Number(item.amount) || 0);
@@ -228,7 +228,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
                   setEmployeePayDetails((pre) => ({
                     ...pre,
                     modal: true,
-                    data: checkPayData,
+                    data: lastestSort,
                     parentid: record.id
                   }))
                 }

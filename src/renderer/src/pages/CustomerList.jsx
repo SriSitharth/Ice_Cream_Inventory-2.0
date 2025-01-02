@@ -223,10 +223,10 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       ).map(data=>({...data,name:record.name}))
 
       const combinedData = payDetails.concat(deliveryDocRef)
-      // let sortedData = await latestFirstSort(combinedData)
+      let sortedData = await latestFirstSort(combinedData)
       
       // setPayDetailsData(sortedData)
-      console.log('Comb',combinedData)
+      console.log('Comb',sortedData)
       // const addFreezerboxNumber = await Promise.all(
       //   combinedData.map(async data => {
       //     const { freezerbox, status } = await getFreezerboxById(data.boxid);
@@ -234,7 +234,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       //   })
       // );
 
-      setPayDetailsData(combinedData)
+      setPayDetailsData(sortedData)
       
       
 

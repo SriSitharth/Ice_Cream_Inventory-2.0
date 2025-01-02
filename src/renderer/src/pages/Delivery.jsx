@@ -207,6 +207,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       },
       // defaultSortOrder: 'descend',
       width: 155,
+      render: (text) => dayjs(text).format('DD/MM/YYYY'),
       editable: false
     },
     {

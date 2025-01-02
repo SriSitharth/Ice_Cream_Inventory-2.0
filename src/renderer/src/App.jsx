@@ -148,8 +148,8 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       const rawmaterial = await getRawMaterials()
-      // const sortedRawmaterial = await latestFirstSort(rawmaterial)
-      setDatas((pre) => ({ ...pre, rawmaterials: rawmaterial }))
+      const sortedRawmaterial = await latestFirstSort(rawmaterial)
+      setDatas((pre) => ({ ...pre, rawmaterials: sortedRawmaterial }))
     }
     fetchData()
   }, [datas.rawmaterialupdatestaus])
@@ -158,8 +158,8 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       const production = await getProductions()
-      // const sortedProduction = await latestFirstSort(production)
-      setDatas((pre) => ({ ...pre, productions: production }))
+      const sortedProduction = await latestFirstSort(production)
+      setDatas((pre) => ({ ...pre, productions: sortedProduction }))
     }
     fetchData()
   }, [datas.productionupdatestaus])
@@ -168,8 +168,8 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       const delivery = await getDelivery()
-      // const sortedDelivery = await latestFirstSort(delivery)
-      setDatas((pre) => ({ ...pre, delivery: delivery }))
+      const sortedDelivery = await latestFirstSort(delivery)
+      setDatas((pre) => ({ ...pre, delivery: sortedDelivery }))
     }
     fetchData()
   }, [datas.deliveryupdatestaus])
