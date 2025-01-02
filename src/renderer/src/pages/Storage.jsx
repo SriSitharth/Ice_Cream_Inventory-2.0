@@ -33,46 +33,46 @@ export default function Storage({ datas, storageUpdateMt }) {
 
   useEffect(() => {
     const fetchData = async () => {
-      setTableLoading(true);
-      
-      const rawData = datas.storage.filter((data) => data.category === selectedSegment);
-      const checkCategory = rawData.some((data) => data.category === 'Product List');
-      console.log("storage",rawData)
-      let sortedData = [];
-  
+      setTableLoading(true)
+
+      const rawData = datas.storage.filter((data) => data.category === selectedSegment)
+      const checkCategory = rawData.some((data) => data.category === 'Product List')
+      console.log('storage', rawData)
+      let sortedData = []
+
       if (checkCategory) {
         const idCompareData = await Promise.all(
           rawData.map(async (data) => {
-            const product = await getProductById(data.productId);
+            const product = await getProductById(data.productId)
             if (product) {
-              const { id, ...filterpr } = product;
-              return { ...data, ...filterpr };
+              const { id, ...filterpr } = product
+              return { ...data, ...filterpr }
             }
-            return data;
+            return data
           })
-        );
+        )
         sortedData = idCompareData.sort((a, b) => {
-          if (!a.name) return 1;
-          if (!b.name) return -1;
-          return a.name.localeCompare(b.name);
-        });
+          if (!a.name) return 1
+          if (!b.name) return -1
+          return a.name.localeCompare(b.name)
+        })
       } else {
         sortedData = rawData.sort((a, b) => {
-          if (!a.materialName) return 1;
-          if (!b.materialName) return -1;
-          return a.materialName.localeCompare(b.materialName);
-        });
+          if (!a.materialName) return 1
+          if (!b.materialName) return -1
+          return a.materialName.localeCompare(b.materialName)
+        })
       }
 
-      let filterSortedData = sortedData.length > 0 ? sortedData.filter(data => !data.isDeleted) : sortedData;
-  
-      setData(filterSortedData);
-      setTableLoading(false);
-    };
-  
-    fetchData(); 
-  }, [datas, selectedSegment]);
-  
+      let filterSortedData =
+        sortedData.length > 0 ? sortedData.filter((data) => !data.isDeleted) : sortedData
+
+      setData(filterSortedData)
+      setTableLoading(false)
+    }
+
+    fetchData()
+  }, [datas, selectedSegment])
 
   // search
   const [searchText, setSearchText] = useState('')
@@ -88,7 +88,7 @@ export default function Storage({ datas, storageUpdateMt }) {
   const setAlert = async (values) => {
     if (editingRecordId) {
       await updateStorage(editingRecordId, {
-        alertCount: values.alertCount,
+        alertCount: values.alertCount
       })
     }
     form.resetFields()
@@ -127,7 +127,7 @@ export default function Storage({ datas, storageUpdateMt }) {
       title: 'Material',
       dataIndex: 'materialName',
       key: 'materialName',
-      sorter: (a, b) =>a.materialName.localeCompare(b.materialName),
+      sorter: (a, b) => a.materialName.localeCompare(b.materialName),
       showSorterTooltip: { target: 'sorter-icon' },
       // defaultSortOrder: 'ascend',
       editable: false
@@ -142,7 +142,7 @@ export default function Storage({ datas, storageUpdateMt }) {
           <div>
             <span>{text}</span> <span>{record.unit}</span>
           </div>
-        );
+        )
       }
     },
     {
@@ -192,16 +192,16 @@ export default function Storage({ datas, storageUpdateMt }) {
           String(record.numberOfPacks).toLowerCase().includes(value.toLowerCase())
         )
       },
-      editable:false
+      editable: false
     },
     {
       title: 'Product',
       dataIndex: 'name',
       key: 'name',
-      sorter:  (a, b) => a.name.localeCompare(b.name),
+      sorter: (a, b) => a.name.localeCompare(b.name),
       showSorterTooltip: { target: 'sorter-icon' },
       // defaultSortOrder: 'ascend',
-      editable:false
+      editable: false
     },
     {
       title: 'Packs',
@@ -254,7 +254,7 @@ export default function Storage({ datas, storageUpdateMt }) {
     }
   ]
 
-  const columns = selectedSegment === 'Material List' ? materialColumns : productColumns;
+  const columns = selectedSegment === 'Material List' ? materialColumns : productColumns
 
   const edit = (record) => {
     ediablefForm.setFieldsValue({ ...record })
@@ -292,7 +292,11 @@ export default function Storage({ datas, storageUpdateMt }) {
     ...restProps
   }) => {
     const inputNode =
-      dataIndex === 'quantity' || dataIndex === 'alertCount' || dataIndex === 'numberOfPacks' ? <InputNumber type='number'/> : <Input />
+      dataIndex === 'quantity' || dataIndex === 'alertCount' || dataIndex === 'numberOfPacks' ? (
+        <InputNumber type="number" />
+      ) : (
+        <Input />
+      )
     return (
       <td {...restProps}>
         {editing ? (
@@ -320,20 +324,25 @@ export default function Storage({ datas, storageUpdateMt }) {
   }
 
   const storageSave = async (record) => {
-    console.log(record);
-    
+    console.log(record)
+
     try {
       const row = await ediablefForm.validateFields()
-      console.log(row);
+      console.log(row)
       if (selectedSegment === 'Material List') {
-        const exsitingData = await datas.storage.some((item) => item.id === record.id && item.alertCount === row.alertCount && item.quantity === row.quantity)
+        const exsitingData = await datas.storage.some(
+          (item) =>
+            item.id === record.id &&
+            item.alertCount === row.alertCount &&
+            item.quantity === row.quantity
+        )
         if (exsitingData) {
-          message.open({ type: 'info', content: 'Data already exists'})
+          message.open({ type: 'info', content: 'Data already exists' })
           setEditingKeys([])
         } else {
           setTableLoading(true)
           await updateStorage(record.id, {
-            alertCount: row.alertCount, 
+            alertCount: row.alertCount,
             quantity: row.quantity
           })
           storageUpdateMt()
@@ -342,12 +351,17 @@ export default function Storage({ datas, storageUpdateMt }) {
           setTableLoading(false)
         }
       } else {
-        const exsitingData = await datas.storage.some((item) => item.id === record.id && item.numberOfPacks === row.numberOfPacks && item.alertCount === row.alertCount)
+        const exsitingData = await datas.storage.some(
+          (item) =>
+            item.id === record.id &&
+            item.numberOfPacks === row.numberOfPacks &&
+            item.alertCount === row.alertCount
+        )
 
         if (exsitingData) {
           message.open({
             type: 'info',
-            content: 'Data already exists',
+            content: 'Data already exists'
           })
           setEditingKeys([])
         } else {
@@ -400,7 +414,7 @@ export default function Storage({ datas, storageUpdateMt }) {
           />
 
           <Segmented
-          disabled={isSegmentDisabled}
+            disabled={isSegmentDisabled}
             options={[
               {
                 label: (

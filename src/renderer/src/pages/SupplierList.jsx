@@ -18,9 +18,14 @@ import {
   Empty,
   Tooltip
 } from 'antd'
-import { MdProductionQuantityLimits } from "react-icons/md";
-import { IoCloseCircle } from "react-icons/io5";
-import { SolutionOutlined, PlusOutlined, MinusCircleOutlined, ConsoleSqlOutlined } from '@ant-design/icons'
+import { MdProductionQuantityLimits } from 'react-icons/md'
+import { IoCloseCircle } from 'react-icons/io5'
+import {
+  SolutionOutlined,
+  PlusOutlined,
+  MinusCircleOutlined,
+  ConsoleSqlOutlined
+} from '@ant-design/icons'
 import { IoMdAdd } from 'react-icons/io'
 import { MdOutlineModeEditOutline } from 'react-icons/md'
 import { PiExport } from 'react-icons/pi'
@@ -29,7 +34,15 @@ import { TiCancel } from 'react-icons/ti'
 import { AiOutlineDelete } from 'react-icons/ai'
 import { MdOutlinePayments } from 'react-icons/md'
 import { TimestampJs } from '../js-files/time-stamp'
-import { addNewMaterialItem, getMaterialDetailsById, updateMaterialItsms, updateSupplier, getSupplierPayDetailsById ,getAllMaterialDetailsFromAllSuppliers, updatePaydetailsChildSupplier } from '../firebase/data-tables/supplier'
+import {
+  addNewMaterialItem,
+  getMaterialDetailsById,
+  updateMaterialItsms,
+  updateSupplier,
+  getSupplierPayDetailsById,
+  getAllMaterialDetailsFromAllSuppliers,
+  updatePaydetailsChildSupplier
+} from '../firebase/data-tables/supplier'
 import { createStorage, deleteStorage } from '../firebase/data-tables/storage'
 import jsonToExcel from '../js-files/json-to-excel'
 import { addDoc, collection, doc } from 'firebase/firestore'
@@ -39,28 +52,28 @@ import { formatToRupee } from '../js-files/formate-to-rupee'
 import { PiWarningCircleFill } from 'react-icons/pi'
 const { Search, TextArea } = Input
 import { debounce } from 'lodash'
-import { areArraysEqual } from '../js-files/compare-two-array-of-object';
-import { getMissingIds } from '../js-files/missing-id';
-import { latestFirstSort } from '../js-files/sort-time-date-sec';
-import { formatName } from '../js-files/letter-or-name';
-import { getRawmaterial } from '../firebase/data-tables/rawmaterial';
-import { truncateString } from '../js-files/letter-length-sorting';
+import { areArraysEqual } from '../js-files/compare-two-array-of-object'
+import { getMissingIds } from '../js-files/missing-id'
+import { latestFirstSort } from '../js-files/sort-time-date-sec'
+import { formatName } from '../js-files/letter-or-name'
+import { getRawmaterial } from '../firebase/data-tables/rawmaterial'
+import { truncateString } from '../js-files/letter-length-sorting'
 import './css/SupplierList.css'
 
-import { addSupplier } from '../sql/supplier';
-import { addStorage, updateStorage } from '../sql/storage';
-import { addSupplierPayment } from '../sql/supplier';
-import { getSupplierAndMaterials , addSupplierAndMaterial } from '../sql/supplierandmaterials';
+import { addSupplier } from '../sql/supplier'
+import { addStorage, updateStorage } from '../sql/storage'
+import { addSupplierPayment } from '../sql/supplier'
+import { getSupplierAndMaterials, addSupplierAndMaterial } from '../sql/supplierandmaterials'
 
 export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt }) {
   // states
-  const [form] = Form.useForm();
-  const [expantableform] = Form.useForm();
+  const [form] = Form.useForm()
+  const [expantableform] = Form.useForm()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingKeys, setEditingKeys] = useState([])
   const [data, setData] = useState([])
   const [payForm] = Form.useForm()
-  const[materialForm] = Form.useForm();
+  const [materialForm] = Form.useForm()
   const [isPayModelOpen, setIsPayModelOpen] = useState(false)
   const [isPayDetailsModelOpen, setIsPayDetailsModelOpen] = useState(false)
   const [supplierPayId, setSupplierPayId] = useState(null)
@@ -73,21 +86,22 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
   // side effect
   useEffect(() => {
     setSupplierTbLoading(true)
-    const filteredData = datas.suppliers
-      .map((item, index) => ({ ...item, sno: index + 1, key: item.id || index }))
+    const filteredData = datas.suppliers.map((item, index) => ({
+      ...item,
+      sno: index + 1,
+      key: item.id || index
+    }))
     // setData(filteredData)
-   
-  async function fetchMaterialItems(){
-    // let getAlldatas = await Promise.all(filteredData.map(async data=>{
-    //   let {materials,status} = await getMaterialDetailsById(data.id);
-    //   return ({...data,item:materials.filter(data=> data.isDeleted === false)})
-    // }))
-    setData(filteredData);
-    setSupplierTbLoading(false)
-   }
+
+    async function fetchMaterialItems() {
+      // let getAlldatas = await Promise.all(filteredData.map(async data=>{
+      //   let {materials,status} = await getMaterialDetailsById(data.id);
+      //   return ({...data,item:materials.filter(data=> data.isDeleted === false)})
+      // }))
+      setData(filteredData)
+      setSupplierTbLoading(false)
+    }
     fetchMaterialItems()
-    
-    
   }, [datas])
 
   // search
@@ -104,42 +118,42 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
   const [supplierModalLoading, setSupplierModalLoading] = useState(false)
   // create new project
   const createNewSupplier = async (values) => {
-
-    let correctNameData = values.material.map(data=>({...data,materialname:formatName(data.materialname)}));
+    let correctNameData = values.material.map((data) => ({
+      ...data,
+      materialname: formatName(data.materialname)
+    }))
     // Create a map to count occurrences of each materialname
-const nameCount = correctNameData.reduce((acc, data) => {
-  acc[data.materialname] = (acc[data.materialname] || 0) + 1;
-  return acc;
-}, {});
+    const nameCount = correctNameData.reduce((acc, data) => {
+      acc[data.materialname] = (acc[data.materialname] || 0) + 1
+      return acc
+    }, {})
 
-// Find all material names that have more than 1 occurrence
-const duplicateNames = Object.keys(nameCount).filter(name => nameCount[name] > 1);
+    // Find all material names that have more than 1 occurrence
+    const duplicateNames = Object.keys(nameCount).filter((name) => nameCount[name] > 1)
 
-if(duplicateNames.length > 0){
-  return message.open({type:'warning',content:`Same material found ${duplicateNames.map(data => data)}`})
-}
+    if (duplicateNames.length > 0) {
+      return message.open({
+        type: 'warning',
+        content: `Same material found ${duplicateNames.map((data) => data)}`
+      })
+    }
 
-    
-    
     if (values.material.length === 0) {
       return message.open({ type: 'info', content: 'Add one material' })
     }
 
-
-
-    const { material, ...value } = values;
+    const { material, ...value } = values
 
     const correctMaterialName = await Promise.all(
-      material.map(async data => ({
+      material.map(async (data) => ({
         ...data,
         materialname: await formatName(data.materialname)
       }))
-    );
-    
+    )
 
     const supplierDatas = {
       ...value,
-      name:formatName(value.name),
+      name: formatName(value.name),
       mobileNumber: value.mobileNumber,
       address: value.address,
       gender: 'Male',
@@ -148,39 +162,40 @@ if(duplicateNames.length > 0){
       isDeleted: 0
     }
 
-    // const materialExists = datas.storage.find(storageItem => 
-    //   material.some( item => 
+    // const materialExists = datas.storage.find(storageItem =>
+    //   material.some( item =>
     //     storageItem.materialname === item.materialname &&
     //     storageItem.category === 'Material List' &&
     //     storageItem.unit === item.unit
     //   )
     // );
 
-    const materialExist = correctMaterialName.filter(item =>
-      !datas.storage.some(storage =>
-        storage.materialname === item.materialname &&
-        storage.category === 'Material List' &&
-        storage.unit === item.unit
-      )
-    );
-   
-    console.log('newmaterial',materialExist);
+    const materialExist = correctMaterialName.filter(
+      (item) =>
+        !datas.storage.some(
+          (storage) =>
+            storage.materialname === item.materialname &&
+            storage.category === 'Material List' &&
+            storage.unit === item.unit
+        )
+    )
+
+    console.log('newmaterial', materialExist)
 
     setSupplierModalLoading(true)
     try {
-
       console.log(supplierDatas)
-      const addedSupplier = await addSupplier(supplierDatas);
-      
+      const addedSupplier = await addSupplier(supplierDatas)
+
       for (const materialItem of correctMaterialName) {
         console.log(materialItem)
         await addSupplierAndMaterial({
-            name: materialItem.materialname,
-            unit: materialItem.unit,
-            supplierId: addedSupplier.id,
-            isDeleted: 0,
-            createdDate: new Date().toISOString(),
-            modifiedDate: new Date().toISOString()
+          name: materialItem.materialname,
+          unit: materialItem.unit,
+          supplierId: addedSupplier.id,
+          isDeleted: 0,
+          createdDate: new Date().toISOString(),
+          modifiedDate: new Date().toISOString()
         })
 
         // await addDoc(materialCollectionRef, {...materialItem,isDeleted:false,createddate:TimestampJs()});
@@ -201,8 +216,8 @@ if(duplicateNames.length > 0){
       }
 
       // new material add storage
-      if(materialExist.length > 0){
-        for (const items of materialExist){
+      if (materialExist.length > 0) {
+        for (const items of materialExist) {
           await addStorage({
             materialName: items.materialname,
             unit: items.unit,
@@ -215,7 +230,7 @@ if(duplicateNames.length > 0){
           })
         }
       }
-     
+
       await supplierUpdateMt()
       await storageUpdateMt()
       form.resetFields()
@@ -228,7 +243,6 @@ if(duplicateNames.length > 0){
       setSupplierModalLoading(false)
       setIsModalOpen(false)
     }
-  
   }
 
   const showPayModal = (record) => {
@@ -239,12 +253,22 @@ if(duplicateNames.length > 0){
   }
 
   const [payModalLoading, setPayModalLoading] = useState(false)
-  
+
   const supplierPay = async (value) => {
     setPayModalLoading(true)
     let { date, decription, ...Datas } = value
     let formateDate = dayjs(date).format('DD/MM/YYYY')
-    const payData = { ...Datas, date: new Date().toISOString(), modifiedDate: new Date().toISOString(), decription: decription || '', createdDate:new Date().toISOString(), collectionType:'supplier',supplierId:supplierPayId, type: 'Payment',isDeleted:0 }
+    const payData = {
+      ...Datas,
+      date: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
+      decription: decription || '',
+      createdDate: new Date().toISOString(),
+      collectionType: 'supplier',
+      supplierId: supplierPayId,
+      type: 'Payment',
+      isDeleted: 0
+    }
     try {
       // const customerDocRef = doc(db, 'supplier', supplierPayId)
       // const payDetailsRef = collection(customerDocRef, 'paydetails')
@@ -259,64 +283,65 @@ if(duplicateNames.length > 0){
       setIsPayModelOpen(false)
       setPayModalLoading(false)
       setAmountOnchangeValue('')
-      message.open({type:'success',content:'Payed successfully'})
+      message.open({ type: 'success', content: 'Payed successfully' })
     }
   }
 
-const [supplierName,setSupplierName] = useState('');
+  const [supplierName, setSupplierName] = useState('')
 
   const showPayDetailsModal = async (record) => {
+    try {
+      let { rawmaterial, status } = await getRawmaterial()
+      let { paydetails } = await getSupplierPayDetailsById(record.id)
+      if (status) {
+        let filterBillOrders = rawmaterial
+          .filter((data) => record.id === data.supplierId && data.isDeleted === false)
+          .map((data) => ({ ...data, name: record.name }))
+        let getPaydetials = paydetails.filter((paydata) => paydata.isDeleted === false)
 
-    try{
-      let {rawmaterial,status} = await getRawmaterial();
-      let {paydetails} = await getSupplierPayDetailsById(record.id)
-      if(status){
-      let filterBillOrders = rawmaterial.filter(data=> record.id === data.supplierId && data.isDeleted === false).map(data => ({...data,name: record.name}));
-      let getPaydetials = paydetails.filter(paydata => paydata.isDeleted === false);
-      
-      let sortData = await latestFirstSort([...filterBillOrders,...getPaydetials]);
-      setPayDetailsData(sortData);
-      setSupplierName(record.name);
+        let sortData = await latestFirstSort([...filterBillOrders, ...getPaydetials])
+        setPayDetailsData(sortData)
+        setSupplierName(record.name)
 
-      // calculation
-      const totalBalance = sortData.reduce((total, item) => {
-        if (item.type === 'Added' && item.paymentstatus === 'Unpaid') {
-          return total + (Number(item.billamount) || 0);
-        }else if (item.type === 'Added' && item.paymentstatus === 'Partial') {
-          return total + ((Number(item.billamount)-Number(item.partialamount)) || 0);
-        }else if (item.type !== 'Added') {
-          return total - (Number(item.amount) || 0);
-        }
-        return total;
-      }, 0);
-      setTotalBalanceAmount(totalBalance);
+        // calculation
+        const totalBalance = sortData.reduce((total, item) => {
+          if (item.type === 'Added' && item.paymentstatus === 'Unpaid') {
+            return total + (Number(item.billamount) || 0)
+          } else if (item.type === 'Added' && item.paymentstatus === 'Partial') {
+            return total + (Number(item.billamount) - Number(item.partialamount) || 0)
+          } else if (item.type !== 'Added') {
+            return total - (Number(item.amount) || 0)
+          }
+          return total
+        }, 0)
+        setTotalBalanceAmount(totalBalance)
 
-      const totalPayment = sortData.reduce((total, item) => {
-        if (item.type === 'Added' && item.paymentstatus === 'Paid') {
-          return total + (Number(item.billamount) || 0);
-        }else if (item.type === 'Added' && item.paymentstatus === 'Partial') {
-          return total + (Number(item.partialamount) || 0);
-        }else if (item.type !== 'Added') {
-          return total + (Number(item.amount) || 0);
-        }
-        return total;
-      }, 0);
-      setTotalPaymentAmount(totalPayment);
+        const totalPayment = sortData.reduce((total, item) => {
+          if (item.type === 'Added' && item.paymentstatus === 'Paid') {
+            return total + (Number(item.billamount) || 0)
+          } else if (item.type === 'Added' && item.paymentstatus === 'Partial') {
+            return total + (Number(item.partialamount) || 0)
+          } else if (item.type !== 'Added') {
+            return total + (Number(item.amount) || 0)
+          }
+          return total
+        }, 0)
+        setTotalPaymentAmount(totalPayment)
 
-      const totalPurchase = sortData.reduce((total, item) => {
-        if (item.type === 'Added') {
-          return total + (Number(item.billamount) || 0);
-        }
-        return total;
-      }, 0);
-      setTotalPurchaseAmount(totalPurchase);
+        const totalPurchase = sortData.reduce((total, item) => {
+          if (item.type === 'Added') {
+            return total + (Number(item.billamount) || 0)
+          }
+          return total
+        }, 0)
+        setTotalPurchaseAmount(totalPurchase)
 
-       setIsPayDetailsModelOpen(true);
+        setIsPayDetailsModelOpen(true)
       }
-    }catch(e){
+    } catch (e) {
       console.log(e)
-    };
-  };
+    }
+  }
 
   const payDetailsColumns = [
     {
@@ -367,9 +392,7 @@ const [supplierName,setSupplierName] = useState('');
       dataIndex: 'price',
       key: 'price',
       render: (text, record) =>
-        record.type === undefined
-          ? '-'
-          : <Tag color='green'>{record.type}</Tag>,
+        record.type === undefined ? '-' : <Tag color="green">{record.type}</Tag>,
       width: 130
     },
     {
@@ -379,13 +402,13 @@ const [supplierName,setSupplierName] = useState('');
       render: (text, record) =>
         record.paymentstatus === undefined ? (
           <>
-          <Tag color="cyan">{record.paymentmode}</Tag>
-          <span></span>
+            <Tag color="cyan">{record.paymentmode}</Tag>
+            <span></span>
           </>
         ) : record.paymentstatus === 'Paid' ? (
           <span className="flex items-center">
-          <Tag color="green">Paid</Tag>
-          {record.paymentmode && <Tag color="cyan">{record.paymentmode}</Tag>}
+            <Tag color="green">Paid</Tag>
+            {record.paymentmode && <Tag color="cyan">{record.paymentmode}</Tag>}
           </span>
         ) : record.paymentstatus === 'Unpaid' ? (
           <Tag color="red">UnPaid</Tag>
@@ -408,9 +431,9 @@ const [supplierName,setSupplierName] = useState('');
       key: 'decription',
       render: (text, record) => (record.decription === undefined ? '-' : record.decription)
     }
-  ];
+  ]
 
-  const [openPopoverRow, setOpenPopoverRow] = useState(null);
+  const [openPopoverRow, setOpenPopoverRow] = useState(null)
   const columns = [
     {
       title: 'S.No',
@@ -419,15 +442,15 @@ const [supplierName,setSupplierName] = useState('');
       render: (_, __, index) => index + 1,
       filteredValue: [searchText],
       onFilter: (value, record) => {
-
         return (
           String(record.name).toLowerCase().includes(value.toLowerCase()) ||
           String(record.materialname).toLowerCase().includes(value.toLowerCase()) ||
           String(record.address).toLowerCase().includes(value.toLowerCase()) ||
           String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
           String(record.gender).toLowerCase().includes(value.toLowerCase()) ||
-          record.item.some(data => String(data.materialname).toLowerCase().includes(value.toLowerCase()))
-
+          record.item.some((data) =>
+            String(data.materialname).toLowerCase().includes(value.toLowerCase())
+          )
         )
       }
     },
@@ -455,8 +478,8 @@ const [supplierName,setSupplierName] = useState('');
       editable: true,
       sorter: (a, b) => a.address.localeCompare(b.address),
       showSorterTooltip: { target: 'sorter-icon' },
-      render: (text,record)=>{
-        return text.length > 18 ? <Tooltip title={text}>{truncateString(text,18)}</Tooltip> : text
+      render: (text, record) => {
+        return text.length > 18 ? <Tooltip title={text}>{truncateString(text, 18)}</Tooltip> : text
       }
     },
     {
@@ -503,7 +526,7 @@ const [supplierName,setSupplierName] = useState('');
     //     );
     //   }
     // },
-    
+
     {
       title: 'Action',
       dataIndex: 'operation',
@@ -546,13 +569,13 @@ const [supplierName,setSupplierName] = useState('');
               disabled={editingKeys.length !== 0 || selectedRowKeys.length !== 0}
               onClick={() => {
                 // edit(record)
-                editSupplier(record);
+                editSupplier(record)
               }}
             >
               <MdOutlineModeEditOutline size={20} />
             </Typography.Link>
             <Popconfirm
-            placement='left'
+              placement="left"
               disabled={editingKeys.length !== 0 || selectedRowKeys.length !== 0}
               className={`${editingKeys.length !== 0 || selectedRowKeys.length !== 0 ? 'cursor-not-allowed' : 'cursor-pointer'} `}
               title="Sure to delete?"
@@ -567,12 +590,12 @@ const [supplierName,setSupplierName] = useState('');
         )
       }
     }
-  ];
+  ]
 
-  const [editSupplierModal,setEditSupplierModal] = useState(false);
-  const [editBtnData,setEditBtnData] = useState({});
+  const [editSupplierModal, setEditSupplierModal] = useState(false)
+  const [editBtnData, setEditBtnData] = useState({})
   const editSupplier = async (record) => {
-    setEditBtnData(record);
+    setEditBtnData(record)
     setEditSupplierModal(true)
     // Set the form fields with the correct values from the record
     form.setFieldsValue({
@@ -582,154 +605,183 @@ const [supplierName,setSupplierName] = useState('');
       mobileNumber: record.mobileNumber,
       material: record.item
       // Ensure materialdetails is an array of objects with the expected structure
-    });
-  
+    })
+
     // Open the modal after setting the form values
-    setIsModalOpen(true);
-  };
-  
-  const updateSupllierMt = async()=>{
-
- try{
-  let {id,...olddata} = editBtnData;
-  let supplerId = id
-  let {material,...newdata} = form.getFieldValue();
-  let oldmaterial = olddata.item.filter(data => data.isDeleted === false);
-
-  let missingIds = await getMissingIds(olddata.item,material)
-  // let missingIds = await material.filter(aObj => !olddata.item.some(bObj => aObj.id === bObj.id));
-  let newMaterialItems = material.filter(item => !item.hasOwnProperty('id')).map(data => ({...data,materialname:formatName(data.materialname)}));
-  let updatedMaterialItems = material.filter(item => item.hasOwnProperty('id'));
-  let compareArrObj = await areArraysEqual(updatedMaterialItems,olddata.item)
- 
-  // check same material
- let sameItem = oldmaterial.filter(old => newMaterialItems.find(newdata => newdata.materialname === old.materialname));
- 
- if(sameItem.length > 0) { return message.open({type:'warning',content:`Not allow same material ${sameItem.map(data=> { return data.materialname})}`})}
-  
-  if(olddata.address === newdata.address && olddata.mobileNumber === newdata.mobileNumber && olddata.name === newdata.name && material.length === olddata.item.length && compareArrObj){
-    message.open({content:'No changes found', type:'info'})
+    setIsModalOpen(true)
   }
-  else{
-    
-    setSupplierModalLoading(true);
-    // update supplier
-    await updateSupplier(supplerId,{...newdata,updateddate:TimestampJs()});
 
-    // update items
-    if(compareArrObj === false){
-      for(const items of updatedMaterialItems){
-        const {id,createddate,isDeleted,...newupdateddata} = items;
-        const itemId = id;
-        await updateMaterialItsms(supplerId,itemId,{...newupdateddata,updateddate:TimestampJs()})
-        
-        console.log("Checking for material:", items.materialname, items.unit);
-        console.log("Storage data:", datas.storage);
+  const updateSupllierMt = async () => {
+    try {
+      let { id, ...olddata } = editBtnData
+      let supplerId = id
+      let { material, ...newdata } = form.getFieldValue()
+      let oldmaterial = olddata.item.filter((data) => data.isDeleted === false)
 
-        const materialExists = datas.storage.find(
-          (storageItem) => storageItem.category === 'Material List' && storageItem.materialname?.trim().toLowerCase() === items.materialname?.trim().toLowerCase() && storageItem.unit?.trim().toLowerCase() === items.unit?.trim().toLowerCase()
-        )
-        if (!materialExists) {
-          await addStorage({
-            materialName: items.materialname,
-            unit: items.unit,
-            alertCount: 0,
-            quantity: 0,
-            isDeleted: 0,
-            category: 'Material List',
-            createdDate: new Date().toISOString(),
-            modifiedDate: new Date().toISOString()
-          })
+      let missingIds = await getMissingIds(olddata.item, material)
+      // let missingIds = await material.filter(aObj => !olddata.item.some(bObj => aObj.id === bObj.id));
+      let newMaterialItems = material
+        .filter((item) => !item.hasOwnProperty('id'))
+        .map((data) => ({ ...data, materialname: formatName(data.materialname) }))
+      let updatedMaterialItems = material.filter((item) => item.hasOwnProperty('id'))
+      let compareArrObj = await areArraysEqual(updatedMaterialItems, olddata.item)
+
+      // check same material
+      let sameItem = oldmaterial.filter((old) =>
+        newMaterialItems.find((newdata) => newdata.materialname === old.materialname)
+      )
+
+      if (sameItem.length > 0) {
+        return message.open({
+          type: 'warning',
+          content: `Not allow same material ${sameItem.map((data) => {
+            return data.materialname
+          })}`
+        })
+      }
+
+      if (
+        olddata.address === newdata.address &&
+        olddata.mobileNumber === newdata.mobileNumber &&
+        olddata.name === newdata.name &&
+        material.length === olddata.item.length &&
+        compareArrObj
+      ) {
+        message.open({ content: 'No changes found', type: 'info' })
+      } else {
+        setSupplierModalLoading(true)
+        // update supplier
+        await updateSupplier(supplerId, { ...newdata, updateddate: TimestampJs() })
+
+        // update items
+        if (compareArrObj === false) {
+          for (const items of updatedMaterialItems) {
+            const { id, createddate, isDeleted, ...newupdateddata } = items
+            const itemId = id
+            await updateMaterialItsms(supplerId, itemId, {
+              ...newupdateddata,
+              updateddate: TimestampJs()
+            })
+
+            console.log('Checking for material:', items.materialname, items.unit)
+            console.log('Storage data:', datas.storage)
+
+            const materialExists = datas.storage.find(
+              (storageItem) =>
+                storageItem.category === 'Material List' &&
+                storageItem.materialname?.trim().toLowerCase() ===
+                  items.materialname?.trim().toLowerCase() &&
+                storageItem.unit?.trim().toLowerCase() === items.unit?.trim().toLowerCase()
+            )
+            if (!materialExists) {
+              await addStorage({
+                materialName: items.materialname,
+                unit: items.unit,
+                alertCount: 0,
+                quantity: 0,
+                isDeleted: 0,
+                category: 'Material List',
+                createdDate: new Date().toISOString(),
+                modifiedDate: new Date().toISOString()
+              })
+              await storageUpdateMt()
+            }
+          }
+        }
+
+        // add new items
+        if (newMaterialItems.length > 0) {
+          for (const items of newMaterialItems) {
+            const { id, createddate, isDeleted, ...newupdateddata } = items
+            console.log(supplerId, newupdateddata, items)
+            await addSupplierAndMaterial(supplerId, {
+              ...newupdateddata,
+              updateddate: TimestampJs(),
+              isDeleted: false
+            })
+            const materialExists = datas.storage.find(
+              (storageItem) =>
+                storageItem.materialname === newupdateddata.materialname &&
+                storageItem.category === 'Material List' &&
+                storageItem.unit === newupdateddata.unit
+            )
+            if (!materialExists) {
+              await addStorage({
+                materialName: newupdateddata.materialname,
+                unit: newupdateddata.unit,
+                alertCount: 0,
+                quantity: 0,
+                isDeleted: 0,
+                category: 'Material List',
+                createdDate: new Date().toISOString(),
+                modifiedDate: new Date().toISOString()
+              })
+            }
+          }
           await storageUpdateMt()
         }
-      }
-    };
 
-    // add new items 
-    if(newMaterialItems.length > 0){
-      for(const items of newMaterialItems){
-        const {id,createddate,isDeleted,...newupdateddata} = items;
-        console.log(supplerId,newupdateddata,items)
-        await addSupplierAndMaterial(supplerId,{...newupdateddata,updateddate:TimestampJs(),isDeleted:false})
-        const materialExists = datas.storage.find((storageItem) => storageItem.materialname === newupdateddata.materialname && storageItem.category === 'Material List' && storageItem.unit === newupdateddata.unit)
-        if (!materialExists) {
-          await addStorage({
-            materialName: newupdateddata.materialname,
-            unit: newupdateddata.unit,
-            alertCount: 0,
-            quantity: 0,
-            isDeleted: 0,
-            category: 'Material List',
-            createdDate: new Date().toISOString(),
-            modifiedDate: new Date().toISOString()
+        // delete the items
+        if (missingIds.length > 0) {
+          missingIds.map(async (id) => {
+            await updateMaterialItsms(supplerId, id, {
+              isDeleted: true,
+              updateddate: TimestampJs()
+            })
           })
         }
-      }
-      await storageUpdateMt()
-    };
-    
-    // delete the items
-    if(missingIds.length > 0){
-      missingIds.map(async id=>{
-        await updateMaterialItsms(supplerId,id,{isDeleted:true,updateddate:TimestampJs()})
-      })
-    }
 
-    for (const oldItem of olddata.item) {
-      const newItem = material.find(
-        (mItem) => mItem.materialname === oldItem.materialname && mItem.unit === oldItem.unit
-      );
-      const { materials: allMaterials, status } = await getAllMaterialDetailsFromAllSuppliers();
-      const isMaterialInSupplierList = allMaterials.find(
-        (mItem) =>
-          mItem.materialname === oldItem.materialname && mItem.unit === oldItem.unit
-      );
-      if (!newItem && !isMaterialInSupplierList) {
-        const oldMaterialExists = datas.storage.find(
-          (storageItem) =>
-            storageItem.materialname === oldItem.materialname &&
-            storageItem.category === 'Material List' &&
-            storageItem.unit === oldItem.unit
-        );
-        console.log(oldMaterialExists,newItem,isMaterialInSupplierList,allMaterials)
-        if (oldMaterialExists) {
-          await updateStorage(oldMaterialExists.id,{isDeleted: 1});
-          await storageUpdateMt();
+        for (const oldItem of olddata.item) {
+          const newItem = material.find(
+            (mItem) => mItem.materialname === oldItem.materialname && mItem.unit === oldItem.unit
+          )
+          const { materials: allMaterials, status } = await getAllMaterialDetailsFromAllSuppliers()
+          const isMaterialInSupplierList = allMaterials.find(
+            (mItem) => mItem.materialname === oldItem.materialname && mItem.unit === oldItem.unit
+          )
+          if (!newItem && !isMaterialInSupplierList) {
+            const oldMaterialExists = datas.storage.find(
+              (storageItem) =>
+                storageItem.materialname === oldItem.materialname &&
+                storageItem.category === 'Material List' &&
+                storageItem.unit === oldItem.unit
+            )
+            console.log(oldMaterialExists, newItem, isMaterialInSupplierList, allMaterials)
+            if (oldMaterialExists) {
+              await updateStorage(oldMaterialExists.id, { isDeleted: 1 })
+              await storageUpdateMt()
+            }
+          }
         }
+
+        await supplierUpdateMt()
+        setIsCloseWarning(false)
+        setIsModalOpen(false)
+        form.resetFields()
+        setSupplierOnchangeValue('')
+        setIsPayModelOpen(false)
+        setIsCloseWarning(false)
+        setAmountOnchangeValue('')
+        setSupplierModalLoading(false)
+        await message.open({ content: 'Updated successfully', type: 'success' })
       }
+    } catch (e) {
+      console.log(e)
+      message.open({ content: `${e} Updated Unsuccessfully`, type: 'error' })
     }
-
-    await supplierUpdateMt()
-    setIsCloseWarning(false)
-    setIsModalOpen(false)
-    form.resetFields()
-    setSupplierOnchangeValue('')
-    setIsPayModelOpen(false)
-    setIsCloseWarning(false)
-    setAmountOnchangeValue('')
-    setSupplierModalLoading(false)
-    await message.open({content:'Updated successfully', type:'success'})
   }
- }catch(e){
-  console.log(e);
-  message.open({content:`${e} Updated Unsuccessfully`, type:'error'})
- }
-   
-  
-  };
-
 
   const handlePopoverClick = (id) => {
-    setOpenPopoverRow(id); // Set the ID of the row whose Popover is open
-  };
+    setOpenPopoverRow(id) // Set the ID of the row whose Popover is open
+  }
 
   const handlePopoverOpenChange = (visible, id) => {
     if (visible) {
-      setOpenPopoverRow(id); // Open Popover for this row
+      setOpenPopoverRow(id) // Open Popover for this row
     } else {
-      setOpenPopoverRow(null); // Close the Popover
+      setOpenPopoverRow(null) // Close the Popover
     }
-  };
+  }
 
   const EditableCell = ({
     editing,
@@ -741,7 +793,6 @@ const [supplierName,setSupplierName] = useState('');
     children,
     ...restProps
   }) => {
-
     const inputNode = inputType === 'number' ? <InputNumber /> : <Input />
     return (
       <td {...restProps}>
@@ -837,41 +888,41 @@ const [supplierName,setSupplierName] = useState('');
     } catch (errInfo) {
       console.log('Validate Failed:', errInfo)
     }
-  };
+  }
 
   const handleRowClick = (record) => {
-    setAddNewMaterial(pre => ({...pre,popover:true}))
-    console.log( record.id);
-  };
+    setAddNewMaterial((pre) => ({ ...pre, popover: true }))
+    console.log(record.id)
+  }
 
   // useEffect(()=>{
   //   const fatchData =()=>{
   //     let {materials,status} =  getMaterialDetailsById(record.id);
   //   }
   // },[])
-  const [editExpandTablekey,setEditExpandTableKey] = useState([]);
+  const [editExpandTablekey, setEditExpandTableKey] = useState([])
   const expandableTable = [
     {
-      title:'S.No',
-      key:'sno',
-      render:(text,record,i)=> <span>{i+1}</span>,
-      width:50,
-      editable:false,
+      title: 'S.No',
+      key: 'sno',
+      render: (text, record, i) => <span>{i + 1}</span>,
+      width: 50,
+      editable: false
     },
     {
-      title:'Material',
-      dataIndex:'materialname',
-      key:'materialname',
-      render:(text)=> <span>{text}</span>,
-      editable:true,
+      title: 'Material',
+      dataIndex: 'materialname',
+      key: 'materialname',
+      render: (text) => <span>{text}</span>,
+      editable: true
     },
     {
-      title:'Unit',
-      key:'unit',
-      dataIndex:'unit',
-      render:(text)=> <span>{text}</span>,
-      width:100,
-      editable:true,
+      title: 'Unit',
+      key: 'unit',
+      dataIndex: 'unit',
+      render: (text) => <span>{text}</span>,
+      width: 100,
+      editable: true
     },
     {
       title: 'Action',
@@ -890,7 +941,13 @@ const [supplierName,setSupplierName] = useState('');
             >
               <LuSave size={17} />
             </Typography.Link>
-            <Popconfirm title="Sure to cancel?" onConfirm={()=> {setEditExpandTableKey([]); setEditingKeys([])}}>
+            <Popconfirm
+              title="Sure to cancel?"
+              onConfirm={() => {
+                setEditExpandTableKey([])
+                setEditingKeys([])
+              }}
+            >
               <TiCancel size={20} className="text-red-500 cursor-pointer hover:text-red-400" />
             </Popconfirm>
           </span>
@@ -917,13 +974,16 @@ const [supplierName,setSupplierName] = useState('');
         )
       }
     }
-  ];
+  ]
 
-const deleteExpantableTableMaterial =async (record)=>{
-  setSupplierTbLoading(true)
-await updateMaterialItsms(expandTableSupplierId,record.id,{  isDeleted:true,updateddate: TimestampJs()});
-setSupplierTbLoading(false)
-}
+  const deleteExpantableTableMaterial = async (record) => {
+    setSupplierTbLoading(true)
+    await updateMaterialItsms(expandTableSupplierId, record.id, {
+      isDeleted: true,
+      updateddate: TimestampJs()
+    })
+    setSupplierTbLoading(false)
+  }
 
   const expandableEditableCell = ({
     editing,
@@ -935,38 +995,36 @@ setSupplierTbLoading(false)
     children,
     ...restProps
   }) => {
-
-     const inputNode = inputType === 'number' ? <InputNumber /> : <Input />
+    const inputNode = inputType === 'number' ? <InputNumber /> : <Input />
     return (
       <td {...restProps}>
         {editing ? (
           <>
             {dataIndex === 'unit' ? (
-                <Form.Item
-                  name="unit"
-                  style={{ margin: 0 }}
-                  rules={[{ required: true, message: false }]}
-                >
-                  <Select
-                    placeholder="Units"
-                    options={[
-                              { label: 'GM', value: 'gm' },
-                              { label: 'KG', value: 'kg' },
-                              { label: 'LT', value: 'lt' },
-                              { label: 'ML', value: 'ml' },
-                              { label: 'Box', value: 'box' },
-                              { label: 'Piece', value: 'piece' }
-                            ]}
-                  />
-                </Form.Item>
-            
+              <Form.Item
+                name="unit"
+                style={{ margin: 0 }}
+                rules={[{ required: true, message: false }]}
+              >
+                <Select
+                  placeholder="Units"
+                  options={[
+                    { label: 'GM', value: 'gm' },
+                    { label: 'KG', value: 'kg' },
+                    { label: 'LT', value: 'lt' },
+                    { label: 'ML', value: 'ml' },
+                    { label: 'Box', value: 'box' },
+                    { label: 'Piece', value: 'piece' }
+                  ]}
+                />
+              </Form.Item>
             ) : (
               <Form.Item
                 name={dataIndex}
                 style={{ margin: 0 }}
                 rules={[{ required: true, message: false }]}
               >
-               {inputNode}
+                {inputNode}
               </Form.Item>
             )}
           </>
@@ -975,15 +1033,15 @@ setSupplierTbLoading(false)
         )}
       </td>
     )
-  };
+  }
 
-  const isEditingExpandTable = (record) => editExpandTablekey.includes(record.id);
+  const isEditingExpandTable = (record) => editExpandTablekey.includes(record.id)
 
   const editExpandTable = (record) => {
     setEditingKeys([record.id])
     expantableform.setFieldsValue({ ...record })
     setEditExpandTableKey([record.id])
-  };
+  }
 
   const mergedColumnsExpandTable = expandableTable.map((col) => {
     if (!col.editable) {
@@ -999,35 +1057,46 @@ setSupplierTbLoading(false)
         editing: isEditingExpandTable(record)
       })
     }
-  });
+  })
 
-  const [expandTableSupplierId,setExpandTableSupplierId] = useState('');
-  const [addNewMaterial,setAddNewMaterial] = useState({
+  const [expandTableSupplierId, setExpandTableSupplierId] = useState('')
+  const [addNewMaterial, setAddNewMaterial] = useState({
     modal: false,
-    spin:false,
-    closewarning:false,
-    popover:false
-  });
+    spin: false,
+    closewarning: false,
+    popover: false
+  })
   const expandableProps = {
     expandedRowRender: (record) => {
-      setExpandTableSupplierId(record.id);
-      return <div className='w-[71%] mx-auto relative'>
-      <span className='flex justify-end items-center mb-1'><Button className='mb-1' type='primary' onClick={()=>setAddNewMaterial(pre=>({...pre,modal:true}))}>Add</Button></span>
-      <Form form={expantableform} component={false} > 
-      <Table 
-      virtual 
-      components={{
-        body:{
-          cell:expandableEditableCell
-          }
-          }} 
-      pagination={false}
-      columns={mergedColumnsExpandTable} 
-      dataSource={record.item.filter(data=> data.isDeleted === false)}
-      rowClassName="editable-row"
-      scroll={{ x: 200,y:200}}
-      /></Form>
-      </div> 
+      setExpandTableSupplierId(record.id)
+      return (
+        <div className="w-[71%] mx-auto relative">
+          <span className="flex justify-end items-center mb-1">
+            <Button
+              className="mb-1"
+              type="primary"
+              onClick={() => setAddNewMaterial((pre) => ({ ...pre, modal: true }))}
+            >
+              Add
+            </Button>
+          </span>
+          <Form form={expantableform} component={false}>
+            <Table
+              virtual
+              components={{
+                body: {
+                  cell: expandableEditableCell
+                }
+              }}
+              pagination={false}
+              columns={mergedColumnsExpandTable}
+              dataSource={record.item.filter((data) => data.isDeleted === false)}
+              rowClassName="editable-row"
+              scroll={{ x: 200, y: 200 }}
+            />
+          </Form>
+        </div>
+      )
     }
   }
 
@@ -1036,11 +1105,7 @@ setSupplierTbLoading(false)
       const row = await expantableform.validateFields()
       const newData = [...data]
       const index = newData.findIndex((item) => key.id === item.key)
-      if (
-        index != null &&
-        row.materialname === key.materialname &&
-        row.unit === key.unit 
-      ) {
+      if (index != null && row.materialname === key.materialname && row.unit === key.unit) {
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKeys([])
         setEditExpandTableKey([])
@@ -1048,25 +1113,28 @@ setSupplierTbLoading(false)
         setSupplierTbLoading(true)
         // console.log(expandTableSupplierId);
         // console.log(key.id, { ...row, updateddate: TimestampJs() });
-        await updateMaterialItsms(expandTableSupplierId,key.id,{ ...row, updateddate: TimestampJs() })
+        await updateMaterialItsms(expandTableSupplierId, key.id, {
+          ...row,
+          updateddate: TimestampJs()
+        })
         // await updateSupplier(key.id, { ...row, updateddate: TimestampJs() })
         supplierUpdateMt()
         message.open({ type: 'success', content: 'Updated Successfully' })
         setEditingKeys([])
-        setEditExpandTableKey([]);
+        setEditExpandTableKey([])
         setSupplierTbLoading(false)
       }
     } catch (errInfo) {
       console.log('Validate Failed:', errInfo)
     }
-  };
+  }
 
   // selection
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  
+  const [selectedRowKeys, setSelectedRowKeys] = useState([])
+
   const onSelectChange = (newSelectedRowKeys) => {
     setSelectedRowKeys(newSelectedRowKeys)
-  };
+  }
 
   const rowSelection = {
     selectedRowKeys,
@@ -1131,19 +1199,19 @@ setSupplierTbLoading(false)
   const deleteProduct = async (data) => {
     // await deleteproduct(data.id);
     const { id, ...newData } = data
-    let {paydetails,status} = await getSupplierPayDetailsById(data.id);
-    if(paydetails.length > 0){
-      paydetails.map(async paydata => {
-        await updatePaydetailsChildSupplier(id,paydata.id,{isDeleted:true});
-       });
-    };
+    let { paydetails, status } = await getSupplierPayDetailsById(data.id)
+    if (paydetails.length > 0) {
+      paydetails.map(async (paydata) => {
+        await updatePaydetailsChildSupplier(id, paydata.id, { isDeleted: true })
+      })
+    }
     await updateSupplier(id, {
       isDeleted: true,
       // deletedby: 'admin',
       deleteddate: TimestampJs()
-    });
+    })
     message.open({ type: 'success', content: 'Deleted Successfully' })
-    supplierUpdateMt();
+    supplierUpdateMt()
   }
 
   // export
@@ -1194,20 +1262,18 @@ setSupplierTbLoading(false)
   const [isCloseWarning, setIsCloseWarning] = useState(false)
 
   const warningModalOk = (value) => {
-     if(value === 'newsupplier'){
+    if (value === 'newsupplier') {
       setIsCloseWarning(false)
       setIsModalOpen(false)
       form.resetFields()
       setSupplierOnchangeValue('')
-  
+
       setIsPayModelOpen(false)
       setIsCloseWarning(false)
       setAmountOnchangeValue('')
-     }else{
-      console.log('material');
-      
-     }
-    
+    } else {
+      console.log('material')
+    }
   }
 
   useEffect(() => {
@@ -1221,7 +1287,7 @@ setSupplierTbLoading(false)
       }
     }
 
-    if(addNewMaterial.modal){
+    if (addNewMaterial.modal) {
       const currentMaterials = materialForm.getFieldValue('material') || []
       if (currentMaterials.length === 0) {
         materialForm.setFieldsValue({
@@ -1229,17 +1295,17 @@ setSupplierTbLoading(false)
         })
       }
     }
-  }, [isModalOpen, form, addNewMaterial.modal, materialForm]);
+  }, [isModalOpen, form, addNewMaterial.modal, materialForm])
 
-  const addNewMaterialMt =()=>{
-    if(materialForm.getFieldValue().material.length === 0){
-      message.open({type:'info',content:'Add one material'})
+  const addNewMaterialMt = () => {
+    if (materialForm.getFieldValue().material.length === 0) {
+      message.open({ type: 'info', content: 'Add one material' })
     }
-  };
+  }
 
   return (
-    <div className='relative'>
-    {/* <div className='absolute right-[20rem] '>
+    <div className="relative">
+      {/* <div className='absolute right-[20rem] '>
     <Popover
       
       content={<a >Close</a>}
@@ -1252,7 +1318,7 @@ setSupplierTbLoading(false)
       
     </Popover>
     </div> */}
-    
+
       <Modal
         zIndex={1001}
         centered={true}
@@ -1263,7 +1329,7 @@ setSupplierTbLoading(false)
           </span>
         }
         open={isCloseWarning}
-        onOk={()=>warningModalOk('newsupplier')}
+        onOk={() => warningModalOk('newsupplier')}
         onCancel={() => setIsCloseWarning(false)}
         okText="ok"
         cancelText="Cancel"
@@ -1297,12 +1363,12 @@ setSupplierTbLoading(false)
                 form.resetFields()
                 // form.setFieldsValue({ gender: 'Male' });
                 form.setFieldsValue({
-  material: [
-    {
-      unit: undefined, 
-    },
-  ],
-});
+                  material: [
+                    {
+                      unit: undefined
+                    }
+                  ]
+                })
               }}
             >
               New Supplier <IoMdAdd />
@@ -1311,8 +1377,7 @@ setSupplierTbLoading(false)
         </li>
 
         <li className="mt-2 ">
-       
-          <Form form={form} component={false} >
+          <Form form={form} component={false}>
             <Table
               // className="expandtables"
               virtual
@@ -1334,9 +1399,8 @@ setSupplierTbLoading(false)
               // expandable={expandableProps}
             />
           </Form>
-        
 
-        {/* <div>
+          {/* <div>
         <Form form={expantableform} component={false} > 
       <Table 
       virtual 
@@ -1364,9 +1428,13 @@ setSupplierTbLoading(false)
             ? true
             : false
         }
-        title={<span className="flex justify-center">{editSupplierModal ? 'UPDATE SUPPLIER' : 'NEW SUPPLIER'}</span>}
+        title={
+          <span className="flex justify-center">
+            {editSupplierModal ? 'UPDATE SUPPLIER' : 'NEW SUPPLIER'}
+          </span>
+        }
         open={isModalOpen}
-        okText={editSupplierModal ? 'Update': 'Add'}
+        okText={editSupplierModal ? 'Update' : 'Add'}
         onOk={() => form.submit()}
         okButtonProps={{ disabled: supplierModalLoading }}
         onCancel={() => {
@@ -1423,15 +1491,13 @@ setSupplierTbLoading(false)
               <TextArea rows={2} placeholder="Enter the Address" />
             </Form.Item>
 
-           <Form.Item label="Material" className="mb-14">
+            <Form.Item label="Material" className="mb-14">
               <Form.List name="material">
                 {(fields, { add, remove }) => (
-               
                   <div className={`w-full overflow-y-scroll h-[200px] custom-scroll pr-4`}>
                     {fields.map(({ key, name, ...restField }) => (
-                      
                       <span key={key} className="flex items-center gap-x-2 relative ">
-                      {/* <span className='text-[0.8rem] w-[20px]'>{key +1}.</span> */}
+                        {/* <span className='text-[0.8rem] w-[20px]'>{key +1}.</span> */}
                         {/* Input field for Material Name */}
                         <Form.Item
                           className="w-[69%] mb-[0.4rem]"
@@ -1442,7 +1508,8 @@ setSupplierTbLoading(false)
                               required: true,
                               message: true
                             }
-                          ]}>
+                          ]}
+                        >
                           <Input placeholder="Material Name" />
                         </Form.Item>
 
@@ -1450,7 +1517,7 @@ setSupplierTbLoading(false)
                         <Form.Item
                           className="w-[23%] mb-[0.4rem]"
                           {...restField}
-                          name={[name,'unit']}
+                          name={[name, 'unit']}
                           rules={[
                             {
                               required: true,
@@ -1460,7 +1527,7 @@ setSupplierTbLoading(false)
                         >
                           <Select
                             placeholder="Unit"
-                            allowClear 
+                            allowClear
                             // optionFilterProp="label"
                             options={[
                               { label: 'GM', value: 'gm' },
@@ -1477,19 +1544,18 @@ setSupplierTbLoading(false)
                           className="absolute top-[40%] right-1 -translate-y-1/2"
                           onClick={() => remove(name)}
                         />
-                        
                       </span>
                     ))}
-                    <Form.Item className='absolute w-full -bottom-16'>
+                    <Form.Item className="absolute w-full -bottom-16">
                       <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
                         Add Material
                       </Button>
                     </Form.Item>
-                    </div>
+                  </div>
                 )}
               </Form.List>
             </Form.Item>
-          
+
             {/* <Form.Item
               className="mb-2"
               name="gender"
@@ -1516,7 +1582,7 @@ setSupplierTbLoading(false)
         }
         title={
           <div className="flex  justify-center py-3">
-            <h1 className='text-xl font-bold'>{supplierName}</h1>
+            <h1 className="text-xl font-bold">{supplierName}</h1>
           </div>
         }
         open={isPayModelOpen}
@@ -1569,28 +1635,30 @@ setSupplierTbLoading(false)
             </Form.Item>
 
             <Form.Item
-                className="mb-0"
-                name="paymentmode"
-                label="Payment Mode"
-                rules={[{ required: true, message: false }]}
-              >
-                <Radio.Group
-                   size='small'>
-                  <Radio value="Cash">Cash</Radio>
-                  <Radio value="Card">Card</Radio>
-                  <Radio value="UPI">UPI</Radio>
-                </Radio.Group>
-              </Form.Item>
-
+              className="mb-0"
+              name="paymentmode"
+              label="Payment Mode"
+              rules={[{ required: true, message: false }]}
+            >
+              <Radio.Group size="small">
+                <Radio value="Cash">Cash</Radio>
+                <Radio value="Card">Card</Radio>
+                <Radio value="UPI">UPI</Radio>
+              </Radio.Group>
+            </Form.Item>
           </Form>
         </Spin>
       </Modal>
 
       <Modal
-        title={<div className="text-center w-full block pb-5">
-          <Tag color='blue' className={`absolute left-14`}>{supplierName}</Tag>
-          <span>PAY DETAILS</span>
-        </div>}
+        title={
+          <div className="text-center w-full block pb-5">
+            <Tag color="blue" className={`absolute left-14`}>
+              {supplierName}
+            </Tag>
+            <span>PAY DETAILS</span>
+          </div>
+        }
         open={isPayDetailsModelOpen}
         footer={null}
         width={1200}
@@ -1607,19 +1675,25 @@ setSupplierTbLoading(false)
           scroll={{ y: historyHeight }}
         />
         <div className="flex justify-between mt-2 font-semibold">
-            <div>Purchase: {totalPurchaseAmount.toFixed(2)}</div>
-            <div>Payment: {totalPaymentAmount.toFixed(2)}</div>
-            <div>Balance: {totalBalanceAmount.toFixed(2)}</div>
-          </div>
+          <div>Purchase: {totalPurchaseAmount.toFixed(2)}</div>
+          <div>Payment: {totalPaymentAmount.toFixed(2)}</div>
+          <div>Balance: {totalBalanceAmount.toFixed(2)}</div>
+        </div>
       </Modal>
 
-      <Modal title={<span className='block text-center'>New Material</span>} onOk={()=>materialForm.submit()} okText='Add' centered open={addNewMaterial.modal} 
-      onCancel={()=>{ 
-        materialForm.resetFields(); 
-        setAddNewMaterial(pre=>({...pre,modal:false}))
-        }}>
+      <Modal
+        title={<span className="block text-center">New Material</span>}
+        onOk={() => materialForm.submit()}
+        okText="Add"
+        centered
+        open={addNewMaterial.modal}
+        onCancel={() => {
+          materialForm.resetFields()
+          setAddNewMaterial((pre) => ({ ...pre, modal: false }))
+        }}
+      >
         <Spin spinning={addNewMaterial.spin}>
-          <Form form={materialForm} layout="vertical" onFinish={addNewMaterialMt}>  
+          <Form form={materialForm} layout="vertical" onFinish={addNewMaterialMt}>
             <Form.Item label="Material" className="mb-0">
               <Form.List name="material">
                 {(fields, { add, remove }) => (
@@ -1638,7 +1712,10 @@ setSupplierTbLoading(false)
                             }
                           ]}
                         >
-                          <Input onChange={()=> setAddNewMaterial(pre=>({}))} placeholder="Material Name" />
+                          <Input
+                            onChange={() => setAddNewMaterial((pre) => ({}))}
+                            placeholder="Material Name"
+                          />
                         </Form.Item>
 
                         {/* Select for Units */}
@@ -1655,7 +1732,7 @@ setSupplierTbLoading(false)
                         >
                           <Select
                             placeholder="Units"
-                            onChange={(value)=> console.log(value)}
+                            onChange={(value) => console.log(value)}
                             options={[
                               { label: 'GM', value: 'gm' },
                               { label: 'KG', value: 'kg' },
@@ -1685,9 +1762,6 @@ setSupplierTbLoading(false)
           </Form>
         </Spin>
       </Modal>
-
-
-
     </div>
   )
 }

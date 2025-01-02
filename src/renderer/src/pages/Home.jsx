@@ -112,9 +112,9 @@ export default function Home({ datas }) {
 
   const quotationTempTable = [
     {
-      title:<span className="text-[0.7rem]">S.No</span>,
-      width:55,
-      render:(text,record,i)=> <span className="text-[0.7rem]">{i+1}</span>
+      title: <span className="text-[0.7rem]">S.No</span>,
+      width: 55,
+      render: (text, record, i) => <span className="text-[0.7rem]">{i + 1}</span>
     },
     {
       title: <span className="text-[0.7rem]">Product</span>,
@@ -582,8 +582,8 @@ export default function Home({ datas }) {
               (data) =>
                 !data.isDeleted &&
                 isWithinRange(data.date) &&
-                (((data.collectiontype === 'delivery' ||
-                  data.collectiontype === 'customer') && data.type === 'Payment') ||
+                (((data.collectiontype === 'delivery' || data.collectiontype === 'customer') &&
+                  data.type === 'Payment') ||
                   (data.collectiontype === 'firstpartial' && data.type === 'firstpartial') ||
                   (data.collectiontype === 'employee' && data.type === 'Return'))
             )
@@ -624,7 +624,7 @@ export default function Home({ datas }) {
 
         let totalAmount = filterData.reduce((total, data) => {
           const amount = Number(data.amount) || 0
-            return total + amount
+          return total + amount
         }, 0)
 
         setTotalPayAmount(totalAmount)
@@ -635,7 +635,10 @@ export default function Home({ datas }) {
             .filter(
               (data) =>
                 isWithinRange(data.date) &&
-                (((data.collectiontype === 'supplier' || data.collectiontype === 'employee') && data.type === 'Payment') || (data.collectiontype === 'customer' && (data.type === 'Advance' || data.type === 'Spend')))
+                (((data.collectiontype === 'supplier' || data.collectiontype === 'employee') &&
+                  data.type === 'Payment') ||
+                  (data.collectiontype === 'customer' &&
+                    (data.type === 'Advance' || data.type === 'Spend')))
             )
             .map(async (data) => {
               let name = ''
@@ -669,8 +672,8 @@ export default function Home({ datas }) {
         )
 
         let spendAmount = spendData.reduce((total, data) => {
-          const amount = Number(data.amount) || 0;
-            return total + amount;
+          const amount = Number(data.amount) || 0
+          return total + amount
         }, 0)
         setTotalSpendAmount(spendAmount)
 
@@ -700,21 +703,23 @@ export default function Home({ datas }) {
   }
 
   const showModal = async (record) => {
-    
-    setSelectedRecord(null);
+    setSelectedRecord(null)
     let itemsWithProductNames = []
     if (record.customerId) {
       const { items, status } = await fetchItemsForDelivery(record.id)
       if (status === 200) {
         itemsWithProductNames = items.map((item) => {
-          const product = datas.product.find((product) => product.id === item.id && product.isDeleted === false);
+          const product = datas.product.find(
+            (product) => product.id === item.id && product.isDeleted === false
+          )
           return {
             ...item,
             productname: product ? product.productname : ''
             // flavour: product ? product.flavour : '',
             // quantity: product ? product.quantity : ''
           }
-        })};
+        })
+      }
     } else if (record.supplierId) {
       const { materialitem, status } = await fetchMaterials(record.id)
       if (status === 200) {
@@ -722,7 +727,8 @@ export default function Home({ datas }) {
           materialitem.map(async (item, i) => {
             let { material, status } = await getOneMaterialDetailsById(
               record.supplierId,
-              item.materialid)
+              item.materialid
+            )
             return {
               sno: materialitem[i].sno, //add on sno(10/10/24, 5.52 pm)
               productname: material.materialname || '',
@@ -737,7 +743,9 @@ export default function Home({ datas }) {
       const { items, status } = await fetchItemsForDelivery(record.id)
       if (status === 200) {
         itemsWithProductNames = items.map((item) => {
-          const product = datas.product.find((product) => product.id === item.id && product.isDeleted === false)
+          const product = datas.product.find(
+            (product) => product.id === item.id && product.isDeleted === false
+          )
           return {
             ...item,
             productname: product ? product.productname : ''
@@ -778,8 +786,8 @@ export default function Home({ datas }) {
     .reduce((total, product) => total + product.billamount, 0)
 
   const totalGeneralSpending = filteredSpending.reduce(
-      (total, product) => total + product.amount,
-      0
+    (total, product) => total + product.amount,
+    0
   )
 
   const totalProfit = totalSales - totalSpend - totalReturn - totalGeneralSpending
@@ -815,7 +823,12 @@ export default function Home({ datas }) {
     { key: 'totalSales', title: 'Total Sales', value: totalSales, prefix: <FaRupeeSign /> },
     { key: 'totalSpend', title: 'Total Expenses', value: totalSpend, prefix: <FaRupeeSign /> },
     { key: 'totalReturn', title: 'Total Return', value: totalReturn, prefix: <FaRupeeSign /> },
-    { key: 'totalGeneralSpending', title: 'General Spending', value: totalGeneralSpending, prefix: <FaRupeeSign /> },
+    {
+      key: 'totalGeneralSpending',
+      title: 'General Spending',
+      value: totalGeneralSpending,
+      prefix: <FaRupeeSign />
+    },
     { key: 'totalPaid', title: 'Total Paid', value: totalPaid, prefix: <FaRupeeSign /> },
     { key: 'totalUnpaid', title: 'Total Unpaid', value: totalUnpaid, prefix: <FaRupeeSign /> },
     { key: 'totalProfit', title: 'Total Profit/Loss', value: totalProfit, prefix: <FaRupeeSign /> },
@@ -872,12 +885,11 @@ export default function Home({ datas }) {
             product.type !== 'return' &&
             (product.paymentstatus === 'Paid' || product.paymentstatus === 'Partial')
         )
-        const filterPayment = filteredPayments
-          .map((pay) => ({
-            ...pay,
-            customername: pay.name,
-            billamount: pay.amount
-          }))
+        const filterPayment = filteredPayments.map((pay) => ({
+          ...pay,
+          customername: pay.name,
+          billamount: pay.amount
+        }))
         newSelectedTableData = [...deliveryData, ...filterPayment]
         break
       }
@@ -901,11 +913,7 @@ export default function Home({ datas }) {
         product.paymentmode === paymentMode
     )
     const filterPayment = filteredPayments
-      .filter(
-        (pay) =>
-          pay.paymentmode === paymentMode &&
-          pay.collectiontype !== 'firstpartial'
-      )
+      .filter((pay) => pay.paymentmode === paymentMode && pay.collectiontype !== 'firstpartial')
       .map((pay) => ({
         ...pay,
         customername: pay.name,
@@ -935,8 +943,8 @@ export default function Home({ datas }) {
   const handleDownloadPdf = async (record) => {
     const { items, status } = await fetchItemsForDelivery(record.id)
     const result = await getCustomerById(record.customerId)
-    const { freezerbox } = await getFreezerboxById(record.boxid);
-    let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber;
+    const { freezerbox } = await getFreezerboxById(record.boxid)
+    let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber
     const gstin = result.gstin || ''
     const address = result.address || ''
     if (status === 200) {
@@ -1036,8 +1044,8 @@ export default function Home({ datas }) {
       if (status !== 200) {
         throw new Error(`Failed to fetch items: ${status}`)
       }
-      const { freezerbox } = await getFreezerboxById(record.boxid);
-      let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber;
+      const { freezerbox } = await getFreezerboxById(record.boxid)
+      let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber
       const result = await getCustomerById(record.customerId)
       const gstin = result.customer?.gstin || ''
       const address = result.customer?.address || ''
@@ -1136,67 +1144,66 @@ export default function Home({ datas }) {
   }
 
   const handleQuotationDownload = async () => {
-    try{
+    try {
       setGstBillPdf(true)
 
       setHasPdf(true)
 
-    // data
-    let { date } = quotationft.tempproduct[0];
-    // customer details
-    let cusotmerData = {
-      customername:
-        quotationft.customername === null || quotationft.customername === ''
-          ? undefined
-          : quotationft.customername,
-      mobileNumber:
-        quotationft.mobileNumber === null || quotationft.mobileNumber === ''
-          ? undefined
-          : quotationft.mobileNumber,
-      date,
-      gstin: '',
-      total: quotationft.mrpamount,
-      billamount: quotationft.totalamount,
-      address: '',
-      partialamount: 0
-    };
-    // product items
-    let items = quotationft.tempproduct.map((data, i) => ({
-      sno: i + 1,
-      productname: data.productname,
-      // flavour: data.flavour,
-      // quantity: data.quantity,
-      pieceamount: data.productprice,
-      numberOfPacks: data.numberOfPacks,
-      producttotalamount: data.mrp,
-      margin: data.margin,
-      price: data.price
-    }));
+      // data
+      let { date } = quotationft.tempproduct[0]
+      // customer details
+      let cusotmerData = {
+        customername:
+          quotationft.customername === null || quotationft.customername === ''
+            ? undefined
+            : quotationft.customername,
+        mobileNumber:
+          quotationft.mobileNumber === null || quotationft.mobileNumber === ''
+            ? undefined
+            : quotationft.mobileNumber,
+        date,
+        gstin: '',
+        total: quotationft.mrpamount,
+        billamount: quotationft.totalamount,
+        address: '',
+        partialamount: 0
+      }
+      // product items
+      let items = quotationft.tempproduct.map((data, i) => ({
+        sno: i + 1,
+        productname: data.productname,
+        // flavour: data.flavour,
+        // quantity: data.quantity,
+        pieceamount: data.productprice,
+        numberOfPacks: data.numberOfPacks,
+        producttotalamount: data.mrp,
+        margin: data.margin,
+        price: data.price
+      }))
 
-    setInvoiceDatas((pre) => ({
-      ...pre,
-      data: items,
-      isGenerate: true,
-      customerdetails: cusotmerData
-    }));
-    // console.log(items);
-    // await setInvoiceDatas({
-    //   data: items,
-    //   isGenerate: false,
-    //   customerdetails: cusotmerData,
-    //   address: ''
-    // });
-    // await setInvoiceDatas((pre) => ({
-    //   ...pre,
-    //   data: prItems,
-    // }))
-    message.open({ type: 'success', content: 'Quotation PDF Download Successfully' })
+      setInvoiceDatas((pre) => ({
+        ...pre,
+        data: items,
+        isGenerate: true,
+        customerdetails: cusotmerData
+      }))
+      // console.log(items);
+      // await setInvoiceDatas({
+      //   data: items,
+      //   isGenerate: false,
+      //   customerdetails: cusotmerData,
+      //   address: ''
+      // });
+      // await setInvoiceDatas((pre) => ({
+      //   ...pre,
+      //   data: prItems,
+      // }))
+      message.open({ type: 'success', content: 'Quotation PDF Download Successfully' })
+    } catch (e) {
+      console.log(e)
+      message.open({ type: 'error', content: `${e} Quotation PDF Download Unsuccessfully` })
     }
-    catch(e){
-      console.log(e);
-      message.open({ type: 'error', content: `${e} Quotation PDF Download Unsuccessfully` });
-    }
-  };
+  }
 
   useEffect(() => {
     if (isPrinting && promiseResolveRef.current) {
@@ -1311,7 +1318,6 @@ export default function Home({ datas }) {
     generatePDF()
   }, [invoiceDatas.isGenerate, printRef])
 
-
   const columns = [
     {
       title: 'Date',
@@ -1346,7 +1352,7 @@ export default function Home({ datas }) {
               {' '}
               {text} <Tag color="volcano">Customer</Tag>
             </>
-          ): (
+          ) : (
             text
           )
         } else if (activeCard === 'totalPaid' || activeTabKey2 === 'total') {
@@ -1390,22 +1396,55 @@ export default function Home({ datas }) {
       dataIndex: 'paymentstatus',
       key: 'paymentstatus',
       render: (text, record) => {
-        
         const { partialamount, bookingstatus } = record
         if (text === 'Paid') {
           return (
             <>
-              <Tag className={`${record.type === undefined || record.type === '' || record.type ===null ? 'hidden': 'inline-block'}`} color="blue">{record.type}</Tag>
-              {bookingstatus && <Tag className={`${record.bookingstatus === undefined || record.bookingstatus === '' ? 'hidden':'inline-block'}`} color="geekblue">{bookingstatus}</Tag>}
-              <Tag className={`${text === undefined || text === '' || text ===null ? 'hidden': 'inline-block'}`} color="green">{text}</Tag>
-              <Tag className={`${record.paymentmode === undefined || record.paymentmode === '' || record.paymentmode ===null ? 'hidden': 'inline-block'}`} color="cyan">{record.paymentmode}</Tag>
+              <Tag
+                className={`${record.type === undefined || record.type === '' || record.type === null ? 'hidden' : 'inline-block'}`}
+                color="blue"
+              >
+                {record.type}
+              </Tag>
+              {bookingstatus && (
+                <Tag
+                  className={`${record.bookingstatus === undefined || record.bookingstatus === '' ? 'hidden' : 'inline-block'}`}
+                  color="geekblue"
+                >
+                  {bookingstatus}
+                </Tag>
+              )}
+              <Tag
+                className={`${text === undefined || text === '' || text === null ? 'hidden' : 'inline-block'}`}
+                color="green"
+              >
+                {text}
+              </Tag>
+              <Tag
+                className={`${record.paymentmode === undefined || record.paymentmode === '' || record.paymentmode === null ? 'hidden' : 'inline-block'}`}
+                color="cyan"
+              >
+                {record.paymentmode}
+              </Tag>
             </>
           )
         } else if (text === 'Partial') {
           return (
             <>
-              <Tag className={`${record.type === undefined || record.type === '' || record.type ===null ? 'hidden': 'inline-block'}`} color="blue">{record.type}</Tag>
-              {bookingstatus && <Tag className={`${record.bookingstatus === undefined || record.bookingstatus === '' ? 'hidden':'inline-block'}`} color="geekblue">{bookingstatus}</Tag>}
+              <Tag
+                className={`${record.type === undefined || record.type === '' || record.type === null ? 'hidden' : 'inline-block'}`}
+                color="blue"
+              >
+                {record.type}
+              </Tag>
+              {bookingstatus && (
+                <Tag
+                  className={`${record.bookingstatus === undefined || record.bookingstatus === '' ? 'hidden' : 'inline-block'}`}
+                  color="geekblue"
+                >
+                  {bookingstatus}
+                </Tag>
+              )}
               <Tag color="yellow">
                 {text} - {partialamount}
               </Tag>
@@ -1415,15 +1454,32 @@ export default function Home({ datas }) {
         } else if (text === 'Return') {
           return (
             <>
-              <Tag className={`${record.type === undefined || record.type === '' || record.type ===null ? 'hidden': 'inline-block'}`} color="red">{record.type === 'return' ? 'Returned' : record.type}</Tag>
+              <Tag
+                className={`${record.type === undefined || record.type === '' || record.type === null ? 'hidden' : 'inline-block'}`}
+                color="red"
+              >
+                {record.type === 'return' ? 'Returned' : record.type}
+              </Tag>
               <Tag color="red">{text}</Tag>
             </>
           )
         } else {
           return (
             <>
-              <Tag className={`${record.type === undefined || record.type === '' || record.type ===null ? 'hidden': 'inline-block'}`} color="blue">{record.type}</Tag>
-              {bookingstatus && <Tag className={`${record.bookingstatus === undefined || record.bookingstatus === '' ? 'hidden':'inline-block'}`} color="geekblue">{bookingstatus}</Tag>}
+              <Tag
+                className={`${record.type === undefined || record.type === '' || record.type === null ? 'hidden' : 'inline-block'}`}
+                color="blue"
+              >
+                {record.type}
+              </Tag>
+              {bookingstatus && (
+                <Tag
+                  className={`${record.bookingstatus === undefined || record.bookingstatus === '' ? 'hidden' : 'inline-block'}`}
+                  color="geekblue"
+                >
+                  {bookingstatus}
+                </Tag>
+              )}
               <Tag className={`${text === undefined || text === '' ? 'hidden' : ''}`} color="red">
                 {text}
               </Tag>
@@ -1443,7 +1499,11 @@ export default function Home({ datas }) {
         return (
           <span>
             <Button
-              disabled={Object.keys(record).includes('collectiontype') || record.spendingtype === 'General' ? true : false}
+              disabled={
+                Object.keys(record).includes('collectiontype') || record.spendingtype === 'General'
+                  ? true
+                  : false
+              }
               className="py-0 text-[0.7rem] h-[1.7rem]"
               icon={<UnorderedListOutlined />}
               style={{ marginRight: 8 }}
@@ -1506,7 +1566,9 @@ export default function Home({ datas }) {
             >
               <Button
                 disabled={
-                  Object.keys(record).includes('collectiontype') || record.type === 'Added' || record.spendingtype === 'General'
+                  Object.keys(record).includes('collectiontype') ||
+                  record.type === 'Added' ||
+                  record.spendingtype === 'General'
                     ? true
                     : false
                 }
@@ -1609,7 +1671,9 @@ export default function Home({ datas }) {
             >
               <Button
                 disabled={
-                  Object.keys(record).includes('collectiontype') || record.type === 'Added' || record.spendingtype === 'General'
+                  Object.keys(record).includes('collectiontype') ||
+                  record.type === 'Added' ||
+                  record.spendingtype === 'General'
                     ? true
                     : false
                 }
@@ -1834,7 +1898,7 @@ export default function Home({ datas }) {
     {
       title: 'Item Name',
       dataIndex: 'productname',
-      key: 'productname',
+      key: 'productname'
       // render:(text)=>{
       //   console.log(text);
       // }
@@ -1970,17 +2034,15 @@ export default function Home({ datas }) {
   }
 
   // Without GST
-  const pdfBillStyle = { heading: '26px', subheading: '24px', para: '20px',logo:'94px' }
-  const printBillStyle = { heading: '18px', subheading: '14px', para: '11px', logo:'64px' }
+  const pdfBillStyle = { heading: '26px', subheading: '24px', para: '20px', logo: '94px' }
+  const printBillStyle = { heading: '18px', subheading: '14px', para: '11px', logo: '64px' }
 
   // GST
   const GstBillStylePdf = { heading: '24px', subheading: '20px', para: '16px' }
   const GstBillStylePrint = { heading: '20px', subheading: '16px', para: '11px' }
 
+  const quotationTableHeight = TableHeight(200, 460)
 
-  const quotationTableHeight = TableHeight(200,460)
-
-  
   return (
     <div>
       {/* old pdf and print start */}
@@ -2069,13 +2131,9 @@ export default function Home({ datas }) {
                   </span>
                 </div>
 
-                <div
-                  className={` ${invoiceDatas.customerdetails.boxnumber ? 'block' : 'hidden'}`}
-                >
+                <div className={` ${invoiceDatas.customerdetails.boxnumber ? 'block' : 'hidden'}`}>
                   <span className="font-bold">Box Number :</span>{' '}
-                  <span>
-                    {invoiceDatas.customerdetails.boxnumber || 'N/A'}
-                  </span>
+                  <span>{invoiceDatas.customerdetails.boxnumber || 'N/A'}</span>
                 </div>
 
                 <div
@@ -2258,23 +2316,25 @@ export default function Home({ datas }) {
               style={{
                 fontSize: `${hasPdf === true ? pdfBillStyle.para : printBillStyle.para}`,
                 textAlign: 'end',
-                margin: '10px 0 0 0',
+                margin: '10px 0 0 0'
                 // display: 'flex',
                 // justifyContent:'space-between',
                 // alignItems:'end'
               }}
             >
-             {/* <p className={`text-start p-2 ${hasPdf === true ? pdfBillStyle.para : printBillStyle.para}`}>Authorised Signature</p> */}
+              {/* <p className={`text-start p-2 ${hasPdf === true ? pdfBillStyle.para : printBillStyle.para}`}>Authorised Signature</p> */}
               <span
                 style={{
-                  fontSize: `${hasPdf === true ? pdfBillStyle.para : printBillStyle.para}`,
+                  fontSize: `${hasPdf === true ? pdfBillStyle.para : printBillStyle.para}`
                   // display: 'flex',
                   // justifyContent: 'space-between',
                   // alignItems: 'center',
                   // padding: '1px 0 0 0'
                 }}
               >
-                <p className={`${hasPdf === true ? pdfBillStyle.para : printBillStyle.para} ${invoiceDatas.customerdetails.partialamount !== 0 ? 'block text-end' : 'hidden'}`}>
+                <p
+                  className={`${hasPdf === true ? pdfBillStyle.para : printBillStyle.para} ${invoiceDatas.customerdetails.partialamount !== 0 ? 'block text-end' : 'hidden'}`}
+                >
                   Balance:{' '}
                   <span className=" font-bold">
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
@@ -2289,7 +2349,7 @@ export default function Home({ datas }) {
                   </span>
                 </p>
               </span>
-             
+
               {/* <p
             style={{
               padding:'50px 0 0 0',
@@ -2300,47 +2360,46 @@ export default function Home({ datas }) {
               Authorised Signature
             </p> */}
 
-            <span>
-             <p
-              // className={`text-end mt-2 ${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'}`}
-              >
-                Total Amount:{' '}
-                <span className=" font-bold">
-                  {Object.keys(invoiceDatas.customerdetails).length !== 0
-                    ? formatToRupee(invoiceDatas.customerdetails.total)
-                    : null}
-                </span>{' '}
-              </p>
-              <p
-              // className={`text-end ${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'}`}
-              >
-                Bill Amount:{' '}
-                <span className=" font-bold">
-                  {Object.keys(invoiceDatas.customerdetails).length !== 0
-                    ? formatToRupee(invoiceDatas.customerdetails.billamount)
-                    : null}
-                </span>
-              </p>
-              <p
-                className={`${invoiceDatas.customerdetails.type === 'return' ? 'hidden' : 'block'}`}
-                // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} ${invoiceDatas.customerdetails.partialamount !== 0 || invoiceDatas.customerdetails.paymentstatus === 'Paid' ? 'block text-end' : 'hidden'}`}
-              >
-                Paid Amount:{' '}
-                <span className=" font-bold">
-                  {Object.keys(invoiceDatas.customerdetails).length !== 0
-                    ? invoiceDatas.customerdetails.paymentstatus === 'Paid'
+              <span>
+                <p
+                // className={`text-end mt-2 ${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'}`}
+                >
+                  Total Amount:{' '}
+                  <span className=" font-bold">
+                    {Object.keys(invoiceDatas.customerdetails).length !== 0
+                      ? formatToRupee(invoiceDatas.customerdetails.total)
+                      : null}
+                  </span>{' '}
+                </p>
+                <p
+                // className={`text-end ${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'}`}
+                >
+                  Bill Amount:{' '}
+                  <span className=" font-bold">
+                    {Object.keys(invoiceDatas.customerdetails).length !== 0
                       ? formatToRupee(invoiceDatas.customerdetails.billamount)
-                      : formatToRupee(invoiceDatas.customerdetails.partialamount)
-                    : null}
-                </span>
+                      : null}
+                  </span>
+                </p>
+                <p
+                  className={`${invoiceDatas.customerdetails.type === 'return' ? 'hidden' : 'block'}`}
+                  // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} ${invoiceDatas.customerdetails.partialamount !== 0 || invoiceDatas.customerdetails.paymentstatus === 'Paid' ? 'block text-end' : 'hidden'}`}
+                >
+                  Paid Amount:{' '}
+                  <span className=" font-bold">
+                    {Object.keys(invoiceDatas.customerdetails).length !== 0
+                      ? invoiceDatas.customerdetails.paymentstatus === 'Paid'
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                        : formatToRupee(invoiceDatas.customerdetails.partialamount)
+                      : null}
+                  </span>
+                </p>
+              </span>
+              <p
+                className={`text-start mt-4 p-2 ${hasPdf === true ? pdfBillStyle.para : printBillStyle.para}`}
+              >
+                Authorised Signature
               </p>
-             </span>
-             <p
-
-className={`text-start mt-4 p-2 ${hasPdf === true ? pdfBillStyle.para : printBillStyle.para}`}
->
-Authorised Signature
-</p>
             </div>
           </section>
         </div>
@@ -2351,7 +2410,7 @@ Authorised Signature
       <div
         ref={GstBillRef}
         className="absolute top-[-200rem] w-full"
-        style={{ padding: '20px', backgroundColor: '#ffff'}}
+        style={{ padding: '20px', backgroundColor: '#ffff' }}
       >
         <span
           style={{
@@ -2371,27 +2430,27 @@ Authorised Signature
             >
               {/* phone number */}
               <li className="text-start flex flex-col ">
-                    <span>
-                      <span className="font-medium">Date &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; :</span>{' '}
-                      <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? invoiceDatas.customerdetails.createddate
-                          : null}
-                      </span>
-                    </span>
                 <span>
-                  <span className="font-medium">Phone No &#160;&#160;&#160; :</span>{' '}
-                  7373674757, 9487369569
+                  <span className="font-medium">
+                    Date &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; :
+                  </span>{' '}
+                  <span>
+                    {Object.keys(invoiceDatas.customerdetails).length !== 0
+                      ? invoiceDatas.customerdetails.createddate
+                      : null}
+                  </span>
                 </span>
                 <span>
-                <span className="font-medium">
-                  Invoice No &#160;&#160; :
-                </span>{' '}
-                    <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? invoiceDatas.customerdetails.id
-                          : null}
-                      </span>
+                  <span className="font-medium">Phone No &#160;&#160;&#160; :</span> 7373674757,
+                  9487369569
+                </span>
+                <span>
+                  <span className="font-medium">Invoice No &#160;&#160; :</span>{' '}
+                  <span>
+                    {Object.keys(invoiceDatas.customerdetails).length !== 0
+                      ? invoiceDatas.customerdetails.id
+                      : null}
+                  </span>
                 </span>
               </li>
 
@@ -2403,11 +2462,7 @@ Authorised Signature
 
             <ul className="flex justify-center items-center gap-x-2 border-b">
               <li className="text-center">
-                <p
-                  className="font-semibold text-[12px]"
-                >
-                  NEW SARANYA ICE COMPANY
-                </p>{' '}
+                <p className="font-semibold text-[12px]">NEW SARANYA ICE COMPANY</p>{' '}
               </li>
             </ul>
 
@@ -2419,7 +2474,8 @@ Authorised Signature
                 }}
               >
                 <span className="text-center block ">
-                Factory Address : TC48/285, Pilavilai, Azhaganparai, Kanyakumari Dist, Pincode-629501
+                  Factory Address : TC48/285, Pilavilai, Azhaganparai, Kanyakumari Dist,
+                  Pincode-629501
                 </span>
               </li>
             </ul>
@@ -2431,11 +2487,10 @@ Authorised Signature
                 }}
               >
                 <span className="text-center block ">
-                Regd Office : 28/3030,Pilavilai,Azhaganparai,K.K.Dist-629501
+                  Regd Office : 28/3030,Pilavilai,Azhaganparai,K.K.Dist-629501
                 </span>
               </li>
             </ul>
-
 
             <table className="gsttable w-full">
               <thead>
@@ -2474,8 +2529,7 @@ Authorised Signature
                     className={`${hasPdf === true ? 'pb-2' : ''} font-medium`}
                   >
                     <span className="text-left block pl-2">
-                      No &#160;&#160;&#160;&#160;&#160;&#160;:{' '}
-                      {invoiceDatas.customerdetails.id}
+                      No &#160;&#160;&#160;&#160;&#160;&#160;: {invoiceDatas.customerdetails.id}
                     </span>
                     <span className="text-left block pl-2">
                       Date &#160;&#160;&#160;:{' '}
@@ -2489,7 +2543,6 @@ Authorised Signature
                 </tr>
               </thead>
             </table>
-
 
             {/* grid-3 */}
             <ul className="border-t grid grid-cols-2 ">
@@ -2578,19 +2631,19 @@ Authorised Signature
               </li>
             </ul>
 
-            <section 
-            style={{
-              minHeight: hasPdf ? '42rem' : '26rem',
-              overflowY: 'auto',
-              pageBreakInside: 'avoid'
-            }}
-            //className={`${hasPdf ? "h-[42rem]" : "h-[26rem]"}`}
+            <section
+              style={{
+                minHeight: hasPdf ? '42rem' : '26rem',
+                overflowY: 'auto',
+                pageBreakInside: 'avoid'
+              }}
+              //className={`${hasPdf ? "h-[42rem]" : "h-[26rem]"}`}
             >
               <table
                 style={{
                   fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
                 }}
-                className={`gstitemtable min-w-full border-collapse ${hasPdf ? "pdf-padding" : ""}`}
+                className={`gstitemtable min-w-full border-collapse ${hasPdf ? 'pdf-padding' : ''}`}
               >
                 <thead>
                   <tr>
@@ -2661,7 +2714,7 @@ Authorised Signature
                               fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
                             }}
                             className={`${hasPdf === true ? 'pb-2' : ''} border-b text-center`}
-                          > 
+                          >
                             {i + 1}
                           </td>
                           <td
@@ -2723,20 +2776,20 @@ Authorised Signature
                       ))
                     : 'No Data'}
 
-                  <tr className='px-1'>
+                  <tr className="px-1">
                     <td></td>
-                    <td className='px-1'>Total</td>
+                    <td className="px-1">Total</td>
                     <td></td>
                     <td></td>
-                    <td className='px-1 text-center'>
+                    <td className="px-1 text-center">
                       <span className="font-bold">
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
                           ? formatToRupee(invoiceDatas.customerdetails.total)
                           : null}
                       </span>
                     </td>
-                  <td></td>
-                    <td className='px-1 text-center'>
+                    <td></td>
+                    <td className="px-1 text-center">
                       <span className=" font-bold">
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
                           ? formatToRupee(invoiceDatas.customerdetails.billamount)
@@ -2752,7 +2805,7 @@ Authorised Signature
               style={{
                 fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
               }}
-              className={`gsttaxtable w-full ${hasPdf ? "pdf-padding" : ""}`}
+              className={`gsttaxtable w-full ${hasPdf ? 'pdf-padding' : ''}`}
             >
               <thead className="font-semibold">
                 <tr className="font-semibold">
@@ -2781,43 +2834,56 @@ Authorised Signature
               >
                 <tr>
                   <td>19053453</td>
-                  <td><span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount)
-                          : null}
-                      </span></td>
+                  <td>
+                    <span>
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                        : null}
+                    </span>
+                  </td>
                   <td>9%</td>
-                  <td><span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
-                          : null}
-                      </span></td>
+                  <td>
+                    <span>
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        : null}
+                    </span>
+                  </td>
                   <td>9%</td>
-                  <td><span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
-                          : null}
-                      </span></td>
+                  <td>
+                    <span>
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        : null}
+                    </span>
+                  </td>
                 </tr>
                 <tr className="font-semibold">
                   <td></td>
                   <td>Total</td>
                   <td></td>
-                  <td><span className=" font-semibold">
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
-                          : null}
-                      </span></td>
+                  <td>
+                    <span className=" font-semibold">
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        : null}
+                    </span>
+                  </td>
                   <td></td>
-                  <td><span className=" font-semibold">
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
-                          : null}
-                      </span></td>
-                  <td><span className=" font-semibold">
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
-                          : null}</span></td>
+                  <td>
+                    <span className=" font-semibold">
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        : null}
+                    </span>
+                  </td>
+                  <td>
+                    <span className=" font-semibold">
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
+                        : null}
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -2829,9 +2895,7 @@ Authorised Signature
               }}
               className={` border-b w-full border-x grid grid-cols-2  `}
             >
-
-
-                <li className={`${hasPdf === true ? 'pb-2' : ''} border-t border-r`}>
+              <li className={`${hasPdf === true ? 'pb-2' : ''} border-t border-r`}>
                 <div className="px-2">
                   <span
                     style={{
@@ -2839,13 +2903,14 @@ Authorised Signature
                     }}
                     className={`font-medium block`}
                   >
-                    Distination &#160;&#160;: <span className={`font-semibold`}>
+                    Distination &#160;&#160;:{' '}
+                    <span className={`font-semibold`}>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
                         ? invoiceDatas.customerdetails.address
                         : null}{' '}
                     </span>
                     <br />
-                    Transport &#160;&#160;&#160;&#160;: 
+                    Transport &#160;&#160;&#160;&#160;:
                     <span className={`font-semibold`}>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
                         ? invoiceDatas.customerdetails.vehicleorfreezerno
@@ -2863,33 +2928,42 @@ Authorised Signature
                     }}
                     className={` font-medium  block`}
                   >
-                    Total Sale Value : <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.total)
-                          : null}
-                      </span><br />
+                    Total Sale Value :{' '}
                     <span>
-                      Bulk Discount :{' '}<span>
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.total)
+                        : null}
+                    </span>
+                    <br />
+                    <span>
+                      Bulk Discount :{' '}
+                      <span>
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.total - invoiceDatas.customerdetails.billamount)
+                          ? formatToRupee(
+                              invoiceDatas.customerdetails.total -
+                                invoiceDatas.customerdetails.billamount
+                            )
                           : null}
                       </span>
                     </span>
                     <br />
-                    Total : <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount)
-                          : null}
-                      </span>
+                    Total :{' '}
+                    <span>
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                        : null}
+                    </span>
                     <br />
-                    GST @ 18% : <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
-                          : null}
-                      </span><br />
+                    GST @ 18% :{' '}
+                    <span>
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
+                        : null}
+                    </span>
+                    <br />
                   </span>
                 </div>
-              </li> 
+              </li>
 
               <li className={`${hasPdf === true ? 'pb-2' : ''} px-2 border-t`}>
                 <h2
@@ -2910,7 +2984,8 @@ Authorised Signature
                 Branch & IFS Code &#160;:{' '}
                 <span className="font-medium">Srialsi SME Branch & SBIN003316</span>
                 <br />
-                UPI ID &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;:{' '}
+                UPI ID
+                &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;:{' '}
                 <span className="font-medium">saranya@sbi</span>
                 <br />
               </li>
@@ -2921,25 +2996,49 @@ Authorised Signature
                 }}
                 className={`px-2 border-l`}
               >
-                <span className="block font-bold text-right pt-5"> Grand Total : <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount + invoiceDatas.customerdetails.billamount * 0.18)
-                          : null}
-                      </span></span>
+                <span className="block font-bold text-right pt-5">
+                  {' '}
+                  Grand Total :{' '}
+                  <span>
+                    {Object.keys(invoiceDatas.customerdetails).length !== 0
+                      ? formatToRupee(
+                          invoiceDatas.customerdetails.billamount +
+                            invoiceDatas.customerdetails.billamount * 0.18
+                        )
+                      : null}
+                  </span>
+                </span>
               </li>
-              
+
               <li
                 style={{
                   fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
                 }}
                 className={`${hasPdf === true ? 'pb-2' : ''} px-2 border-t w-full`}
               >
-                <p className={`font-semibold ${hasPdf === true ? 'text-[12px]' : 'text-[10px]'}`}>Declaration & Terms Of Delivery</p>
-                <p className='text-[7px]'>1 Billing Is Ex-Works.Claims for Shortage and Defective Goods Will Not Be Entertained After Delivery.</p>
-                <p className='text-[7px]'>2 All Transportation Via Buyer Vehicle Is Cost to Buyers Accounts.All Damages/risks After Delivery at Factory Premises to Buyers Accounts</p>
-                <p className='text-[7px]'>3 All Taxes/levis/penalites/compounding Fees Etc Imposed Post Delivery to the Buyers Accounts.</p>
-                <p className='text-[7px]'>4 Name of the Commodity- IC = Medium fat Ice cream,FD = Medium fat frozen dessert,LG=High fat ice cream,IL=Ice lolly,IN=ice candy</p>
-                <p className='text-[7px]'>5 We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.</p>
+                <p className={`font-semibold ${hasPdf === true ? 'text-[12px]' : 'text-[10px]'}`}>
+                  Declaration & Terms Of Delivery
+                </p>
+                <p className="text-[7px]">
+                  1 Billing Is Ex-Works.Claims for Shortage and Defective Goods Will Not Be
+                  Entertained After Delivery.
+                </p>
+                <p className="text-[7px]">
+                  2 All Transportation Via Buyer Vehicle Is Cost to Buyers Accounts.All
+                  Damages/risks After Delivery at Factory Premises to Buyers Accounts
+                </p>
+                <p className="text-[7px]">
+                  3 All Taxes/levis/penalites/compounding Fees Etc Imposed Post Delivery to the
+                  Buyers Accounts.
+                </p>
+                <p className="text-[7px]">
+                  4 Name of the Commodity- IC = Medium fat Ice cream,FD = Medium fat frozen
+                  dessert,LG=High fat ice cream,IL=Ice lolly,IN=ice candy
+                </p>
+                <p className="text-[7px]">
+                  5 We declare that this invoice shows the actual price of the goods described and
+                  that all particulars are true and correct.
+                </p>
               </li>
 
               <li
@@ -2948,10 +3047,9 @@ Authorised Signature
                 }}
                 className={`${hasPdf === true ? 'pb-2' : ''} px-2  border-l border-t`}
               >
-                Checked by <span className='font-semibold'>NEW SARANYA ICE COMPANY</span>
+                Checked by <span className="font-semibold">NEW SARANYA ICE COMPANY</span>
                 <span className="block text-right pt-14"> Authorised Signature </span>
               </li>
-
             </ul>
           </section>
         </div>
@@ -3074,8 +3172,8 @@ Authorised Signature
         centered={true}
         open={isModalVisible}
         onCancel={() => {
-          setIsModalVisible(false);
-          setSelectedRecord(null);
+          setIsModalVisible(false)
+          setSelectedRecord(null)
         }}
         width={800}
         footer={null}
@@ -3101,7 +3199,7 @@ Authorised Signature
                 pagination={false}
                 rowKey={(item) => item.id + '-' + item.sno}
                 // virtual
-                scroll={{y:450}}
+                scroll={{ y: 450 }}
               />
             </div>
           </div>
@@ -3206,7 +3304,6 @@ Authorised Signature
       >
         <div className="relative">
           <div className="grid grid-cols-4 gap-x-2">
-           
             <span className="col-span-1">
               <Form
                 form={form}
@@ -3316,7 +3413,10 @@ Authorised Signature
                   <Form.Item className="mb-1" name="customername">
                     <Input
                       onChange={(e) =>
-                        debounce(setQuotationFt((pre) => ({ ...pre, customername: e.target.value })),300)
+                        debounce(
+                          setQuotationFt((pre) => ({ ...pre, customername: e.target.value })),
+                          300
+                        )
                       }
                       placeholder="Customer Name"
                     />

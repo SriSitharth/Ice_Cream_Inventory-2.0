@@ -49,13 +49,13 @@ export default function BalanceSheet({ datas }) {
   const [isCloseDisabled, setIsCloseDisabled] = useState(false)
   const [isPayDisabled, setIsPayDisabled] = useState(false)
   const [isPaySelected, setIsPaySelected] = useState(false)
-  const printRef = useRef();
+  const printRef = useRef()
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [prevBookExists, setPrevBookExists] = useState(false)
   const [nextBookExists, setNextBookExists] = useState(false)
-  const [isFreezerBoxCustomer, setIsFreezerBoxCustomer] = useState(false);
-  const [freezerBoxOptions, setFreezerBoxOptions] = useState([]);
-  const [selectedBoxId, setSelectedBoxId] = useState(null);
+  const [isFreezerBoxCustomer, setIsFreezerBoxCustomer] = useState(false)
+  const [freezerBoxOptions, setFreezerBoxOptions] = useState([])
+  const [selectedBoxId, setSelectedBoxId] = useState(null)
   const [currentEntryIndex, setCurrentEntryIndex] = useState(0)
   const [totalBookIndex, setTotalBookIndex] = useState(0)
 
@@ -105,21 +105,21 @@ export default function BalanceSheet({ datas }) {
 
           const filteredPayDetails = openEntry
             ? [
-              openEntry,
-              ...payDetails.filter((payDetail) =>
-                dayjs(payDetail.createdDate, 'DD/MM/YYYY HH:mm:ss').isAfter(
-                  dayjs(openEntry.createdDate, 'DD/MM/YYYY HH:mm:ss')
+                openEntry,
+                ...payDetails.filter((payDetail) =>
+                  dayjs(payDetail.createdDate, 'DD/MM/YYYY HH:mm:ss').isAfter(
+                    dayjs(openEntry.createdDate, 'DD/MM/YYYY HH:mm:ss')
+                  )
                 )
-              )
-            ]
+              ]
             : payDetails
 
           const filteredDeliveries = openEntry
             ? customerDeliveries.filter((delivery) =>
-              dayjs(delivery.createdDate, 'DD/MM/YYYY HH:mm:ss').isAfter(
-                dayjs(openEntry.createdDate, 'DD/MM/YYYY HH:mm:ss')
+                dayjs(delivery.createdDate, 'DD/MM/YYYY HH:mm:ss').isAfter(
+                  dayjs(openEntry.createdDate, 'DD/MM/YYYY HH:mm:ss')
+                )
               )
-            )
             : customerDeliveries
 
           const billUnpaid = filteredDeliveries.reduce((acc, item) => {
@@ -307,7 +307,7 @@ export default function BalanceSheet({ datas }) {
     const payData = {
       ...Datas,
       amount: Number(amount),
-      date:  new Date().toISOString(),
+      date: new Date().toISOString(),
       type: type,
       paymentMode: decription === 'Pay' ? paymentMode : '',
       decription: decription,
@@ -315,7 +315,7 @@ export default function BalanceSheet({ datas }) {
       modifiedDate: new Date().toISOString(),
       customerId: customerPayId,
       collectionType: decription === 'Pay' ? 'customer' : '',
-      isDeleted:0
+      isDeleted: 0
     }
     try {
       // const customerDocRef = doc(db, 'customer', customerPayId)
@@ -347,42 +347,42 @@ export default function BalanceSheet({ datas }) {
   }
 
   const handleRowClick = async (record) => {
-    setFreezerBoxOptions([]);
-    setSelectedBoxId(null);
+    setFreezerBoxOptions([])
+    setSelectedBoxId(null)
     fetchCustomerData(record.id)
     setSelectedCustomer(record.id)
     setCurrentEntryIndex(0)
-    if(record.transport === "Freezer Box"){
+    if (record.transport === 'Freezer Box') {
       const result = await getFreezerboxByCustomerId(record.id)
       if (result) {
-        const options = result.map(box => ({
-            value: box.id,
-            label: box.boxNumber
-        }));
-        setFreezerBoxOptions(options);
-        setIsFreezerBoxCustomer(true);
+        const options = result.map((box) => ({
+          value: box.id,
+          label: box.boxNumber
+        }))
+        setFreezerBoxOptions(options)
+        setIsFreezerBoxCustomer(true)
+      } else {
+        setFreezerBoxOptions([])
+        setIsFreezerBoxCustomer(false)
+        console.error(result)
+      }
     } else {
-        setFreezerBoxOptions([]);
-        setIsFreezerBoxCustomer(false);
-        console.error(result);
-    }
-    }else {
       setIsFreezerBoxCustomer(false)
-      setFreezerBoxOptions([]);
+      setFreezerBoxOptions([])
     }
   }
 
   const handleBoxChange = async (value) => {
-    console.log(selectedCustomer , value)
-    setSelectedBoxId(value);
-    if(!value){
-      await fetchCustomerDataByBoxID(selectedCustomer,'');
-    }else{
-    await fetchCustomerDataByBoxID(selectedCustomer,value);
+    console.log(selectedCustomer, value)
+    setSelectedBoxId(value)
+    if (!value) {
+      await fetchCustomerDataByBoxID(selectedCustomer, '')
+    } else {
+      await fetchCustomerDataByBoxID(selectedCustomer, value)
     }
   }
 
-  const fetchCustomerDataByBoxID = async (customerId,boxid) => {
+  const fetchCustomerDataByBoxID = async (customerId, boxid) => {
     try {
       const customerResponse = await getCustomerById(customerId)
       if (customerResponse) {
@@ -406,26 +406,29 @@ export default function BalanceSheet({ datas }) {
             )
           )
 
-        let totalPairs = 0;
-        let openCount = 0;
+        let totalPairs = 0
+        let openCount = 0
 
         opencloseEntries.forEach((entry) => {
           if (entry.decription === 'Open') {
-            openCount++;
+            openCount++
           } else if (entry.decription === 'Close' && openCount > 0) {
-            totalPairs++;
-            console.log(`Pair formed: totalPairs = ${totalPairs}`);
-            openCount--;
+            totalPairs++
+            console.log(`Pair formed: totalPairs = ${totalPairs}`)
+            openCount--
           }
-        });
-        if (opencloseEntries.length > 3 && opencloseEntries[opencloseEntries.length - 1].decription === 'Close') {
-          totalPairs = totalPairs - 1;
+        })
+        if (
+          opencloseEntries.length > 3 &&
+          opencloseEntries[opencloseEntries.length - 1].decription === 'Close'
+        ) {
+          totalPairs = totalPairs - 1
         }
         // setCurrentEntryIndex(totalPairs)
         setTotalBookIndex(totalPairs)
 
-        setPrevBookExists(currentEntryIndex > 0);
-        setNextBookExists(currentEntryIndex < totalPairs);
+        setPrevBookExists(currentEntryIndex > 0)
+        setNextBookExists(currentEntryIndex < totalPairs)
 
         const openEntry =
           payDetails
@@ -500,19 +503,21 @@ export default function BalanceSheet({ datas }) {
 
         setPayDetailsList(filteredPayDetails)
 
-        const deliveries = await Promise.all(deliveryData.filter(
-          (delivery) => {
-            const matchesCustomer = delivery.customerId === customerId;
-            const matchesBox = boxid ? delivery.boxid === boxid : true;
-            return matchesCustomer && !delivery.isDeleted && matchesBox;
-          }
-        ).map(async (delivery) => {
-          const freezerbox = await getFreezerboxById(delivery.boxid);
-          return {
-            ...delivery,
-            boxNumber: freezerbox === undefined ? '' : freezerbox.boxNumber, 
-          };
-        }))
+        const deliveries = await Promise.all(
+          deliveryData
+            .filter((delivery) => {
+              const matchesCustomer = delivery.customerId === customerId
+              const matchesBox = boxid ? delivery.boxid === boxid : true
+              return matchesCustomer && !delivery.isDeleted && matchesBox
+            })
+            .map(async (delivery) => {
+              const freezerbox = await getFreezerboxById(delivery.boxid)
+              return {
+                ...delivery,
+                boxNumber: freezerbox === undefined ? '' : freezerbox.boxNumber
+              }
+            })
+        )
 
         let filteredDeliveries = []
 
@@ -592,20 +597,23 @@ export default function BalanceSheet({ datas }) {
             )
           )
 
-        let totalPairs = 0;
-        let openCount = 0;
+        let totalPairs = 0
+        let openCount = 0
 
         opencloseEntries.forEach((entry) => {
           if (entry.decription === 'Open') {
-            openCount++;
+            openCount++
           } else if (entry.decription === 'Close' && openCount > 0) {
-            totalPairs++;
-            console.log(`Pair formed: totalPairs = ${totalPairs}`);
-            openCount--;
+            totalPairs++
+            console.log(`Pair formed: totalPairs = ${totalPairs}`)
+            openCount--
           }
-        });
-        if (opencloseEntries.length > 3 && opencloseEntries[opencloseEntries.length - 1].decription === 'Close') {
-          totalPairs = totalPairs - 1;
+        })
+        if (
+          opencloseEntries.length > 3 &&
+          opencloseEntries[opencloseEntries.length - 1].decription === 'Close'
+        ) {
+          totalPairs = totalPairs - 1
         }
         setCurrentEntryIndex(totalPairs)
         setTotalBookIndex(totalPairs)
@@ -706,15 +714,17 @@ export default function BalanceSheet({ datas }) {
 
         setPayDetailsList(filteredPayDetails)
 
-        const deliveries = await Promise.all(deliveryData.filter(
-          (delivery) => delivery.customerId === customerId && !delivery.isDeleted
-        ).map(async (delivery) => {
-          const freezerbox = await getFreezerboxById(delivery.boxid);
-          return {
-            ...delivery,
-            boxNumber: freezerbox === undefined ? '' : freezerbox.boxNumber, 
-          };
-        }))
+        const deliveries = await Promise.all(
+          deliveryData
+            .filter((delivery) => delivery.customerId === customerId && !delivery.isDeleted)
+            .map(async (delivery) => {
+              const freezerbox = await getFreezerboxById(delivery.boxid)
+              return {
+                ...delivery,
+                boxNumber: freezerbox === undefined ? '' : freezerbox.boxNumber
+              }
+            })
+        )
 
         let filteredDeliveries = []
 
@@ -780,7 +790,7 @@ export default function BalanceSheet({ datas }) {
         }
         return newIndex
       })
-      await loadListEntriesAtIndex(currentEntryIndex - 1);
+      await loadListEntriesAtIndex(currentEntryIndex - 1)
     }
   }
 
@@ -794,15 +804,15 @@ export default function BalanceSheet({ datas }) {
         }
         return newIndex
       })
-      await loadListEntriesAtIndex(currentEntryIndex + 1);
+      await loadListEntriesAtIndex(currentEntryIndex + 1)
     }
   }
 
   const loadListEntriesAtIndex = async (index) => {
-    let payDetails = [];
-    const payDetailsResponse = await getCustomerPaymentsById(selectedCustomer);
+    let payDetails = []
+    const payDetailsResponse = await getCustomerPaymentsById(selectedCustomer)
     if (payDetailsResponse) {
-      payDetails = payDetailsResponse || [];
+      payDetails = payDetailsResponse || []
     }
 
     const opencEntry =
@@ -812,7 +822,7 @@ export default function BalanceSheet({ datas }) {
           dayjs(a.createdDate, 'DD/MM/YYYY HH:mm:ss').diff(
             dayjs(b.createdDate, 'DD/MM/YYYY HH:mm:ss')
           )
-        )[index] || null;
+        )[index] || null
 
     const closeEntry =
       payDetails
@@ -821,10 +831,10 @@ export default function BalanceSheet({ datas }) {
           dayjs(a.createdDate, 'DD/MM/YYYY HH:mm:ss').diff(
             dayjs(b.createdDate, 'DD/MM/YYYY HH:mm:ss')
           )
-        )[index] || null;
+        )[index] || null
 
-    await loadListEntries(opencEntry, closeEntry);
-  };
+    await loadListEntries(opencEntry, closeEntry)
+  }
 
   const loadListEntries = async (openEntry, closeEntry) => {
     try {
@@ -888,19 +898,22 @@ export default function BalanceSheet({ datas }) {
 
       setPayDetailsList(filteredPayDetails)
 
-      const deliveries = await Promise.all(deliveryData.filter(
-        (delivery) => {
-          const isMatchingCustomer = delivery.customerId === selectedCustomer && !delivery.isDeleted;
-          const isMatchingBox = !selectedBoxId || delivery.boxid === selectedBoxId;
-          return isMatchingCustomer && isMatchingBox;
-        }
-      ).map(async (delivery) => {
-        const freezerbox = await getFreezerboxById(delivery.boxid);
-        return {
-          ...delivery,
-          boxNumber: freezerbox === undefined ? '' : freezerbox.boxNumber, 
-        };
-      }))
+      const deliveries = await Promise.all(
+        deliveryData
+          .filter((delivery) => {
+            const isMatchingCustomer =
+              delivery.customerId === selectedCustomer && !delivery.isDeleted
+            const isMatchingBox = !selectedBoxId || delivery.boxid === selectedBoxId
+            return isMatchingCustomer && isMatchingBox
+          })
+          .map(async (delivery) => {
+            const freezerbox = await getFreezerboxById(delivery.boxid)
+            return {
+              ...delivery,
+              boxNumber: freezerbox === undefined ? '' : freezerbox.boxNumber
+            }
+          })
+      )
 
       let filteredDeliveries = []
 
@@ -1063,47 +1076,38 @@ export default function BalanceSheet({ datas }) {
             enterButton
           />
           <div className="flex gap-x-2">
+            <Select
+              className="box-select"
+              showSearch
+              allowClear
+              disabled={!isFreezerBoxCustomer}
+              placeholder={
+                <span
+                  style={{
+                    color: isFreezerBoxCustomer ? '#f26723' : ''
+                  }}
+                >
+                  Select Box
+                </span>
+              }
+              style={{
+                width: 120,
+                color: '#f26723'
+              }}
+              value={selectedBoxId}
+              onChange={handleBoxChange}
+              options={freezerBoxOptions}
+            />
 
-          <Select
-          className="box-select"
-          showSearch
-          allowClear
-          disabled={!isFreezerBoxCustomer}
-    placeholder = {<span
-      style={{
-        color: isFreezerBoxCustomer ? '#f26723' : '',
-      }}
-    >Select Box</span>}
-    style={{
-      width: 120,
-      color: '#f26723',
-    }}
-    value={selectedBoxId}
-    onChange={handleBoxChange}
-    options={freezerBoxOptions}
-  />
-
-            <Button
-              type="primary"
-              disabled={!deliveryList.length}
-              onClick={handleExportClick}
-            >
+            <Button type="primary" disabled={!deliveryList.length} onClick={handleExportClick}>
               <PiExport />
               Export
             </Button>
-            <Button
-              type="primary"
-              disabled={!prevBookExists}
-              onClick={handlePrevClick}
-            >
+            <Button type="primary" disabled={!prevBookExists} onClick={handlePrevClick}>
               <FaBackward />
               Prev
             </Button>
-            <Button
-              type="primary"
-              disabled={!nextBookExists}
-              onClick={handleNextClick}
-            >
+            <Button type="primary" disabled={!nextBookExists} onClick={handleNextClick}>
               Next
               <FaForward />
             </Button>
@@ -1184,8 +1188,12 @@ export default function BalanceSheet({ datas }) {
               renderItem={(item) => (
                 <List.Item>
                   <div>{item.date}</div>
-                  <div>MRP: <Tag color="blue">{item.total}</Tag></div>
-                  <div>Bill: <Tag color="green">{item.billamount}</Tag></div>
+                  <div>
+                    MRP: <Tag color="blue">{item.total}</Tag>
+                  </div>
+                  <div>
+                    Bill: <Tag color="green">{item.billamount}</Tag>
+                  </div>
                   <div>
                     {item.paymentstatus === 'Partial' ? (
                       <span>
@@ -1195,7 +1203,10 @@ export default function BalanceSheet({ datas }) {
                       <span>{item.paymentstatus}</span>
                     )}
                   </div>
-                  <div>{item.type}{item.boxNumber ? <Tag>{item.boxNumber}</Tag> : ''}</div>
+                  <div>
+                    {item.type}
+                    {item.boxNumber ? <Tag>{item.boxNumber}</Tag> : ''}
+                  </div>
                 </List.Item>
               )}
               style={{
@@ -1206,11 +1217,15 @@ export default function BalanceSheet({ datas }) {
             <List
               className="mt-2"
               size="small"
-              header={<div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600' }}>
-                <div>Payment Details {customerName}</div>
-                <div>Total Spend: {totalCustomerSpend}</div>
-                <div>Total Advance: {totalCustomerAdvance}</div>
-                  </div>}
+              header={
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600' }}
+                >
+                  <div>Payment Details {customerName}</div>
+                  <div>Total Spend: {totalCustomerSpend}</div>
+                  <div>Total Advance: {totalCustomerAdvance}</div>
+                </div>
+              }
               footer={
                 <div
                   style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600' }}
@@ -1226,14 +1241,22 @@ export default function BalanceSheet({ datas }) {
                 <List.Item>
                   <div>{item.date}</div>
                   <div>
-                  {item.type === 'Balance' ? (
-                      <span>Balance: <Tag color="blue">{item.amount}</Tag></span>
+                    {item.type === 'Balance' ? (
+                      <span>
+                        Balance: <Tag color="blue">{item.amount}</Tag>
+                      </span>
                     ) : item.type === 'Spend' ? (
-                      <span>Spend: <Tag color="red">{item.amount}</Tag></span>
+                      <span>
+                        Spend: <Tag color="red">{item.amount}</Tag>
+                      </span>
                     ) : item.type === 'Advance' ? (
-                      <span>Advance: <Tag color="green">{item.amount}</Tag></span>
+                      <span>
+                        Advance: <Tag color="green">{item.amount}</Tag>
+                      </span>
                     ) : (
-                      <span>Amount: <Tag color="purple">{item.amount}</Tag></span>
+                      <span>
+                        Amount: <Tag color="purple">{item.amount}</Tag>
+                      </span>
                     )}
                   </div>
                   <div>{item.decription}</div>
@@ -1321,19 +1344,18 @@ export default function BalanceSheet({ datas }) {
         </Form>
       </Modal>
 
-      <div
-        ref={printRef}
-        className="absolute w-full top-[-200rem]"
-      >
+      <div ref={printRef} className="absolute w-full top-[-200rem]">
         <section className="w-full max-w-[900px] mx-auto mt-1">
           <ul className="flex justify-center items-center gap-x-5">
             <li>
               <img className="w-[68px]" src={companyLogo} alt="comapanylogo" />{' '}
             </li>
             <li className="text-center">
-              <h1 style={{ fontSize: "1.25rem", fontWeight: "bold" }} className='font-bold'>NEW SARANYA ICE COMPANY</h1>{' '}
-              <div style={{ fontWeight: "bold" }}>
-                <p >PILAVILAI, AZHAGANPARAI P.O.</p> <p >K.K.DIST</p>
+              <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold' }} className="font-bold">
+                NEW SARANYA ICE COMPANY
+              </h1>{' '}
+              <div style={{ fontWeight: 'bold' }}>
+                <p>PILAVILAI, AZHAGANPARAI P.O.</p> <p>K.K.DIST</p>
               </div>
             </li>
           </ul>
@@ -1341,20 +1363,13 @@ export default function BalanceSheet({ datas }) {
           <ul className="mt-1 flex justify-between">
             <li>
               <div>
-                <span className="font-bold">Date:</span>{' '}
-                <span>
-                  {TimestampJs().split(',')[0]}
-                </span>
-                {' '}
+                <span className="font-bold">Date:</span> <span>{TimestampJs().split(',')[0]}</span>{' '}
               </div>
               <div>
                 <span className="font-bold">GSTIN:</span> 33AAIFN6367K1ZV
               </div>
               <div>
-                <span className="font-bold">Name:</span>{' '}
-                <span>
-                  {customerName}
-                </span>
+                <span className="font-bold">Name:</span> <span>{customerName}</span>
               </div>
             </li>
 
@@ -1429,7 +1444,7 @@ export default function BalanceSheet({ datas }) {
             </div>
           </div>
 
-          <div className='text-end mt-24'>
+          <div className="text-end mt-24">
             <p>Authorised Signature</p>
           </div>
         </section>

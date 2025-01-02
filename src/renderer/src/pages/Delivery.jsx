@@ -23,7 +23,7 @@ import { RiHistoryLine } from 'react-icons/ri'
 import { PiGarageBold, PiWarningCircleFill } from 'react-icons/pi'
 import { MdOutlinePayments } from 'react-icons/md'
 import { PiExport } from 'react-icons/pi'
-import { TbReportAnalytics } from "react-icons/tb";
+import { TbReportAnalytics } from 'react-icons/tb'
 import { IoMdAdd, IoMdRemove } from 'react-icons/io'
 import { LuSave } from 'react-icons/lu'
 import { TiCancel } from 'react-icons/ti'
@@ -63,7 +63,7 @@ import { latestFirstSort, oldestFirstSort } from '../js-files/sort-time-date-sec
 import '../pages/css/Delivery.css'
 import { getFreezerbox, getFreezerboxById } from '../firebase/data-tables/freezerbox'
 import TableHeight from '../components/TableHeight'
-import { ClockCircleOutlined } from '@ant-design/icons';
+import { ClockCircleOutlined } from '@ant-design/icons'
 
 import { addDelivery, getDeliveryById, updateDelivery, addDeliveryDetail } from '../sql/delivery'
 import { getCustomerById } from '../sql/customer'
@@ -84,8 +84,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const [tableLoading, setTableLoading] = useState(true)
   const partialAmountRef = useRef(null)
   const GstBillRef = useRef()
-  const [offset, setOffset] = useState(0);
-  const chunkSize = 25;
+  const [offset, setOffset] = useState(0)
+  const chunkSize = 25
   const [deliveryBill, setDeliveryBill] = useState({
     model: false,
     loading: false,
@@ -102,7 +102,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     billingamount: 0,
     returnmodeltable: false,
     update: true,
-    boxNumber:''
+    boxNumber: ''
   })
 
   useEffect(() => {
@@ -113,37 +113,39 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           .filter((data) => isWithinRange(data.date))
           .slice(offset, offset + chunkSize)
           .map(async (item, index) => {
-            const result = await getCustomerById(item.customerId);
+            const result = await getCustomerById(item.customerId)
             console.log(result)
-            const freezerboxResult = item.boxId === '' ? item.boxId : await getFreezerboxById(item.boxId)
+            const freezerboxResult =
+              item.boxId === '' ? item.boxId : await getFreezerboxById(item.boxId)
 
             const customerName = result.name || item.name
             const mobileNumber = result.mobileNumber || item.mobileNumber
             const gstNumber = result.gstin || item.gstin
             const address = result.address || item.address
-            const boxNumber = freezerboxResult !== '' ? freezerboxResult.boxNumber : '';
+            const boxNumber = freezerboxResult !== '' ? freezerboxResult.boxNumber : ''
             return {
               ...item,
               sno: index + 1,
               key: item.id || index,
               customername: customerName,
               mobileNumber: mobileNumber,
-              gstin:gstNumber,
+              gstin: gstNumber,
               address: address,
-              boxNumber:boxNumber
+              boxNumber: boxNumber
             }
-          }));
-        
-      setData((prevData) => (offset === 0 ? filteredData : [...prevData, ...filteredData]));
-      setTableLoading(false);
+          })
+      )
+
+      setData((prevData) => (offset === 0 ? filteredData : [...prevData, ...filteredData]))
+      setTableLoading(false)
     }
     fetchData()
   }, [datas.delivery, dateRange, offset])
 
   useEffect(() => {
-    setOffset(0);
-    setData([]);
-  }, [datas.delivery,dateRange]);
+    setOffset(0)
+    setData([])
+  }, [datas.delivery, dateRange])
 
   const isWithinRange = (date) => {
     if (!dateRange || !dateRange[0] || !dateRange[1]) {
@@ -169,12 +171,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   }
 
   const handleTableScroll = debounce((e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    const { scrollTop, scrollHeight, clientHeight } = e.target
 
     if (scrollTop + clientHeight >= scrollHeight - 10) {
-      setOffset((prevOffset) => prevOffset + chunkSize);
+      setOffset((prevOffset) => prevOffset + chunkSize)
     }
-  }, 200);
+  }, 200)
 
   const columns = [
     {
@@ -240,23 +242,34 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       width: 130,
       sorter: (a, b) => a.type.localeCompare(b.type),
       showSorterTooltip: { target: 'sorter-icon' },
-      render: (text,record) =>
+      render: (text, record) =>
         text === 'return' ? (
-          <span className='flex'><Tag color="red">Return</Tag><Tag color='blue' className={`${record.boxNumber === '' ? 'hidden': 'block'}`}>{record.boxNumber}</Tag></span>
+          <span className="flex">
+            <Tag color="red">Return</Tag>
+            <Tag color="blue" className={`${record.boxNumber === '' ? 'hidden' : 'block'}`}>
+              {record.boxNumber}
+            </Tag>
+          </span>
         ) : text === 'quick' ? (
           <Tag color="blue">Quick Sale</Tag>
         ) : text === 'booking' ? (
           <span>
-          {record.bookingstatus === 'Delivered' ? (
-          <Tag color="green">Booking Delivered</Tag>
-        ) : record.bookingstatus === 'Cancelled' ? (
-          <Tag color="red">Booking Cancelled</Tag>
-        ) : (<Tag color="cyan">Booking</Tag>)
-        }
+            {record.bookingstatus === 'Delivered' ? (
+              <Tag color="green">Booking Delivered</Tag>
+            ) : record.bookingstatus === 'Cancelled' ? (
+              <Tag color="red">Booking Cancelled</Tag>
+            ) : (
+              <Tag color="cyan">Booking</Tag>
+            )}
           </span>
         ) : (
-          <span className='flex'><Tag color="green">Order</Tag> <Tag color='blue' className={`${record.boxNumber === '' ? 'hidden': 'block'}`}>{record.boxNumber}</Tag></span>
-        ),
+          <span className="flex">
+            <Tag color="green">Order</Tag>{' '}
+            <Tag color="blue" className={`${record.boxNumber === '' ? 'hidden' : 'block'}`}>
+              {record.boxNumber}
+            </Tag>
+          </span>
+        )
     },
     {
       title: 'Payment Status',
@@ -271,8 +284,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           <Tag color="green">Paid</Tag>
         ) : text === 'Partial' ? (
           <span className="flex gap-x-0">
-            <Tag color="yellow">Partial</Tag>{' '}
-            <Tag color="blue">{record.partialamount}</Tag>
+            <Tag color="yellow">Partial</Tag> <Tag color="blue">{record.partialamount}</Tag>
           </span>
         ) : text === 'Return' ? (
           <Tag color="red">Returned</Tag>
@@ -304,32 +316,61 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         ) : (
           <span className="flex gap-x-3 justify-center items-center">
             <FaClipboardList
-              onClick={() =>
-                {
-                editingKey !== '' ? console.log('Not Clickable') : onOpenDeliveryBill(record),console.log(record)
-                }
-              }
+              onClick={() => {
+                editingKey !== '' ? console.log('Not Clickable') : onOpenDeliveryBill(record),
+                  console.log(record)
+              }}
               size={17}
               className={`${editingKey !== '' ? 'text-gray-400 cursor-not-allowed' : 'cursor-pointer text-green-500'}`}
             />
             <Popconfirm
-            placement="leftTop"
-            // visible={visible}
+              placement="leftTop"
+              // visible={visible}
               className={`${editingKey !== '' ? 'cursor-not-allowed' : 'cursor-pointer'} `}
-              title={<div>
-                <span>Sure to download pdf?</span>
-                <section className='flex gap-x-2 mt-2'>
-                  <Button loading={loadingGstin} disabled={record.gstin === undefined || record.gstin === '' || record.gstin === null ? true : false} size='small' className='text-[0.7rem]' type='primary' onClick={() => { setLoadingGstin(true); setGstin(true); handleDownloadPdf(record);}} >GST</Button>
-                  <Button loading={loadingWithoutGstin} size='small' className='text-[0.7rem]' type='dashed' onClick={() => { setLoadingWithoutGstin(true); setGstin(false); handleDownloadPdf(record);}}>Without GST</Button>
-                  {/* <Button size='small' className='text-[0.7rem]' >Cancel</Button> */}
-                </section>
-              </div>}
-              
+              title={
+                <div>
+                  <span>Sure to download pdf?</span>
+                  <section className="flex gap-x-2 mt-2">
+                    <Button
+                      loading={loadingGstin}
+                      disabled={
+                        record.gstin === undefined || record.gstin === '' || record.gstin === null
+                          ? true
+                          : false
+                      }
+                      size="small"
+                      className="text-[0.7rem]"
+                      type="primary"
+                      onClick={() => {
+                        setLoadingGstin(true)
+                        setGstin(true)
+                        handleDownloadPdf(record)
+                      }}
+                    >
+                      GST
+                    </Button>
+                    <Button
+                      loading={loadingWithoutGstin}
+                      size="small"
+                      className="text-[0.7rem]"
+                      type="dashed"
+                      onClick={() => {
+                        setLoadingWithoutGstin(true)
+                        setGstin(false)
+                        handleDownloadPdf(record)
+                      }}
+                    >
+                      Without GST
+                    </Button>
+                    {/* <Button size='small' className='text-[0.7rem]' >Cancel</Button> */}
+                  </section>
+                </div>
+              }
               disabled={editingKey !== ''}
               onConfirm={null} // Set onConfirm to null
               showCancel={false} // Hides the cancel button
               okButtonProps={{ style: { display: 'none' } }} // Hides the ok button
-                      >
+            >
               <TbFileDownload
                 size={19}
                 className={`${editingKey !== '' ? 'text-gray-400 cursor-not-allowed' : 'text-blue-500 cursor-pointer hover:text-blue-400'}`}
@@ -449,7 +490,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         setEditingKey('')
       } else {
         await updateDelivery(key.id, {
-          numberOfPacks: row.numberOfPacks,
+          numberOfPacks: row.numberOfPacks
         })
         await deliveryUpdateMt()
         message.open({ type: 'success', content: 'Updated Successfully' })
@@ -510,15 +551,15 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
   // delete
   const deleteProduct = async (data) => {
-    const { id, ...newData } = data;
+    const { id, ...newData } = data
 
-    let {paymenthistory,status} = await fetchPayDetailsForDelivery(data.id);
-    
-    if(paymenthistory.length > 0){
-      paymenthistory.map(async paydata => {
-        await updatePaydetailsChild(id,paydata.id,{isDeleted:true});
-       });
-    };
+    let { paymenthistory, status } = await fetchPayDetailsForDelivery(data.id)
+
+    if (paymenthistory.length > 0) {
+      paymenthistory.map(async (paydata) => {
+        await updatePaydetailsChild(id, paydata.id, { isDeleted: true })
+      })
+    }
 
     await updateDelivery(id, { isDeleted: 1 })
     deliveryUpdateMt()
@@ -536,8 +577,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const columns2 = [
     {
       title: <span className="text-[0.7rem]">S.No</span>,
-      render: (text,record,i) => <span className="text-[0.7rem]">{i+1}</span>,
-      width:50
+      render: (text, record, i) => <span className="text-[0.7rem]">{i + 1}</span>,
+      width: 50
     },
     {
       title: <span className="text-[0.7rem]">Product</span>,
@@ -566,7 +607,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: 'productprice',
       editable: TableEdiable.pieceprice,
       render: (text) => <span className="text-[0.7rem]">{text}</span>,
-      width:80
+      width: 80
     },
     {
       title: <span className="text-[0.7rem]">Packs</span>,
@@ -574,7 +615,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: 'numberOfPacks',
       editable: TableEdiable.packs,
       render: (text) => <span className="text-[0.7rem]">{text}</span>,
-      width:80
+      width: 80
     },
     {
       title: <span className="text-[0.7rem]">MRP</span>,
@@ -582,7 +623,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: 'mrp',
       editable: false,
       render: (text) => <span className="text-[0.7rem]">{formatToRupee(text, true)}</span>,
-      width:100
+      width: 100
     },
     {
       title: <span className="text-[0.7rem]">Margin</span>,
@@ -590,7 +631,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: 'margin',
       editable: TableEdiable.margin,
       render: (text) => <span className="text-[0.7rem]">{toDigit(text)}</span>,
-      width:60
+      width: 60
     },
     {
       title: <span className="text-[0.7rem]">Price</span>,
@@ -598,7 +639,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: 'price',
       editable: TableEdiable.price,
       render: (text) => <span className="text-[0.7rem]">{formatToRupee(text, true)}</span>,
-      width:100
+      width: 100
     },
     {
       title: <span className="text-[0.7rem]">Action</span>,
@@ -647,8 +688,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const columnsReturn = [
     {
       title: <span className="text-[0.7rem]">S.No</span>,
-      render: (text,record,i) => <span className="text-[0.7rem]">{i+1}</span>,
-      width:50
+      render: (text, record, i) => <span className="text-[0.7rem]">{i + 1}</span>,
+      width: 50
     },
     {
       title: <span className="text-[0.7rem]">Product</span>,
@@ -677,7 +718,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: 'productprice',
       editable: TableEdiable.pieceprice,
       render: (text) => <span className="text-[0.7rem]">{formatToRupee(text, true)}</span>,
-      width:90
+      width: 90
     },
     {
       title: <span className="text-[0.7rem]">Packs</span>,
@@ -685,7 +726,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: 'numberOfPacks',
       editable: TableEdiable.packs,
       render: (text) => <span className="text-[0.7rem]">{text}</span>,
-      width:70
+      width: 70
     },
     {
       title: <span className="text-[0.7rem]">MRP</span>,
@@ -693,7 +734,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: 'mrp',
       editable: false,
       render: (text) => <span className="text-[0.7rem]">{formatToRupee(text, true)}</span>,
-      width:90
+      width: 90
     },
     {
       title: <span className="text-[0.7rem]">Margin</span>,
@@ -701,7 +742,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: 'margin',
       editable: TableEdiable.margin,
       render: (text) => <span className="text-[0.7rem]">{toDigit(text)}</span>,
-      width:75
+      width: 75
     },
     {
       title: <span className="text-[0.7rem]">Price</span>,
@@ -709,14 +750,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       key: 'price',
       editable: TableEdiable.price,
       render: (text) => <span className="text-[0.7rem]">{formatToRupee(text, true)}</span>,
-      width:90
+      width: 90
     },
     {
       title: <span className="text-[0.7rem]">Return Type</span>,
       dataIndex: 'returntype',
       key: 'returntype',
       editable: true,
-      width:90,
+      width: 90,
       render: (text) => {
         return text === 'damage' ? (
           <Tag color="red" className="text-[0.7rem]">
@@ -929,16 +970,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     quantitystatus: true,
     tempproduct: [],
     editingKeys: [],
-    freezerboxs:[]
+    freezerboxs: []
   })
 
   //product initial value
   useEffect(() => {
-
     const productOp = datas.product
       .filter(
-        (item, i, s) =>
-          item.isDeleted === false 
+        (item, i, s) => item.isDeleted === false
         // && s.findIndex((item2) => item2.productname === item.productname) === i
       )
       .map((data) => ({ label: data.productname, value: data.productname }))
@@ -970,26 +1009,28 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   })
 
   const [lastOrderBtnState, setlastOrderBtnState] = useState(true)
-  const [freezerBoxState,setFreezerBoxState] = useState(false);
+  const [freezerBoxState, setFreezerBoxState] = useState(false)
 
   const customerOnchange = debounce(async (value, i) => {
+    let filterBoxs = datas.freezerbox
+      .filter((data) => data.customerId === value)
+      .map((box) => ({ label: box.boxNumber, value: box.id }))
+    setOption((pre) => ({ ...pre, freezerboxs: filterBoxs }))
 
-    let filterBoxs = datas.freezerbox.filter(data => data.customerId === value).map(box =>({label:box.boxNumber,value:box.id}));
-    setOption(pre=>({...pre,freezerboxs:filterBoxs}));
-
-  setFreezerBoxState(filterBoxs.length === 0 ? true : false)
+    setFreezerBoxState(filterBoxs.length === 0 ? true : false)
     if (returnDelivery.state === false) {
       setlastOrderBtnState(true)
       // get last order data
-      let lastOrderDatas = datas.delivery.filter( (data) => data.customerId === value && data.type === 'order')
-      
+      let lastOrderDatas = datas.delivery.filter(
+        (data) => data.customerId === value && data.type === 'order'
+      )
+
       if (lastOrderDatas.length > 0) {
-        
         let latestOrderData = await latestFirstSort(lastOrderDatas)
         latestOrderData = latestOrderData.length > 0 ? latestOrderData[0] : []
-        
+
         let { items, status } = await fetchItemsForDelivery(latestOrderData.id)
-        
+
         if (status) {
           let customerDetails = lastOrderDatas[0]
           let products = await Promise.all(
@@ -1001,15 +1042,16 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                   ...product
                 }
               }
-            }));
+            })
+          )
 
           // console.log(products);
-          let compainddata = [...lastOrderData.products, ...products];
-          
-          let uniqueArray = [...new Map(compainddata.map((item) => [item.id, item])).values()];
+          let compainddata = [...lastOrderData.products, ...products]
+
+          let uniqueArray = [...new Map(compainddata.map((item) => [item.id, item])).values()]
           // console.log(compainddata);
-          
-          setLastOrderData({ customerdetails: customerDetails, products: uniqueArray });
+
+          setLastOrderData({ customerdetails: customerDetails, products: uniqueArray })
         }
         setlastOrderBtnState(false)
       }
@@ -1023,25 +1065,27 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
     if (lastOrderData.products.length > 0) {
     } else {
-      setOption((pre) => ({ ...pre, customerstatus: false, tempproduct: [] }));
+      setOption((pre) => ({ ...pre, customerstatus: false, tempproduct: [] }))
       setTotalAmount(0)
       form5.resetFields(['marginvalue'])
       setMarginValue({ amount: 0, discount: 0, percentage: 0 })
     }
   }, 300)
 
-  const[productCount,setProductCount] = useState(0);
+  const [productCount, setProductCount] = useState(0)
   //product onchange value
   const productOnchange = debounce((value, i) => {
     // form2.resetFields(['flavour'])
     // form2.resetFields(['quantity'])
     // form2.resetFields(['numberOfPacks'])
-    form5.resetFields(['marginvalue']);
-   
-    let productId = datas.product.find(data => (data.name === value) && (data.isDeleted === 0)).id;
-    let numberofpackCount = datas.storage.find(data => (data.productId === productId) && data.isDeleted === 0 ).numberOfPacks;
-    setProductCount(numberofpackCount);
-    
+    form5.resetFields(['marginvalue'])
+
+    let productId = datas.product.find((data) => data.name === value && data.isDeleted === 0).id
+    let numberofpackCount = datas.storage.find(
+      (data) => data.productId === productId && data.isDeleted === 0
+    ).numberOfPacks
+    setProductCount(numberofpackCount)
+
     // setMarginValue({ amount: 0, discount: 0, percentage: 0 })
     // const flavourOp = Array.from(
     //   new Set(datas.product.filter((item) => item.isDeleted === false && item.productname === value)
@@ -1083,12 +1127,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     const formattedDate = values.date ? values.date.format('DD/MM/YYYY') : ''
     // let [quantityvalue, units] = values.quantity.split(' ')
     const findPrice = await datas.product.find(
-      (item) =>
-        item.isDeleted === false &&
-        item.productname === values.productname 
-        // && item.flavour === values.flavour &&
-        // item.quantity === Number(quantityvalue) &&
-        // item.unit === units
+      (item) => item.isDeleted === false && item.productname === values.productname
+      // && item.flavour === values.flavour &&
+      // item.quantity === Number(quantityvalue) &&
+      // item.unit === units
     ).price
 
     const newProduct = {
@@ -1185,12 +1227,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     let productItems = option.tempproduct.flatMap((temp, tempIndex) =>
       datas.product
         .filter(
-          (pr) =>
-            temp.productname === pr.productname && 
-            pr.isDeleted === false 
-            // && temp.flavour === pr.flavour &&
-            // pr.quantity == temp.quantity.split(' ')[0] &&
-            // pr.unit === temp.quantity.split(' ')[1]
+          (pr) => temp.productname === pr.productname && pr.isDeleted === false
+          // && temp.flavour === pr.flavour &&
+          // pr.quantity == temp.quantity.split(' ')[0] &&
+          // pr.unit === temp.quantity.split(' ')[1]
         )
         .map((pr) => ({
           numberOfPacks: temp.numberOfPacks,
@@ -1198,23 +1238,28 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           returntype: temp.returntype,
           margin: temp.margin === '' ? 0 : temp.margin,
           sno: tempIndex + 1
-        })));
+        }))
+    )
 
     // Partial amount (value)
-    let { partialamount,paymentMode } = form4.getFieldsValue()
+    let { partialamount, paymentMode } = form4.getFieldsValue()
     let { customername } = form2.getFieldsValue()
     // Create delivery new
-    const newDelivery = returnDelivery.state === true ? {
+    const newDelivery =
+      returnDelivery.state === true
+        ? {
             customerId: customername,
             date: dayjs(form2.getFieldValue().date).format('DD/MM/YYYY'),
             total: totalamount,
             billamount: option.tempproduct.map((data) => data.price).reduce((a, b) => a + b, 0),
             paymentstatus: 'Return',
-            partialamount: partialamount === undefined || partialamount === null ? 0 : partialamount,
+            partialamount:
+              partialamount === undefined || partialamount === null ? 0 : partialamount,
             isDeleted: false,
             type: returnDelivery.state === true ? 'return' : 'order',
             createddate: TimestampJs(),
-            boxid:form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
+            boxid:
+              form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
           }
         : {
             customerId: customername,
@@ -1223,16 +1268,16 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             billamount: marginValue.amount,
             // paymentstatus: marginValue.paymentstaus,
             paymentstatus: form4.getFieldsValue().paymentstatus,
-            partialamount: partialamount === undefined || partialamount === null ? 0 : partialamount,
+            partialamount:
+              partialamount === undefined || partialamount === null ? 0 : partialamount,
             paymentMode: marginValue.paymentstaus === 'Unpaid' ? '' : paymentMode,
             isDeleted: false,
             type: returnDelivery.state === true ? 'return' : 'order',
             createddate: TimestampJs(),
-            boxid:form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
+            boxid:
+              form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
           }
-          
-          
-    
+
     // console.log(newDelivery);
     try {
       // const deliveryCollectionRef = collection(db, 'delivery')
@@ -1243,24 +1288,27 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       let deliveryRef = await addDelivery(newDelivery)
 
       for (const item of productItems) {
-        console.log(itemsCollectionRef,item,deliveryRef.id)
+        console.log(itemsCollectionRef, item, deliveryRef.id)
         await addDeliveryDetail(deliveryRef.id, item)
         // await addDoc(itemsCollectionRef, item)
 
         const product = await getProductById(item.id)
 
         if (product) {
-          const existingProduct = datas.storage.find( (storageItem) => storageItem.productId === product.id && storageItem.category === 'Product List');
+          const existingProduct = datas.storage.find(
+            (storageItem) =>
+              storageItem.productId === product.id && storageItem.category === 'Product List'
+          )
 
           if (returnDelivery.state === true && item.returntype === 'normal') {
             await updateStorage(existingProduct.id, {
-              numberOfPacks: existingProduct.numberOfPacks + item.numberOfPacks,
+              numberOfPacks: existingProduct.numberOfPacks + item.numberOfPacks
             })
           } else if (returnDelivery.state === true && item.returntype === 'damage') {
             // console.log('damage')
           } else {
             await updateStorage(existingProduct.id, {
-              numberOfPacks: existingProduct.numberOfPacks - item.numberOfPacks,
+              numberOfPacks: existingProduct.numberOfPacks - item.numberOfPacks
             })
           }
         }
@@ -1277,7 +1325,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       await storageUpdateMt()
     } catch (e) {
       console.error('Error adding delivery: ', e)
-      message.open({ type: 'error', content: `${e} Error ${returnDelivery.state === true ? 'return' : 'adding' }  delivery` })
+      message.open({
+        type: 'error',
+        content: `${e} Error ${returnDelivery.state === true ? 'return' : 'adding'}  delivery`
+      })
     } finally {
       setTotalAmount(0)
       setMarginValue((pre) => ({ ...pre, amount: 0 }))
@@ -1288,7 +1339,6 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       setIsDeliverySpiner(false)
       setTableLoading(false)
     }
-    
   }
 
   // model close
@@ -1360,79 +1410,79 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       Partial: item.partialamount,
       Status: item.paymentstatus,
       Mode: item.paymentMode
-    }));
+    }))
     jsonToExcel(specificData, `Delivery-List-${TimestampJs()}`)
     setSelectedRowKeys([])
     setEditingKey('')
   }
 
-   // export PDF
-   const exportPDF = async () => {
+  // export PDF
+  const exportPDF = async () => {
     const exportDatas = data.filter((item) => selectedRowKeys.includes(item.key))
-    let allInvoiceData = [];
+    let allInvoiceData = []
     console.log(allInvoiceData)
-    for(let record of exportDatas){
-    const { items, status } = await fetchItemsForDelivery(record.id)
-    const { freezerbox } = await getFreezerboxById(record.boxid);
-    let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber;
-    if (status === 200) {
-      let prData = datas.product.filter((item) => items.find((item2) => item.id === item2.id))
-      let prItems = prData.flatMap((pr) => {
-        let matchingItems = items.filter((item) => item.id === pr.id);
-        return matchingItems.map((matchingData) => ({
+    for (let record of exportDatas) {
+      const { items, status } = await fetchItemsForDelivery(record.id)
+      const { freezerbox } = await getFreezerboxById(record.boxid)
+      let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber
+      if (status === 200) {
+        let prData = datas.product.filter((item) => items.find((item2) => item.id === item2.id))
+        let prItems = prData.flatMap((pr) => {
+          let matchingItems = items.filter((item) => item.id === pr.id)
+          return matchingItems.map((matchingData) => ({
             sno: matchingData.sno,
             ...pr,
             pieceamount: pr.price,
             quantity: `${pr.quantity} ${pr.unit}`,
             margin: matchingData.margin,
             price:
-                matchingData.numberOfPacks * pr.price -
-                matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
+              matchingData.numberOfPacks * pr.price -
+              matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
             numberOfPacks: matchingData.numberOfPacks,
             producttotalamount: matchingData.numberOfPacks * pr.price,
-            returntype: matchingData.returntype,
-        }));
-      });
-      prItems.sort((a, b) => a.sno - b.sno);
-      allInvoiceData.push({
-        data: prItems,
-        customerdetails: {
-          ...record,
-          boxNumber: boxNumber
-        },
-      });
+            returntype: matchingData.returntype
+          }))
+        })
+        prItems.sort((a, b) => a.sno - b.sno)
+        allInvoiceData.push({
+          data: prItems,
+          customerdetails: {
+            ...record,
+            boxNumber: boxNumber
+          }
+        })
+      }
     }
-    }
-    const pdf = new jsPDF();
+    const pdf = new jsPDF()
     const imgWidth = 210
     const pageHeight = 297
-    for(let invoice of allInvoiceData){
+    for (let invoice of allInvoiceData) {
       await new Promise((resolve) => {
         setInvoiceDatas({
           data: invoice.data,
-          customerdetails: invoice.customerdetails,
-        });
-        setTimeout(resolve, 300);
+          customerdetails: invoice.customerdetails
+        })
+        setTimeout(resolve, 300)
       })
-        const element = printRef.current;
-        const canvas = await html2canvas(element);
-        const data = canvas.toDataURL('image/png');
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        pdf.addImage(data, 'PNG', 0, 0, imgWidth, imgHeight);
-        let heightLeft = imgHeight - pageHeight;
-        while (heightLeft > 0) {
-            pdf.addPage();
-            pdf.addImage(data, 'PNG', 0, heightLeft - imgHeight, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-        }
-        if (invoice !== allInvoiceData[allInvoiceData.length - 1]) {
-            pdf.addPage();
-        }
+      const element = printRef.current
+      const canvas = await html2canvas(element)
+      const data = canvas.toDataURL('image/png')
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      pdf.addImage(data, 'PNG', 0, 0, imgWidth, imgHeight)
+      let heightLeft = imgHeight - pageHeight
+      while (heightLeft > 0) {
+        pdf.addPage()
+        pdf.addImage(data, 'PNG', 0, heightLeft - imgHeight, imgWidth, imgHeight)
+        heightLeft -= pageHeight
       }
-      const lastInvoice = allInvoiceData[allInvoiceData.length - 1];
-      pdf.save(`Report-${lastInvoice.customerdetails.date}.pdf`);
-      setSelectedRowKeys([])
-      setEditingKey('')
+      if (invoice !== allInvoiceData[allInvoiceData.length - 1]) {
+        pdf.addPage()
+      }
+    }
+    const lastInvoice = allInvoiceData[allInvoiceData.length - 1]
+    pdf.save(`Report-${lastInvoice.customerdetails.date}.pdf`)
+    setSelectedRowKeys([])
+    setEditingKey('')
   }
 
   // material used
@@ -1609,7 +1659,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       title: 'S.No',
       key: 'sno',
       dataIndex: 'sno',
-      width: 80,
+      width: 80
       // render: (text, record, i) => <span>{i + 1}</span>
     },
     {
@@ -1690,8 +1740,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
         const { items, status } = await fetchItemsForDelivery(deliveryBill.prdata.id)
         const { paymenthistory } = await fetchPayDetailsForDelivery(deliveryBill.prdata.id)
-        
-        
+
         if (status === 200) {
           let prItems = datas.product.flatMap((item) =>
             items
@@ -1714,15 +1763,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               })
           )
 
-          console.log(deliveryBill);
+          console.log(deliveryBill)
 
           setDeliveryBill((pre) => ({
             ...pre,
             data: {
               items: prItems,
               ...deliveryBill.prdata,
-              paymenthistory: paymenthistory.length > 0 ? paymenthistory : [],
-              
+              paymenthistory: paymenthistory.length > 0 ? paymenthistory : []
             }
           }))
         }
@@ -1738,9 +1786,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   ])
 
   const onOpenDeliveryBill = debounce(async (data) => {
-    
-    let {freezerbox} = await getFreezerboxById(data.boxid);
-    let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber 
+    let { freezerbox } = await getFreezerboxById(data.boxid)
+    let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber
 
     setDeliveryBill((pre) => ({
       ...pre,
@@ -1749,7 +1796,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       open: !deliveryBill.open,
       // open: !pre.open,
       returnmodeltable: data.type === 'return' ? true : false,
-      boxNumber:boxNumber
+      boxNumber: boxNumber
     }))
   }, 200)
 
@@ -2027,17 +2074,17 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     customerdetails: {}
   })
 
-  const [gstin,setGstin] = useState(false);
-  const [loadingGstin, setLoadingGstin] = useState(false);
-  const [loadingWithoutGstin, setLoadingWithoutGstin] = useState(false);
+  const [gstin, setGstin] = useState(false)
+  const [loadingGstin, setLoadingGstin] = useState(false)
+  const [loadingWithoutGstin, setLoadingWithoutGstin] = useState(false)
 
   const handleDownloadPdf = async (record) => {
     const { items, status } = await fetchItemsForDelivery(record.id)
-    const { freezerbox } = await getFreezerboxById(record.boxid);
-    let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber;
+    const { freezerbox } = await getFreezerboxById(record.boxid)
+    let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber
     if (status === 200) {
       let prData = datas.product.filter((item, i) => items.find((item2) => item.id === item2.id))
-      
+
       // let prItems = await prData.map((pr, i) => {
       //   let matchingData = items.find((item, i) => item.id === pr.id)
       //   return {
@@ -2057,25 +2104,25 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
       let prItems = prData.flatMap((pr, i) => {
         // Get all matching items with the same id
-        let matchingItems = items.filter((item) => item.id === pr.id);
-        
+        let matchingItems = items.filter((item) => item.id === pr.id)
+
         // If there are matching items, map over them to return multiple results
         return matchingItems.map((matchingData) => ({
-            sno: matchingData.sno,
-            ...pr,
-            pieceamount: pr.price,
-            quantity: `${pr.quantity} ${pr.unit}`,
-            margin: matchingData.margin,
-            price:
-                matchingData.numberOfPacks * pr.price -
-                matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
-            numberOfPacks: matchingData.numberOfPacks,
-            producttotalamount: matchingData.numberOfPacks * pr.price,
-            returntype: matchingData.returntype,
-        }));
-      });
+          sno: matchingData.sno,
+          ...pr,
+          pieceamount: pr.price,
+          quantity: `${pr.quantity} ${pr.unit}`,
+          margin: matchingData.margin,
+          price:
+            matchingData.numberOfPacks * pr.price -
+            matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
+          numberOfPacks: matchingData.numberOfPacks,
+          producttotalamount: matchingData.numberOfPacks * pr.price,
+          returntype: matchingData.returntype
+        }))
+      })
 
-      prItems.sort((a, b) => a.sno - b.sno);
+      prItems.sort((a, b) => a.sno - b.sno)
       setInvoiceDatas((pre) => ({
         ...pre,
         data: prItems,
@@ -2083,11 +2130,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         customerdetails: {
           ...record,
           boxNumber: boxNumber
-        },
-      }));}
-      // console.log(record);
-      setLoadingGstin(false);
-      setLoadingWithoutGstin(false);
+        }
+      }))
+    }
+    // console.log(record);
+    setLoadingGstin(false)
+    setLoadingWithoutGstin(false)
   }
 
   useEffect(() => {
@@ -2113,12 +2161,11 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         pdf.save(
           `${invoiceDatas.customerdetails.customername}-${invoiceDatas.customerdetails.date}-${TimestampJs().split(' ')[1]}.pdf`
         )
-        setInvoiceDatas((pre) => ({ ...pre, isGenerate: false }));
-        setGstin(false);
+        setInvoiceDatas((pre) => ({ ...pre, isGenerate: false }))
+        setGstin(false)
       }
     }
     generatePDF()
-    
   }, [invoiceDatas.isGenerate, printRef])
 
   const [isCloseWarning, setIsCloseWarning] = useState(false)
@@ -2136,25 +2183,27 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
   // last order pull button
   const lastOrderBtn = async () => {
-    let itemsObject = lastOrderData.products.sort((a, b) => a.sno - b.sno).map((data, i) => ({
-      createddate: TimestampJs(),
-      customername: lastOrderData.customerdetails.customerId,
-      date: form2.getFieldValue().date ? form2.getFieldValue().date.format('DD/MM/YYYY') : '',
-      // flavour: data.flavour,
-      key: i + 1,
-      margin: data.margin,
-      mrp: data.numberOfPacks * data.price,
-      numberOfPacks: data.numberOfPacks,
-      price:
-        data.numberOfPacks * data.price - (data.numberOfPacks * data.price * data.margin) / 100,
-      productname: data.productname,
-      productprice: data.price,
-      // quantity: data.quantity + ' ' + data.unit,
-      returntype: data.returntype
-    }))
+    let itemsObject = lastOrderData.products
+      .sort((a, b) => a.sno - b.sno)
+      .map((data, i) => ({
+        createddate: TimestampJs(),
+        customername: lastOrderData.customerdetails.customerId,
+        date: form2.getFieldValue().date ? form2.getFieldValue().date.format('DD/MM/YYYY') : '',
+        // flavour: data.flavour,
+        key: i + 1,
+        margin: data.margin,
+        mrp: data.numberOfPacks * data.price,
+        numberOfPacks: data.numberOfPacks,
+        price:
+          data.numberOfPacks * data.price - (data.numberOfPacks * data.price * data.margin) / 100,
+        productname: data.productname,
+        productprice: data.price,
+        // quantity: data.quantity + ' ' + data.unit,
+        returntype: data.returntype
+      }))
 
-    console.log(lastOrderData.products);
-    
+    console.log(lastOrderData.products)
+
     let mrpValue = lastOrderData.products
       .map((data, i) => data.numberOfPacks * data.price)
       .reduce((a, b) => a + b, 0)
@@ -2195,10 +2244,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       collectiontype: 'delivery',
       deliveryid: billId,
       date: formateDate,
-      type:'Payment',
+      type: 'Payment',
       createddate: TimestampJs(),
       description: description === undefined || description === null ? '' : description,
-      isDeleted:false
+      isDeleted: false
     }
 
     let balanceAmount = deliveryBill.data.billamount - deliveryBill.data.partialamount
@@ -2265,7 +2314,6 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       await message.open({ type: 'success', content: `Payment pay successfully` })
       setPopupModal((pre) => ({ ...pre, quicksaleform: false }))
       setLoadingSpin((pre) => ({ ...pre, quicksaleform: false }))
-      
     }
   }
 
@@ -2300,9 +2348,9 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     //modal
     setPopupModal((pre) => ({ ...pre, payhistory: true }))
     // get data
-    const { paymenthistory } = await fetchPayDetailsForDelivery(deliveryBill.prdata.id);
-    let filterdata = paymenthistory.filter(data => data.isDeleted === false)
-console.log(filterdata);
+    const { paymenthistory } = await fetchPayDetailsForDelivery(deliveryBill.prdata.id)
+    let filterdata = paymenthistory.filter((data) => data.isDeleted === false)
+    console.log(filterdata)
 
     const sortedHistory = await oldestFirstSort(filterdata)
 
@@ -2343,7 +2391,9 @@ console.log(filterdata);
           {
             dot: <MdOutlineDoneOutline className="timeline-clock-icon text-green-500 pb-0" />,
             label: 'Paid',
-            children: ( <span className="pb-0 mb-0">{`${deliveryBill.data.billamount === undefined ? 0 : formatToRupee(deliveryBill.data.billamount)}`}</span>)
+            children: (
+              <span className="pb-0 mb-0">{`${deliveryBill.data.billamount === undefined ? 0 : formatToRupee(deliveryBill.data.billamount)}`}</span>
+            )
           }
         ]
       }))
@@ -2410,10 +2460,10 @@ console.log(filterdata);
     }
   }
 
-  const pdfBillStyle = {heading:'28px',subheading:'26px',para:'22px'};
+  const pdfBillStyle = { heading: '28px', subheading: '26px', para: '22px' }
 
-  const temTableHeight = TableHeight(200,430);
-  const returnTableHeight = TableHeight(200,430);
+  const temTableHeight = TableHeight(200, 430)
+  const returnTableHeight = TableHeight(200, 430)
   return (
     <div>
       <Modal
@@ -2449,14 +2499,16 @@ console.log(filterdata);
               <img className="w-[68px]" src={companyLogo} alt="comapanylogo" />{' '}
             </li>
             <li className="text-center">
-              <h1 style={{fontSize:`${pdfBillStyle.heading}`}} className='font-bold'>NEW SARANYA ICE COMPANY</h1>{' '}
-             <div style={{fontSize:`${pdfBillStyle.subheading}`}}>
-             <p >PILAVILAI, AZHAGANPARAI P.O.</p> <p >K.K.DIST</p>
-             </div>
+              <h1 style={{ fontSize: `${pdfBillStyle.heading}` }} className="font-bold">
+                NEW SARANYA ICE COMPANY
+              </h1>{' '}
+              <div style={{ fontSize: `${pdfBillStyle.subheading}` }}>
+                <p>PILAVILAI, AZHAGANPARAI P.O.</p> <p>K.K.DIST</p>
+              </div>
             </li>
           </ul>
 
-          <ul style={{fontSize:`${pdfBillStyle.para}`}} className="mt-1 flex justify-between">
+          <ul style={{ fontSize: `${pdfBillStyle.para}` }} className="mt-1 flex justify-between">
             <li>
               <div>
                 <span className="font-bold">Date:</span>{' '}
@@ -2464,8 +2516,7 @@ console.log(filterdata);
                   {Object.keys(invoiceDatas.customerdetails).length !== 0
                     ? invoiceDatas.customerdetails.date
                     : null}
-                </span>
-                {' '}
+                </span>{' '}
               </div>
               <div>
                 <span className="font-bold">GSTIN:</span> 33AAIFN6367K1ZV
@@ -2479,22 +2530,18 @@ console.log(filterdata);
                 </span>
               </div>
 
-              <div
-                  className={` ${invoiceDatas.customerdetails.boxNumber ? 'block' : 'hidden'}`}
-                >
-                  <span className="font-bold">Box Number :</span>{' '}
-                  <span>
-                    {invoiceDatas.customerdetails.boxNumber || 'N/A'}
-                  </span>
-                </div>
+              <div className={` ${invoiceDatas.customerdetails.boxNumber ? 'block' : 'hidden'}`}>
+                <span className="font-bold">Box Number :</span>{' '}
+                <span>{invoiceDatas.customerdetails.boxNumber || 'N/A'}</span>
+              </div>
 
               <div>
-              <span className="font-bold">Mobile Number : </span>{' '}
-              <span>{invoiceDatas.customerdetails.mobileNumber}</span>
+                <span className="font-bold">Mobile Number : </span>{' '}
+                <span>{invoiceDatas.customerdetails.mobileNumber}</span>
               </div>
 
               <section className={`${gstin === true ? 'block' : 'hidden'}`}>
-              <div
+                <div
                   className={` ${invoiceDatas.customerdetails.gstin !== '' ? 'block' : 'hidden'}`}
                 >
                   <span className="font-bold">Customer GSTIN :</span>{' '}
@@ -2515,7 +2562,6 @@ console.log(filterdata);
                   </span>
                 </div>
               </section>
-
             </li>
 
             <li className="text-end flex flex-col items-end">
@@ -2527,9 +2573,17 @@ console.log(filterdata);
             </li>
           </ul>
 
-          <h2 className={`${invoiceDatas.customerdetails.type === 'return' ? 'block': 'hidden'} font-bold w-full text-center mt-[10px]`} style={{fontSize:`${pdfBillStyle.para}`}}>Return</h2>
+          <h2
+            className={`${invoiceDatas.customerdetails.type === 'return' ? 'block' : 'hidden'} font-bold w-full text-center mt-[10px]`}
+            style={{ fontSize: `${pdfBillStyle.para}` }}
+          >
+            Return
+          </h2>
           {/* <h1 className="font-bold  text-center text-lg">Invoice</h1> */}
-          <table style={{fontSize:`${pdfBillStyle.para}`}} className="billtable min-w-full border-collapse mt-4">
+          <table
+            style={{ fontSize: `${pdfBillStyle.para}` }}
+            className="billtable min-w-full border-collapse mt-4"
+          >
             <thead>
               <tr>
                 <th className=" text-left border-b pb-2">S.No</th>
@@ -2548,7 +2602,13 @@ console.log(filterdata);
                 ? invoiceDatas.data.map((item, i) => (
                     <tr key={i}>
                       <td className=" border-b  pb-2">{item.sno}</td>
-                      <td className=" border-b  pb-2">{item.productname} {invoiceDatas.customerdetails.type === 'return' && (item.returntype !== undefined || item.returntype !== null) ? `(${item.returntype})` : '' }</td>
+                      <td className=" border-b  pb-2">
+                        {item.productname}{' '}
+                        {invoiceDatas.customerdetails.type === 'return' &&
+                        (item.returntype !== undefined || item.returntype !== null)
+                          ? `(${item.returntype})`
+                          : ''}
+                      </td>
                       {/* <td className=" border-b  pb-2">{item.flavour}</td> */}
                       {/* <td className=" border-b  pb-2">{item.quantity}</td> */}
                       <td className=" border-b  pb-2">{item.pieceamount}</td>
@@ -2566,52 +2626,58 @@ console.log(filterdata);
                 : 'No Data'}
             </tbody>
           </table>
-          
-          <div style={{fontSize:`${pdfBillStyle.para}`}}>
-          <p className="text-end mt-2 ">
-            Total Amount:{' '}
-            <span className=" font-bold">
-              {Object.keys(invoiceDatas.customerdetails).length !== 0
-                ? formatToRupee(invoiceDatas.customerdetails.total)
-                : null}
-            </span>{' '}
-          </p>
-          <p className="text-end ">
-          Bill Amount:{' '}
-            <span className=" font-bold">
-              {Object.keys(invoiceDatas.customerdetails).length !== 0
-                ? formatToRupee(invoiceDatas.customerdetails.billamount)
-                : null}
-            </span>
-          </p>
-          <p
-            className={` ${invoiceDatas.customerdetails.partialamount !== 0 || invoiceDatas.customerdetails.paymentstatus === "Paid" ? 'block text-end' : 'hidden'}`}
-          >
-            Paid Amount:{' '}
-            <span className=" font-bold ">
-              {Object.keys(invoiceDatas.customerdetails).length !== 0
-                ? invoiceDatas.customerdetails.paymentstatus === "Paid"
-                ? formatToRupee(invoiceDatas.customerdetails.billamount)
-                : formatToRupee(invoiceDatas.customerdetails.partialamount)
-                : null}
-            </span>
-          </p>
-          </div>
-        
-         <div style={{fontSize:`${pdfBillStyle.para}`}} className='flex justify-between items-center'>
-         <p className="text-end ">Authorised Signature</p>
 
-<p
-  className={` ${invoiceDatas.customerdetails.partialamount !== 0 ? 'block text-end' : 'hidden'}`}
->
-  Balance:{' '}
-  <span className=" font-bold ">
-    {Object.keys(invoiceDatas.customerdetails).length !== 0
-      ? formatToRupee(invoiceDatas.customerdetails.billamount - invoiceDatas.customerdetails.partialamount)
-      : null}
-  </span>
-</p>
-         </div>
+          <div style={{ fontSize: `${pdfBillStyle.para}` }}>
+            <p className="text-end mt-2 ">
+              Total Amount:{' '}
+              <span className=" font-bold">
+                {Object.keys(invoiceDatas.customerdetails).length !== 0
+                  ? formatToRupee(invoiceDatas.customerdetails.total)
+                  : null}
+              </span>{' '}
+            </p>
+            <p className="text-end ">
+              Bill Amount:{' '}
+              <span className=" font-bold">
+                {Object.keys(invoiceDatas.customerdetails).length !== 0
+                  ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                  : null}
+              </span>
+            </p>
+            <p
+              className={` ${invoiceDatas.customerdetails.partialamount !== 0 || invoiceDatas.customerdetails.paymentstatus === 'Paid' ? 'block text-end' : 'hidden'}`}
+            >
+              Paid Amount:{' '}
+              <span className=" font-bold ">
+                {Object.keys(invoiceDatas.customerdetails).length !== 0
+                  ? invoiceDatas.customerdetails.paymentstatus === 'Paid'
+                    ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                    : formatToRupee(invoiceDatas.customerdetails.partialamount)
+                  : null}
+              </span>
+            </p>
+          </div>
+
+          <div
+            style={{ fontSize: `${pdfBillStyle.para}` }}
+            className="flex justify-between items-center"
+          >
+            <p className="text-end ">Authorised Signature</p>
+
+            <p
+              className={` ${invoiceDatas.customerdetails.partialamount !== 0 ? 'block text-end' : 'hidden'}`}
+            >
+              Balance:{' '}
+              <span className=" font-bold ">
+                {Object.keys(invoiceDatas.customerdetails).length !== 0
+                  ? formatToRupee(
+                      invoiceDatas.customerdetails.billamount -
+                        invoiceDatas.customerdetails.partialamount
+                    )
+                  : null}
+              </span>
+            </p>
+          </div>
           {/* <p className="text-end mt-28 p-2 ">Authorised Signature</p> */}
         </section>
       </div>
@@ -2835,7 +2901,7 @@ console.log(filterdata);
           <div className="grid grid-cols-4 gap-x-3">
             <span className="col-span-1">
               <Form
-              className='relative'
+                className="relative"
                 onFinish={createTemDeliveryMt}
                 form={form2}
                 layout="vertical"
@@ -2895,10 +2961,11 @@ console.log(filterdata);
                 </span>
 
                 <Form.Item
-                  className={`mb-1 
+                  className={
+                    `mb-1 
                   
                   `
-                  // ${returnDelivery.state ? 'hidden' : 'block'}
+                    // ${returnDelivery.state ? 'hidden' : 'block'}
                   }
                   name="boxNumber"
                   label="Box Number"
@@ -2920,8 +2987,18 @@ console.log(filterdata);
                   />
                 </Form.Item>
 
-               <span className={`${returnDelivery.state === true ? 'hidden': 'inline-block'} absolute left-1/2 top-1/2 translate-x-2 translate-y-12`}>  <Tag className='w-full flex gap-x-0 justify-between items-center' color={`${productCount <= 0 ? 'red' : 'green'}`}  ><PiGarageBold size={16} /> {productCount <= 0 ? 0 : productCount} </Tag></span>
-                
+                <span
+                  className={`${returnDelivery.state === true ? 'hidden' : 'inline-block'} absolute left-1/2 top-1/2 translate-x-2 translate-y-12`}
+                >
+                  {' '}
+                  <Tag
+                    className="w-full flex gap-x-0 justify-between items-center"
+                    color={`${productCount <= 0 ? 'red' : 'green'}`}
+                  >
+                    <PiGarageBold size={16} /> {productCount <= 0 ? 0 : productCount}{' '}
+                  </Tag>
+                </span>
+
                 <Form.Item
                   className="mb-1"
                   name="productname"
@@ -2929,7 +3006,6 @@ console.log(filterdata);
                   rules={[{ required: true, message: false }]}
                 >
                   <Select
-                  
                     disabled={option.customerstatus}
                     showSearch
                     placeholder="Select the Product"
@@ -2942,7 +3018,6 @@ console.log(filterdata);
                     options={option.product}
                     onChange={(value, i) => productOnchange(value, i)}
                   />
-
                 </Form.Item>
 
                 {/* <Form.Item
@@ -3003,8 +3078,6 @@ console.log(filterdata);
                   />
                 </Form.Item>
 
-
-
                 <Form.Item
                   className="mb-3"
                   name="numberOfPacks"
@@ -3036,7 +3109,10 @@ console.log(filterdata);
                   dataSource={option.tempproduct}
                   // pagination={{ pageSize: 5 }}
                   pagination={false}
-                  scroll={{ x: false, y: returnDelivery.state === true ? returnTableHeight : temTableHeight }}
+                  scroll={{
+                    x: false,
+                    y: returnDelivery.state === true ? returnTableHeight : temTableHeight
+                  }}
                 />
               </Form>
             </span>
@@ -3064,12 +3140,13 @@ console.log(filterdata);
         width={1200}
         title={
           <div className="relative flex items-center justify-center text-sm py-2">
-            
             <div className="absolute left-10 m-0 text-sm">
-            <Tag color="blue" >
-              {deliveryBill.data.customername}
-            </Tag>
-            { deliveryBill.boxNumber === '' ? '' : <Tag color='pink'>{deliveryBill.boxNumber}</Tag>}
+              <Tag color="blue">{deliveryBill.data.customername}</Tag>
+              {deliveryBill.boxNumber === '' ? (
+                ''
+              ) : (
+                <Tag color="pink">{deliveryBill.boxNumber}</Tag>
+              )}
             </div>
 
             <span className="flex gap-x-1">
@@ -3089,8 +3166,11 @@ console.log(filterdata);
               >
                 {deliveryBill.prdata.deliverydate} {deliveryBill.prdata.time}
               </span>
-              <span className={`${deliveryBill.prdata.type !== 'booking' ? ' inline-block' : 'hidden'}`}>
-                {deliveryBill.data.date === undefined ? 0 : deliveryBill.data.date}</span>
+              <span
+                className={`${deliveryBill.prdata.type !== 'booking' ? ' inline-block' : 'hidden'}`}
+              >
+                {deliveryBill.data.date === undefined ? 0 : deliveryBill.data.date}
+              </span>
               <Tag
                 className="m-0"
                 color={`${deliveryBill.data.paymentstatus === 'Paid' ? 'green' : deliveryBill.data.paymentstatus === 'Unpaid' ? 'red' : deliveryBill.data.paymentstatus === 'Partial' ? 'yellow' : 'blue'}`}
@@ -3123,17 +3203,18 @@ console.log(filterdata);
                     await updateDelivery(deliveryBill.data.id, { bookingstatus: 'Delivered' })
 
                     let { items, status } = await fetchItemsForDelivery(deliveryBill.data.id)
-                      items.map(async (data) => {
-                        const existingProduct = datas.storage.find(
-                          (storageItem) =>
-                            storageItem.productId === data.id && storageItem.category === 'Product List'
-                        )
-                        await updateStorage(existingProduct.id, {
-                          numberOfPacks: existingProduct.numberOfPacks - data.numberOfPacks,
-                          updateddate: TimestampJs()
-                        })
+                    items.map(async (data) => {
+                      const existingProduct = datas.storage.find(
+                        (storageItem) =>
+                          storageItem.productId === data.id &&
+                          storageItem.category === 'Product List'
+                      )
+                      await updateStorage(existingProduct.id, {
+                        numberOfPacks: existingProduct.numberOfPacks - data.numberOfPacks,
+                        updateddate: TimestampJs()
                       })
-                      await storageUpdateMt()
+                    })
+                    await storageUpdateMt()
 
                     // await setDeliveryBill(pre=>({...pre,loading:false}));
                     await deliveryUpdateMt()
@@ -3347,7 +3428,8 @@ console.log(filterdata);
                 onFinish={payModalState.type === 'create' ? quickSalePayMt : updateQuickSalePayMt}
                 form={quicksalepayForm}
                 initialValues={{ date: dayjs(), paymentMode: 'Cash' }}
-                layout="vertical">
+                layout="vertical"
+              >
                 <Form.Item
                   className=" absolute top-[-3rem]"
                   name="date"
@@ -3410,41 +3492,35 @@ console.log(filterdata);
       <div
         ref={GstBillRef}
         className="absolute top-[-200rem] w-full"
-        style={{ padding: '20px', backgroundColor: '#ffff', fontSize: '16px'}}
+        style={{ padding: '20px', backgroundColor: '#ffff', fontSize: '16px' }}
       >
-        <span
-          className="w-full block text-center font-bold text-[20px]"
-        >
-          TAX INVOICE
-        </span>
+        <span className="w-full block text-center font-bold text-[20px]">TAX INVOICE</span>
         <div className="w-full flex justify-center items-center">
           <section className="w-[90%] border mt-4">
-            <ul
-              className={`px-2 flex justify-between text-[16px]`}
-            >
+            <ul className={`px-2 flex justify-between text-[16px]`}>
               {/* phone number */}
               <li className="text-start flex flex-col ">
-                    <span>
-                      <span className="font-medium">Date &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; :</span>{' '}
-                      <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? invoiceDatas.customerdetails.createddate
-                          : null}
-                      </span>
-                    </span>
                 <span>
-                  <span className="font-medium">Phone No &#160;&#160;&#160; :</span>{' '}
-                  7373674757, 9487369569
+                  <span className="font-medium">
+                    Date &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; :
+                  </span>{' '}
+                  <span>
+                    {Object.keys(invoiceDatas.customerdetails).length !== 0
+                      ? invoiceDatas.customerdetails.createddate
+                      : null}
+                  </span>
                 </span>
                 <span>
-                <span className="font-medium">
-                  Invoice No &#160;&#160; :
-                </span>{' '}
-                    <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? invoiceDatas.customerdetails.id
-                          : null}
-                      </span>
+                  <span className="font-medium">Phone No &#160;&#160;&#160; :</span> 7373674757,
+                  9487369569
+                </span>
+                <span>
+                  <span className="font-medium">Invoice No &#160;&#160; :</span>{' '}
+                  <span>
+                    {Object.keys(invoiceDatas.customerdetails).length !== 0
+                      ? invoiceDatas.customerdetails.id
+                      : null}
+                  </span>
                 </span>
               </li>
 
@@ -3456,27 +3532,24 @@ console.log(filterdata);
 
             <ul className="flex justify-center items-center gap-x-2 border-b">
               <li className="text-center pb-2">
-                <p
-                  className="font-bold text-[14px]"
-                >
-                  NEW SARANYA ICE COMPANY
-                </p>{' '}
+                <p className="font-bold text-[14px]">NEW SARANYA ICE COMPANY</p>{' '}
               </li>
             </ul>
 
             {/* grid -2 */}
             <ul className={`px-2 pb-2`}>
-              <li className='text-[16px]'>
+              <li className="text-[16px]">
                 <span className="text-center block ">
-                Factory Address : TC48/285, Pilavilai, Azhaganparai, Kanyakumari Dist, Pincode-629501
+                  Factory Address : TC48/285, Pilavilai, Azhaganparai, Kanyakumari Dist,
+                  Pincode-629501
                 </span>
               </li>
             </ul>
 
             <ul className={`px-2 border-t pb-2`}>
-              <li className='text-[16px]'>
+              <li className="text-[16px]">
                 <span className="text-center block ">
-                Regd Office : 28/3030,Pilavilai,Azhaganparai,K.K.Dist-629501
+                  Regd Office : 28/3030,Pilavilai,Azhaganparai,K.K.Dist-629501
                 </span>
               </li>
             </ul>
@@ -3484,13 +3557,9 @@ console.log(filterdata);
             <table className="gsttable w-full">
               <thead>
                 <tr>
-                  <th
-                    className={`pl-2 font-medium text-[16px] pb-2`}
-                  >
+                  <th className={`pl-2 font-medium text-[16px] pb-2`}>
                     <span className="text-left block ">
-                      GSTIN
-                      &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;:
-                      33AAIFN6367K1ZV
+                      GSTIN &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;: 33AAIFN6367K1ZV
                     </span>
                     <span className="text-left block ">
                       PAN No &#160;&#160;&#160;&#160;&#160;&#160;:{' '}
@@ -3498,19 +3567,14 @@ console.log(filterdata);
                     </span>
                   </th>
 
-                  <th
-                    className={`font-medium text-[16px] pb-2`}
-                  >
+                  <th className={`font-medium text-[16px] pb-2`}>
                     <span className="block">FSSAI No</span>
                     33AAIFN6367K1ZV
                   </th>
 
-                  <th
-                    className={`font-medium text-[16px] pb-2`}
-                  >
+                  <th className={`font-medium text-[16px] pb-2`}>
                     <span className="text-left block pl-2">
-                      No &#160;&#160;&#160;&#160;&#160;&#160;:{' '}
-                      {invoiceDatas.customerdetails.id}
+                      No &#160;&#160;&#160;&#160;&#160;&#160;: {invoiceDatas.customerdetails.id}
                     </span>
                     <span className="text-left block pl-2">
                       Date &#160;&#160;&#160;:{' '}
@@ -3525,20 +3589,13 @@ console.log(filterdata);
               </thead>
             </table>
 
-
             {/* grid-3 */}
             <ul className="border-t grid grid-cols-2 ">
               {/* billed address */}
               <li className={`border-r pb-2`}>
                 <div className="px-2">
-                  <span
-                    className="text-left block font-semibold text-[16px]"
-                  >
-                    Billed To{' '}
-                  </span>
-                  <address
-                    className={`not-italic text-[16px]`}
-                  >
+                  <span className="text-left block font-semibold text-[16px]">Billed To </span>
+                  <address className={`not-italic text-[16px]`}>
                     <span className={`font-semibold pl-2`}>New Saranya Ice Company</span> <br />
                     <span className={`font-medium block pl-4`}>
                       2-61/3 Pillavillai Azhaganparal Post <br />
@@ -3548,22 +3605,20 @@ console.log(filterdata);
                       Pincode: 628217.
                     </span>
                   </address>
-                  <span
-                    className={` font-medium mt-3 block text-[16px]`}
-                  >
-                    PAN NO &#160;&#160;&#160;&#160;&#160;&#160;&#160;: 33AAIFN6367K1ZV<br />
-                    GSTIN &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;: 33AAIFN6367K1ZV
+                  <span className={` font-medium mt-3 block text-[16px]`}>
+                    PAN NO &#160;&#160;&#160;&#160;&#160;&#160;&#160;: 33AAIFN6367K1ZV
+                    <br />
+                    GSTIN &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;:
+                    33AAIFN6367K1ZV
                     <br />
                   </span>
                 </div>
               </li>
               {/* shipped address */}
-              <li className='text-[16px] pb-2'>
+              <li className="text-[16px] pb-2">
                 <div className="px-2 flex flex-col justify-between">
                   <span className="text-left block font-semibold">Shipped To </span>
-                  <address
-                    className={`not-italic text-[16px]`}
-                  >
+                  <address className={`not-italic text-[16px]`}>
                     <span className={`font-semibold pl-2`}>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
                         ? invoiceDatas.customerdetails.customername
@@ -3577,9 +3632,7 @@ console.log(filterdata);
                     </span>
                   </address>
 
-                  <span
-                    className={` font-medium  block text-[16px]`}
-                  >
+                  <span className={` font-medium  block text-[16px]`}>
                     GSTIN &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;:{' '}
                     <span className={`font-medium`}>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
@@ -3592,95 +3645,49 @@ console.log(filterdata);
             </ul>
 
             <section
-            style={{
-              minHeight: '46rem',
-              overflowY: 'auto',
-              pageBreakInside: 'avoid'
-            }}
+              style={{
+                minHeight: '46rem',
+                overflowY: 'auto',
+                pageBreakInside: 'avoid'
+              }}
             >
-              <table
-                className={`gstitemtable min-w-full border-collapse text-[16px]`}
-              >
+              <table className={`gstitemtable min-w-full border-collapse text-[16px]`}>
                 <thead>
                   <tr>
-                    <th
-                      className={`border-r w-[2rem] text-[16px] pb-2`}
-                    >
-                      S.No
-                    </th>
-                    <th
-                      className={` border-b text-[16px] pb-2`}
-                    >
-                      Product
-                    </th>
-                    <th
-                      className={` border-b text-[16px] pb-2`}
-                    >
-                      Rate
-                    </th>
-                    <th
-                      className={` border-b text-[16px] pb-2`}
-                    >
-                      Qty
-                    </th>
-                    <th
-                      className={` border-b text-[16px] pb-2`}
-                    >
-                      MRP
-                    </th>
-                    <th
-                      className={` border-b text-[16px] pb-2`}
-                    >
-                      Discount
-                    </th>
-                    <th
-                      className={` border-b text-[16px] pb-2`}
-                    >
-                      Amount
-                    </th>
+                    <th className={`border-r w-[2rem] text-[16px] pb-2`}>S.No</th>
+                    <th className={` border-b text-[16px] pb-2`}>Product</th>
+                    <th className={` border-b text-[16px] pb-2`}>Rate</th>
+                    <th className={` border-b text-[16px] pb-2`}>Qty</th>
+                    <th className={` border-b text-[16px] pb-2`}>MRP</th>
+                    <th className={` border-b text-[16px] pb-2`}>Discount</th>
+                    <th className={` border-b text-[16px] pb-2`}>Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {invoiceDatas.data.length > 0
                     ? invoiceDatas.data.map((item, i) => (
                         <tr key={i}>
-                          <td
-                            className={`border-b text-center text-[16px] pb-2`}
-                          > 
-                            {i + 1}
-                          </td>
-                          <td
-                            className={` border-b px-1 text-[16px]`}
-                          >
+                          <td className={`border-b text-center text-[16px] pb-2`}>{i + 1}</td>
+                          <td className={` border-b px-1 text-[16px]`}>
                             {item.productname}{' '}
                             {invoiceDatas.customerdetails.type === 'return' &&
                             (item.returntype !== undefined || item.returntype !== null)
                               ? `(${item.returntype})`
                               : ''}
                           </td>
-                          <td
-                            className={` border-b text-center text-[16px]`}
-                          >
+                          <td className={` border-b text-center text-[16px]`}>
                             {item.pieceamount}
                           </td>
-                          <td
-                            className={` border-b text-center text-[16px]`}
-                          >
+                          <td className={` border-b text-center text-[16px]`}>
                             {item.numberOfPacks}
                           </td>
-                          <td
-                            className={` border-b text-center text-[16px]`}
-                          >
+                          <td className={` border-b text-center text-[16px]`}>
                             {item.producttotalamount}
                           </td>
-                          <td
-                            className={` border-b text-center text-[16px]`}
-                          >
+                          <td className={` border-b text-center text-[16px]`}>
                             {toDigit(item.margin)}%
                           </td>
-                          <td
-                            className={` border-b text-center text-[16px]`}
-                          >
+                          <td className={` border-b text-center text-[16px]`}>
                             {customRound(
                               item.numberOfPacks * item.pieceamount -
                                 (item.numberOfPacks * item.pieceamount * item.margin) / 100
@@ -3690,20 +3697,20 @@ console.log(filterdata);
                       ))
                     : 'No Data'}
 
-                  <tr className='px-1 pdf-padding'>
+                  <tr className="px-1 pdf-padding">
                     <td></td>
-                    <td className='px-1'>Total</td>
+                    <td className="px-1">Total</td>
                     <td></td>
                     <td></td>
-                    <td className='px-1 text-center'>
+                    <td className="px-1 text-center">
                       <span className="font-bold">
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
                           ? formatToRupee(invoiceDatas.customerdetails.total)
                           : null}
                       </span>
                     </td>
-                  <td></td>
-                    <td className='px-1 text-center'>
+                    <td></td>
+                    <td className="px-1 text-center">
                       <span className=" font-bold">
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
                           ? formatToRupee(invoiceDatas.customerdetails.billamount)
@@ -3715,9 +3722,7 @@ console.log(filterdata);
               </table>
             </section>
 
-            <table
-              className={`gsttaxtable w-full text-[16px] pdf-padding`}
-            >
+            <table className={`gsttaxtable w-full text-[16px] pdf-padding`}>
               <thead className="font-semibold">
                 <tr className="font-semibold">
                   <th>HSN/SAC</th>
@@ -3737,68 +3742,76 @@ console.log(filterdata);
                 </tr>
               </thead>
 
-              <tbody
-                className={`gsttaxtable w-full text-center text-[16px]`}
-              >
+              <tbody className={`gsttaxtable w-full text-center text-[16px]`}>
                 <tr>
                   <td>19053453</td>
-                  <td><span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount)
-                          : null}
-                      </span></td>
+                  <td>
+                    <span>
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                        : null}
+                    </span>
+                  </td>
                   <td>9%</td>
-                  <td><span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
-                          : null}
-                      </span></td>
+                  <td>
+                    <span>
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        : null}
+                    </span>
+                  </td>
                   <td>9%</td>
-                  <td><span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
-                          : null}
-                      </span></td>
+                  <td>
+                    <span>
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        : null}
+                    </span>
+                  </td>
                 </tr>
                 <tr className="font-semibold">
                   <td></td>
                   <td>Total</td>
                   <td></td>
-                  <td><span className=" font-semibold">
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
-                          : null}
-                      </span></td>
+                  <td>
+                    <span className=" font-semibold">
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        : null}
+                    </span>
+                  </td>
                   <td></td>
-                  <td><span className=" font-semibold">
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
-                          : null}
-                      </span></td>
-                  <td><span className=" font-semibold">
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
-                          : null}</span></td>
+                  <td>
+                    <span className=" font-semibold">
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        : null}
+                    </span>
+                  </td>
+                  <td>
+                    <span className=" font-semibold">
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
+                        : null}
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             </table>
 
             {/* company bank detials */}
-            <ul
-              className={`text-[16px] border-b w-full border-x grid grid-cols-2  `}
-            >
-                <li className={`border-t border-r pb-2`}>
+            <ul className={`text-[16px] border-b w-full border-x grid grid-cols-2  `}>
+              <li className={`border-t border-r pb-2`}>
                 <div className="px-2">
-                  <span
-                    className={`font-medium block text-[16px]`}
-                  >
-                    Distination &#160;&#160;: <span className={`font-semibold`}>
+                  <span className={`font-medium block text-[16px]`}>
+                    Distination &#160;&#160;:{' '}
+                    <span className={`font-semibold`}>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
                         ? invoiceDatas.customerdetails.address
                         : null}{' '}
                     </span>
                     <br />
-                    Transport &#160;&#160;&#160;&#160;: 
+                    Transport &#160;&#160;&#160;&#160;:
                     <span className={`font-semibold`}>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
                         ? invoiceDatas.customerdetails.vehicleorfreezerno
@@ -3810,33 +3823,32 @@ console.log(filterdata);
               </li>
               <li className={`w-full border-t text-right`}>
                 <div className="px-2">
-                  <span
-                    className={` font-medium  block text-[16px]`}
-                  >
-                    Total Sale Value : <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.total)
-                          : null}
-                      </span><br />
+                  <span className={` font-medium  block text-[16px]`}>
+                    Total Sale Value :{' '}
                     <span>
-                      Discount :{' '}<span>
+                      {Object.keys(invoiceDatas.customerdetails).length !== 0
+                        ? formatToRupee(invoiceDatas.customerdetails.total)
+                        : null}
+                    </span>
+                    <br />
+                    <span>
+                      Discount :{' '}
+                      <span>
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.total - invoiceDatas.customerdetails.billamount)
+                          ? formatToRupee(
+                              invoiceDatas.customerdetails.total -
+                                invoiceDatas.customerdetails.billamount
+                            )
                           : null}
                       </span>
                     </span>
                     <br />
-                   
                   </span>
                 </div>
-              </li> 
+              </li>
 
               <li className={`px-2 border-t pb-2`}>
-                <h2
-                  className="w-full font-semibold text-[16px]"
-                >
-                  Company's Bank Details
-                </h2>
+                <h2 className="w-full font-semibold text-[16px]">Company's Bank Details</h2>
                 Bank Name
                 &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;:{' '}
                 <span className="font-medium">State Bank of India CC A/c</span> <br />
@@ -3847,50 +3859,69 @@ console.log(filterdata);
                 Branch & IFS Code &#160;:{' '}
                 <span className="font-medium">Srialsi SME Branch & SBIN003316</span>
                 <br />
-                UPI ID &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;:{' '}
+                UPI ID
+                &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;:{' '}
                 <span className="font-medium">saranya@sbi</span>
                 <br />
               </li>
 
-              <li
-                className={`px-2 border-l font-medium text-[16px] text-right`}
-              >
-                 Total : <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount)
-                          : null}
-                      </span>
-                    <br />
-                    GST @ 18% : <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
-                          : null}
-                      </span><br />
-                <span className="block font-bold pt-5"> Grand Total : <span>
-                        {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount + invoiceDatas.customerdetails.billamount * 0.18)
-                          : null}
-                      </span></span>
-              </li>
-              
-              <li
-                className={`px-2 border-t w-full text-[16px] pb-2`}
-              >
-                <p className={`font-semibold text-[14px]`}>Declaration & Terms Of Delivery</p>
-                <p className='text-[8px]'>1 Billing Is Ex-Works.Claims for Shortage and Defective Goods Will Not Be Entertained After Delivery.</p>
-                <p className='text-[8px]'>2 All Transportation Via Buyer Vehicle Is Cost to Buyers Accounts.All Damages/risks After Delivery at Factory Premises to Buyers Accounts</p>
-                <p className='text-[8px]'>3 All Taxes/levis/penalites/compounding Fees Etc Imposed Post Delivery to the Buyers Accounts.</p>
-                <p className='text-[8px]'>4 Name of the Commodity- IC = Medium fat Ice cream,FD = Medium fat frozen dessert,LG=High fat ice cream,IL=Ice lolly,IN=ice candy</p>
-                <p className='text-[8px]'>5 We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.</p>
+              <li className={`px-2 border-l font-medium text-[16px] text-right`}>
+                Total :{' '}
+                <span>
+                  {Object.keys(invoiceDatas.customerdetails).length !== 0
+                    ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                    : null}
+                </span>
+                <br />
+                GST @ 18% :{' '}
+                <span>
+                  {Object.keys(invoiceDatas.customerdetails).length !== 0
+                    ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
+                    : null}
+                </span>
+                <br />
+                <span className="block font-bold pt-5">
+                  {' '}
+                  Grand Total :{' '}
+                  <span>
+                    {Object.keys(invoiceDatas.customerdetails).length !== 0
+                      ? formatToRupee(
+                          invoiceDatas.customerdetails.billamount +
+                            invoiceDatas.customerdetails.billamount * 0.18
+                        )
+                      : null}
+                  </span>
+                </span>
               </li>
 
-              <li
-                className={`px-2  border-l border-t text-[16px] pb-2`}
-              >
-                Checked by <span className='font-semibold'>NEW SARANYA ICE COMPANY</span>
+              <li className={`px-2 border-t w-full text-[16px] pb-2`}>
+                <p className={`font-semibold text-[14px]`}>Declaration & Terms Of Delivery</p>
+                <p className="text-[8px]">
+                  1 Billing Is Ex-Works.Claims for Shortage and Defective Goods Will Not Be
+                  Entertained After Delivery.
+                </p>
+                <p className="text-[8px]">
+                  2 All Transportation Via Buyer Vehicle Is Cost to Buyers Accounts.All
+                  Damages/risks After Delivery at Factory Premises to Buyers Accounts
+                </p>
+                <p className="text-[8px]">
+                  3 All Taxes/levis/penalites/compounding Fees Etc Imposed Post Delivery to the
+                  Buyers Accounts.
+                </p>
+                <p className="text-[8px]">
+                  4 Name of the Commodity- IC = Medium fat Ice cream,FD = Medium fat frozen
+                  dessert,LG=High fat ice cream,IL=Ice lolly,IN=ice candy
+                </p>
+                <p className="text-[8px]">
+                  5 We declare that this invoice shows the actual price of the goods described and
+                  that all particulars are true and correct.
+                </p>
+              </li>
+
+              <li className={`px-2  border-l border-t text-[16px] pb-2`}>
+                Checked by <span className="font-semibold">NEW SARANYA ICE COMPANY</span>
                 <span className="block text-right pt-14"> Authorised Signature </span>
               </li>
-
             </ul>
           </section>
         </div>

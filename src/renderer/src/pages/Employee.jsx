@@ -41,7 +41,13 @@ import { PiWarningCircleFill } from 'react-icons/pi'
 import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import { truncateString } from '../js-files/letter-length-sorting'
 
-import { addEmployee, updateEmployee, addEmployeePayment, getEmployeePaymentsById, updateEmployeePayment } from '../sql/employee'
+import {
+  addEmployee,
+  updateEmployee,
+  addEmployeePayment,
+  getEmployeePaymentsById,
+  updateEmployeePayment
+} from '../sql/employee'
 
 export default function Employee({ datas, employeeUpdateMt }) {
   // states
@@ -56,8 +62,11 @@ export default function Employee({ datas, employeeUpdateMt }) {
   // side effect
   useEffect(() => {
     setEmployeeTbLoading(true)
-    const filteredData = datas.employees
-      .map((item, index) => ({ ...item, sno: index + 1, key: item.id || index }))
+    const filteredData = datas.employees.map((item, index) => ({
+      ...item,
+      sno: index + 1,
+      key: item.id || index
+    }))
     setData(filteredData)
     setEmployeeTbLoading(false)
   }, [datas])
@@ -77,7 +86,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
   // create new project
   const createNewEmployee = async (values) => {
     setIsNewEmployeeLoading(true)
-    console.log(values);
+    console.log(values)
     try {
       await addEmployee({
         ...values,
@@ -92,7 +101,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
       employeeUpdateMt()
       message.open({ type: 'success', content: 'Created Successfully' })
     } catch (e) {
-      console.log(e);
+      console.log(e)
       message.open({ type: 'error', content: `${e} Created Unsuccessfully` })
     } finally {
       setIsModalOpen(false)
@@ -116,8 +125,8 @@ export default function Employee({ datas, employeeUpdateMt }) {
           String(record.position).toLowerCase().includes(value.toLowerCase()) ||
           String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
           String(record.address).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.name).toLowerCase().includes(value.toLowerCase()) || 
-          String(record.gender).toLowerCase().includes(value.toLowerCase()) 
+          String(record.name).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.gender).toLowerCase().includes(value.toLowerCase())
         )
       }
     },
@@ -146,8 +155,8 @@ export default function Employee({ datas, employeeUpdateMt }) {
       editable: true,
       sorter: (a, b) => a.address.localeCompare(b.address),
       showSorterTooltip: { target: 'sorter-icon' },
-      render: (text,record)=>{
-        return text.length > 18 ? <Tooltip title={text}>{truncateString(text,18)}</Tooltip> : text
+      render: (text, record) => {
+        return text.length > 18 ? <Tooltip title={text}>{truncateString(text, 18)}</Tooltip> : text
       }
     },
     {
@@ -207,23 +216,25 @@ export default function Employee({ datas, employeeUpdateMt }) {
                 console.log(paydetails)
                 if (paydetails) {
                   let checkPayData = paydetails.filter((item) => item.isDeleted === 1)
-                  console.log(checkPayData,paydetails)
-                  let lastestSort = await latestFirstSort(checkPayData.filter(paydata => !paydata.isDeleted));
+                  console.log(checkPayData, paydetails)
+                  let lastestSort = await latestFirstSort(
+                    checkPayData.filter((paydata) => !paydata.isDeleted)
+                  )
                   const totalPayment = checkPayData.reduce((total, item) => {
                     if (item.type === 'Payment') {
-                      return total + (Number(item.amount) || 0);
+                      return total + (Number(item.amount) || 0)
                     }
-                    return total;
-                  }, 0);
-                  setTotalPaymentAmount(totalPayment);
-                  
+                    return total
+                  }, 0)
+                  setTotalPaymentAmount(totalPayment)
+
                   const totalReturn = checkPayData.reduce((total, item) => {
                     if (item.type === 'Return') {
-                      return total + (Number(item.amount) || 0);
+                      return total + (Number(item.amount) || 0)
                     }
-                    return total;
-                  }, 0);
-                  setTotalReturnAmount(totalReturn);
+                    return total
+                  }, 0)
+                  setTotalReturnAmount(totalReturn)
 
                   setEmployeePayDetails((pre) => ({
                     ...pre,
@@ -245,7 +256,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
             </Typography.Link>
 
             <Popconfirm
-              placement='left'
+              placement="left"
               disabled={editingKeys.length !== 0 || selectedRowKeys.length !== 0}
               className={`${editingKeys.length !== 0 || selectedRowKeys.length !== 0 ? 'cursor-not-allowed' : 'cursor-pointer'} `}
               title="Sure to delete?"
@@ -358,7 +369,8 @@ export default function Employee({ datas, employeeUpdateMt }) {
         title: col.title,
         editing: isEditing(record)
       })
-    }});
+    }
+  })
 
   const cancel = () => {
     setEditingKeys([])
@@ -369,7 +381,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
       const row = await form.validateFields()
       const newData = [...data]
       const index = newData.findIndex((item) => key.id === item.key)
-      console.log(row,key)
+      console.log(row, key)
       if (
         index != null &&
         row.name === key.name &&
@@ -381,7 +393,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKeys([])
       } else {
-        await updateEmployee(key.id, { ...row})
+        await updateEmployee(key.id, { ...row })
         employeeUpdateMt()
         message.open({ type: 'success', content: 'Updated Successfully' })
         setEditingKeys([])
@@ -459,24 +471,24 @@ export default function Employee({ datas, employeeUpdateMt }) {
   // delete
   const deleteProduct = async (data) => {
     // await deleteproduct(data.id);
-    const { id, ...newData } = data;
-    console.log(id,data);
-    let paydetails  = await getEmployeePaymentsById(id);
-    if(paydetails & paydetails.length > 0){
+    const { id, ...newData } = data
+    console.log(id, data)
+    let paydetails = await getEmployeePaymentsById(id)
+    if (paydetails & (paydetails.length > 0)) {
       await Promise.all(
-      paydetails.map( async paydata =>{
-          await updateEmployeePayment(id,paydata.id,{isDeleted:1});
-      })
-    );
-    }else{
-      console.log("No payments found for the employee")
+        paydetails.map(async (paydata) => {
+          await updateEmployeePayment(id, paydata.id, { isDeleted: 1 })
+        })
+      )
+    } else {
+      console.log('No payments found for the employee')
     }
     await updateEmployee(id, {
       isDeleted: 1
-    });
-    employeeUpdateMt();
-    message.open({ type: 'success', content: 'Deleted Successfully' });
-  };
+    })
+    employeeUpdateMt()
+    message.open({ type: 'success', content: 'Deleted Successfully' })
+  }
 
   // export
   const exportExcel = async () => {
@@ -492,15 +504,15 @@ export default function Employee({ datas, employeeUpdateMt }) {
     jsonToExcel(excelDatas, `Employee-List-${TimestampJs()}`)
     setSelectedRowKeys([])
     setEditingKeys('')
-  };
+  }
 
   // employee pay
   const [employeePayForm] = Form.useForm()
   const [employeePay, setEmployeePay] = useState({
     modal: false,
     name: {},
-    data: dayjs().format('DD/MMM/YYYY'),
-  });
+    data: dayjs().format('DD/MMM/YYYY')
+  })
 
   const [isEmpLoading, setIsEmpLoading] = useState(false)
   const empPayMt = async (value) => {
@@ -510,13 +522,13 @@ export default function Employee({ datas, employeeUpdateMt }) {
     const empId = employeePay.name.id
     const payData = {
       ...Datas,
-      collectionType:'employee',
+      collectionType: 'employee',
       employeeId: empId,
       date: new Date().toISOString(),
       decription: description === undefined ? '' : description,
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString(),
-      isDeleted: 1,
+      isDeleted: 1
     }
 
     try {
@@ -589,15 +601,15 @@ export default function Employee({ datas, employeeUpdateMt }) {
       key: 'paymentMode',
       width: 70,
       render: (_, record) => (
-        <> 
-        <Tag color="cyan">{record.paymentMode ? record.paymentMode : ''}</Tag>
+        <>
+          <Tag color="cyan">{record.paymentMode ? record.paymentMode : ''}</Tag>
         </>
       )
     },
     {
       title: 'Description',
       dataIndex: 'decription',
-      key: 'decription',
+      key: 'decription'
     }
   ]
 
@@ -618,13 +630,13 @@ export default function Employee({ datas, employeeUpdateMt }) {
         editing: isEmpDtailTableEditing(record)
       })
     }
-  });
+  })
 
   const empDetailTbEdit = (record) => {
     const date = dayjs(record.date, 'DD/MM/YYYY')
     empdetailpayform.setFieldsValue({ ...record, date })
     setEmployeePayDetails((pre) => ({ ...pre, isedit: [record.id] }))
-  };
+  }
 
   const EmpPayDetailTableEditableCell = ({
     editing,
@@ -930,7 +942,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
                 { type: 'number', message: false }
               ]}
             >
-              <InputNumber  className="w-full" type="number" placeholder="Enter the Mobile Number" />
+              <InputNumber className="w-full" type="number" placeholder="Enter the Mobile Number" />
             </Form.Item>
 
             <Form.Item
@@ -971,7 +983,9 @@ export default function Employee({ datas, employeeUpdateMt }) {
         okButtonProps={{ disabled: isEmpLoading }}
       >
         <Spin spinning={isEmpLoading}>
-          <span className="block w-full text-center mb-7 text-xl font-bold">{employeePay.name.employeename}</span>
+          <span className="block w-full text-center mb-7 text-xl font-bold">
+            {employeePay.name.employeename}
+          </span>
           <Form
             onFinish={empPayMt}
             form={employeePayForm}
@@ -979,20 +993,25 @@ export default function Employee({ datas, employeeUpdateMt }) {
             layout="vertical"
           >
             <Form.Item name="type" className="mb-1 mt-3">
-                  <Radio.Group
-                    buttonStyle="solid"
-                    style={{ width: '100%', textAlign: 'center', fontWeight: '600' }}
-                  >
-                    <Radio.Button value="Payment" style={{ width: '50%' }}>
-                      PAID
-                    </Radio.Button>
-                    <Radio.Button value="Return" style={{ width: '50%' }}>
-                      RETURN
-                    </Radio.Button>
-                  </Radio.Group>
-                </Form.Item>
+              <Radio.Group
+                buttonStyle="solid"
+                style={{ width: '100%', textAlign: 'center', fontWeight: '600' }}
+              >
+                <Radio.Button value="Payment" style={{ width: '50%' }}>
+                  PAID
+                </Radio.Button>
+                <Radio.Button value="Return" style={{ width: '50%' }}>
+                  RETURN
+                </Radio.Button>
+              </Radio.Group>
+            </Form.Item>
 
-            <Form.Item className="mb-1" name="amount" label="Amount" rules={[{ required: true, message: false }]}>
+            <Form.Item
+              className="mb-1"
+              name="amount"
+              label="Amount"
+              rules={[{ required: true, message: false }]}
+            >
               <InputNumber
                 onChange={(e) => employeeOnchangeMt(e)}
                 min={0}
@@ -1016,29 +1035,29 @@ export default function Employee({ datas, employeeUpdateMt }) {
             </Form.Item>
 
             <Form.Item
-                className="mb-0 top-[2rem] left-80"
-                name="paymentMode"
-                label="Payment Mode"
-                rules={[{ required: true, message: false }]}
-              >
-                <Radio.Group
-                 size='small'>
-                  <Radio value="Cash">Cash</Radio>
-                  <Radio value="Card">Card</Radio>
-                  <Radio value="UPI">UPI</Radio>
-                </Radio.Group>
-              </Form.Item>
-
+              className="mb-0 top-[2rem] left-80"
+              name="paymentMode"
+              label="Payment Mode"
+              rules={[{ required: true, message: false }]}
+            >
+              <Radio.Group size="small">
+                <Radio value="Cash">Cash</Radio>
+                <Radio value="Card">Card</Radio>
+                <Radio value="UPI">UPI</Radio>
+              </Radio.Group>
+            </Form.Item>
           </Form>
         </Spin>
       </Modal>
 
       <Modal
         title={
-         <div className='relative'>
-           <Tag color='blue' className='absolute left-4'>{employeePay.name.employeename}</Tag>
-           <span className="text-center w-full block pb-5">PAY DETAILS</span>
-         </div>
+          <div className="relative">
+            <Tag color="blue" className="absolute left-4">
+              {employeePay.name.employeename}
+            </Tag>
+            <span className="text-center w-full block pb-5">PAY DETAILS</span>
+          </div>
         }
         open={employeePayDetails.modal}
         footer={null}

@@ -30,7 +30,7 @@ import companyLogo from '../assets/img/companylogo.png'
 import { generatPDF } from '../js-files/pdf-generator'
 import { formatName } from '../js-files/letter-or-name'
 
-import { addProduct,updateProduct } from '../sql/product'
+import { addProduct, updateProduct } from '../sql/product'
 import { addStorage } from '../sql/storage'
 
 const { Search } = Input
@@ -46,12 +46,15 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
   // side effect
   useEffect(() => {
     setProductTbLoading(true)
-    const filteredData = datas.product
-      .map((item, index) => ({ ...item, sno: index + 1, key: item.id || index }))
+    const filteredData = datas.product.map((item, index) => ({
+      ...item,
+      sno: index + 1,
+      key: item.id || index
+    }))
     setData(filteredData)
     setProductTbLoading(false)
     console.log(filteredData)
-  }, [datas,datas.projectupdatestaus])
+  }, [datas, datas.projectupdatestaus])
 
   // search
   const [searchText, setSearchText] = useState('')
@@ -67,68 +70,74 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
   const [isProductLoading, setIsProductLoading] = useState(false)
   // create new project
   const createNewProduct = async (values) => {
-  
-    
     try {
-      const productExists = datas.product.some((product) => (product.productname === values.productname  || product.productname === formatName(values.productname)) && product.isdeleted === false
-          );
+      const productExists = datas.product.some(
+        (product) =>
+          (product.productname === values.productname ||
+            product.productname === formatName(values.productname)) &&
+          product.isdeleted === false
+      )
 
       // const storageExists = datas.storage.filter(prfound => datas.product.filter(pr => pr.id === prfound.productid && pr.productname === formatName(values.productname)));
-      const storageExists = datas.storage.some(prfound => datas.product.some(pr =>  (pr.id === prfound.productid) && (pr.productname === formatName(values.productname)) && (prfound.isdeleted === false) && (pr.isdeleted === false)));
-      
+      const storageExists = datas.storage.some((prfound) =>
+        datas.product.some(
+          (pr) =>
+            pr.id === prfound.productid &&
+            pr.productname === formatName(values.productname) &&
+            prfound.isdeleted === false &&
+            pr.isdeleted === false
+        )
+      )
 
+      if (productExists) {
+        return message.open({ content: 'This name was already exsits', type: 'info' })
+      } else {
+        console.log({
+          ...values,
+          name: formatName(values.productname),
+          productPerPack: values.productperpack,
+          price: values.price,
+          createdDate: TimestampJs(),
+          modifiedDate: TimestampJs(),
+          isDeleted: 0
+        })
 
-  if(productExists){
-    return message.open({content:'This name was already exsits',type:'info'})
-  }
-  else{
-    console.log({
-      ...values,
-      name: formatName(values.productname),
-      productPerPack: values.productperpack,
-      price: values.price,
-      createdDate: TimestampJs(),
-      modifiedDate: TimestampJs(),
-      isDeleted: 0
-    });
-    
-    
-    setIsProductLoading(true)
-    const productRef = await addProduct({
-      name: formatName(values.productname),
-      productPerPack: values.productperpack,
-      price: values.price,
-      createdDate: new Date().toISOString(),
-      modifiedDate: new Date().toISOString(),
-      isDeleted: 0
-    });
+        setIsProductLoading(true)
+        const productRef = await addProduct({
+          name: formatName(values.productname),
+          productPerPack: values.productperpack,
+          price: values.price,
+          createdDate: new Date().toISOString(),
+          modifiedDate: new Date().toISOString(),
+          isDeleted: 0
+        })
 
-    const productId = productRef.id
-    console.log(storageExists,productId);
-    
-    if (storageExists === false ) {
-      await addStorage({
-        productId: String(productId),
-        alertCount: 0,
-        numberOfPacks: 0,
-        category: 'Product List',
-        createdDate: new Date().toISOString(),
-        modifiedDate: new Date().toISOString(),
-        isDeleted:0
-      })
-      storageUpdateMt()
-    }
-    form.resetFields()
-    await productUpdateMt()
-    setIsProductLoading(false)
-     setIsModalOpen(false)
-     setProductOnchangeValue('')
-     message.open({content:'Product Created Successfully',type:'success'})
+        const productId = productRef.id
+        console.log(storageExists, productId)
+
+        if (storageExists === false) {
+          await addStorage({
+            productId: String(productId),
+            alertCount: 0,
+            numberOfPacks: 0,
+            category: 'Product List',
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString(),
+            isDeleted: 0
+          })
+          storageUpdateMt()
+        }
+        form.resetFields()
+        await productUpdateMt()
+        setIsProductLoading(false)
+        setIsModalOpen(false)
+        setProductOnchangeValue('')
+        message.open({ content: 'Product Created Successfully', type: 'success' })
       }
     } catch (e) {
       console.log(e)
-      message.open({content:'Product Creation Failed',type:'error'})
-    } 
+      message.open({ content: 'Product Creation Failed', type: 'error' })
+    }
   }
 
   const columns = [
@@ -144,8 +153,12 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
           // String(record.quantity).toLowerCase().includes(value.toLowerCase()) ||
           // String(record.flavour).toLowerCase().includes(value.toLowerCase()) ||
           String(record.productperpack).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.price * record.productperpack).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.quantity + ' ' + record.unit).toLowerCase().includes(value.toLowerCase())
+          String(record.price * record.productperpack)
+            .toLowerCase()
+            .includes(value.toLowerCase()) ||
+          String(record.quantity + ' ' + record.unit)
+            .toLowerCase()
+            .includes(value.toLowerCase())
         )
       }
     },
@@ -233,7 +246,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
               <MdOutlineModeEditOutline size={20} />
             </Typography.Link>
             <Popconfirm
-              placement='left'
+              placement="left"
               disabled={editingKeys.length !== 0 || selectedRowKeys.length !== 0}
               className={`${editingKeys.length !== 0 || selectedRowKeys.length !== 0 ? 'cursor-not-allowed' : 'cursor-pointer'} `}
               title="Sure to delete?"
@@ -354,23 +367,22 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
       if (
         row.name === key.name &&
         row.productPerPack === key.productPerPack &&
-        row.price === key.price 
+        row.price === key.price
       ) {
         message.open({ type: 'info', content: 'No changes made' })
-        setEditingKeys([]);
-      } 
-      else {
+        setEditingKeys([])
+      } else {
         setProductTbLoading(true)
-        setEditingKeys([]);
-        await updateProduct(key.id, { ...row,name:formatName(row.name) });
-        productUpdateMt();
-        message.open({ type: 'success', content: 'Updated Successfully' });
+        setEditingKeys([])
+        await updateProduct(key.id, { ...row, name: formatName(row.name) })
+        productUpdateMt()
+        message.open({ type: 'success', content: 'Updated Successfully' })
         setProductTbLoading(false)
       }
     } catch (errInfo) {
-      console.log('Validate Failed:', errInfo);
+      console.log('Validate Failed:', errInfo)
     }
-  };
+  }
 
   // selection
   const [selectedRowKeys, setSelectedRowKeys] = useState([])
@@ -435,23 +447,23 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
       window.removeEventListener('resize', updateTableHeight)
       document.removeEventListener('fullscreenchange', updateTableHeight)
     }
-  }, []);
+  }, [])
 
   // delete
   const deleteProduct = async (data) => {
     // await deleteproduct(data.id);
-    const { id, ...newData } = data;
-   
-    let storageProduct = datas.storage.find(pr => pr.productid === id);
-   
-    await updateProduct(id, {isDeleted: 1});
+    const { id, ...newData } = data
+
+    let storageProduct = datas.storage.find((pr) => pr.productid === id)
+
+    await updateProduct(id, { isDeleted: 1 })
 
     // await updateStorage(storageProduct.id,{isdeleted:true,updateddate: TimestampJs()})
-    
-   await storageUpdateMt()
-   await productUpdateMt()
+
+    await storageUpdateMt()
+    await productUpdateMt()
     message.open({ type: 'success', content: 'Deleted Successfully' })
-  };
+  }
 
   // export
   const exportExcel = async () => {
@@ -469,7 +481,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
     jsonToExcel(excelDatas, `Product-List-${TimestampJs()}`)
     setSelectedRowKeys([])
     // setEditingKey('')
-  };
+  }
 
   const pdfRef = useRef()
   const [pdf, setPdf] = useState({
@@ -520,7 +532,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
   const [productOnchangeValue, setProductOnchangeValue] = useState('')
   const productOnchange = debounce((value) => {
     setProductOnchangeValue(value)
-  },500)
+  }, 500)
 
   const [isCloseWarning, setIsCloseWarning] = useState(false)
 
@@ -678,7 +690,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
               columns={mergedColumns}
               pagination={false}
               loading={{
-                spinning: productTbLoading,
+                spinning: productTbLoading
                 // productTbLoading,
                 // indicator: (
                 //   <Spin indicator={<img className="opacity-80" src={loadingGif} alt="loading" />} />
@@ -731,7 +743,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
                 placeholder="Enter the Product Name"
               />
             </Form.Item>
- {/*
+            {/*
             <Form.Item
               className="mb-2"
               name="flavour"
@@ -793,7 +805,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
             >
               <InputNumber className="w-full" type="number" placeholder="Enter the Amount" />
             </Form.Item>
-            
+
             <Form.Item
               className="mb-5"
               name="productperpack"

@@ -38,14 +38,14 @@ import { addProduction, updateProduction } from '../sql/production'
 export default function Production({ datas, productionUpdateMt, storageUpdateMt }) {
   const [form] = Form.useForm()
   const [form2] = Form.useForm()
-  const [form3]= Form.useForm()
+  const [form3] = Form.useForm()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingKey, setEditingKey] = useState('')
   const [data, setData] = useState([])
   const [dateRange, setDateRange] = useState([null, null])
   const [isProductionTbLoading, setIsProductionTbLoading] = useState(true)
-  const [offset, setOffset] = useState(0);
-  const chunkSize = 25;
+  const [offset, setOffset] = useState(0)
+  const chunkSize = 25
 
   // side effect
   useEffect(() => {
@@ -62,20 +62,22 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
               ...item,
               sno: offset + index + 1,
               key: item.id || index,
-              productname: productname,
+              productname: productname
             }
           })
       )
-      setData((prevData) => (offset === 0 ? filteredProductions : [...prevData, ...filteredProductions]))
+      setData((prevData) =>
+        offset === 0 ? filteredProductions : [...prevData, ...filteredProductions]
+      )
       setIsProductionTbLoading(false)
     }
     fetchData()
-  }, [datas.productions, dateRange,offset])
+  }, [datas.productions, dateRange, offset])
 
   useEffect(() => {
-    setOffset(0);
-    setData([]);
-  }, [datas.productions,dateRange]);
+    setOffset(0)
+    setData([])
+  }, [datas.productions, dateRange])
 
   const isWithinRange = (date) => {
     if (!dateRange || !dateRange[0] || !dateRange[1]) {
@@ -101,12 +103,12 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
   }
 
   const handleTableScroll = debounce((e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    const { scrollTop, scrollHeight, clientHeight } = e.target
 
     if (scrollTop + clientHeight >= scrollHeight - 10) {
-      setOffset((prevOffset) => prevOffset + chunkSize);
+      setOffset((prevOffset) => prevOffset + chunkSize)
     }
-  }, 200);
+  }, 200)
 
   const columns = [
     {
@@ -175,7 +177,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         ) : (
           <span className="flex gap-x-3 justify-center items-center">
             <Popconfirm
-            placement='left'
+              placement="left"
               className={`${editingKey !== '' ? 'cursor-not-allowed' : 'cursor-pointer'} `}
               title="Sure to delete?"
               onConfirm={() => deleteProduct(record)}
@@ -261,7 +263,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         setEditingKey('')
       } else {
         await updateProduction(key.id, {
-          numberOfPacks: row.numberOfPacks,
+          numberOfPacks: row.numberOfPacks
         })
         await productionUpdateMt()
         message.open({ type: 'success', content: 'Updated Successfully' })
@@ -352,15 +354,15 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
     {
       title: <span className="text-[0.7rem]">S.No</span>,
       editable: false,
-      render:(text,record,i)=> <span className="text-[0.7rem]">{i+1}</span>,
-      width:65
+      render: (text, record, i) => <span className="text-[0.7rem]">{i + 1}</span>,
+      width: 65
     },
     {
       title: <span className="text-[0.7rem]">Product</span>,
       dataIndex: 'productname',
       key: 'productname',
       editable: false,
-      render:(text)=> <span className="text-[0.7rem]">{text}</span>
+      render: (text) => <span className="text-[0.7rem]">{text}</span>
     },
     // {
     //   title: 'Flavor',
@@ -380,7 +382,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       dataIndex: 'numberOfPacks',
       key: 'numberOfPacks',
       editable: true,
-      render:(text)=> <span className="text-[0.7rem]">{text}</span>,
+      render: (text) => <span className="text-[0.7rem]">{text}</span>,
       width: 120
     },
     {
@@ -393,9 +395,9 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         return !editable ? (
           <span className="flex gap-x-2">
             <MdOutlineModeEditOutline
-              className={` ${editingKey !== '' ?'text-gray-400 cursor-not-allowed' : 'text-blue-500 cursor-pointer'}`}
+              className={` ${editingKey !== '' ? 'text-gray-400 cursor-not-allowed' : 'text-blue-500 cursor-pointer'}`}
               size={19}
-              onClick={() => editingKey !== '' ? console.log('') : temedit(record)}
+              onClick={() => (editingKey !== '' ? console.log('') : temedit(record))}
             />
             <Popconfirm
               className={`${editingKey !== '' ? 'cursor-not-allowed' : 'cursor-pointer'} `}
@@ -415,9 +417,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
               <LuSave size={17} />
             </Typography.Link>
 
-            <Popconfirm
-              title="Sure to cancel?"
-              onConfirm={temcancel}>
+            <Popconfirm title="Sure to cancel?" onConfirm={temcancel}>
               <TiCancel size={20} className="text-red-500 cursor-pointer hover:text-red-400" />
             </Popconfirm>
           </span>
@@ -437,9 +437,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         // )
       }
     }
-  ];
-
- 
+  ]
 
   const [option, setOption] = useState({
     flavour: [],
@@ -449,8 +447,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
     quantity: [],
     quantitystatus: true,
     tempproduct: []
-  });
-
+  })
 
   const temEditableCell = ({
     editing,
@@ -462,7 +459,8 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
     children,
     ...restProps
   }) => {
-    const inputNode = inputType === 'number' ? <InputNumber className='text-[0.8rem]' size='small'/> : <Input />
+    const inputNode =
+      inputType === 'number' ? <InputNumber className="text-[0.8rem]" size="small" /> : <Input />
     return (
       <td {...restProps}>
         {editing ? (
@@ -487,7 +485,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
     )
   }
   const temisEditing = (record) => record.key === editingKey
- 
+
   const temedit = (record) => {
     form3.setFieldsValue({ ...record })
     setEditingKey(record.key)
@@ -522,8 +520,10 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKey('')
       } else {
-        let updateData = newData.map(data => data.key === key.key ? {...data,numberOfPacks:row.numberOfPacks} : data );
-        setOption(pre=>({...pre,tempproduct:updateData}))
+        let updateData = newData.map((data) =>
+          data.key === key.key ? { ...data, numberOfPacks: row.numberOfPacks } : data
+        )
+        setOption((pre) => ({ ...pre, tempproduct: updateData }))
         message.open({ type: 'success', content: 'Updated Successfully' })
         setEditingKey('')
       }
@@ -535,13 +535,12 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
   //product initial value
   useEffect(() => {
     const productOp = datas.product
-      .filter((item, i, s) =>
-       item.isDeleted === 0)
+      .filter((item, i, s) => item.isDeleted === 0)
       //  && s.findIndex((item2) => item2.productname === item.productname))
-       .map((data) => ({ label: data.name, value: data.name }));
-      
-      setOption((pre) => ({ ...pre, product: productOp  }))
-  }, []);
+      .map((data) => ({ label: data.name, value: data.name }))
+
+    setOption((pre) => ({ ...pre, product: productOp }))
+  }, [])
 
   //product onchange value
   const productOnchange = debounce(async (value, i) => {
@@ -553,15 +552,15 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
     //     datas.product
     //       .filter((item) => item.isDeleted === false && item.productname === value)
     //       .map((data) => data.flavour))).map((flavour) => ({ label: flavour, value: flavour }));
-   
-          setOption((pre) => ({
+
+    setOption((pre) => ({
       ...pre,
       flavourstatus: false,
       // flavour: flavourOp,
       productvalue: value,
       quantitystatus: true
     }))
-  },300)
+  }, 300)
 
   //flavour onchange value
   const flavourOnchange = async (value, i) => {
@@ -574,7 +573,9 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
             item.isDeleted === false &&
             item.flavour === value &&
             item.productname === option.productvalue
-        ))).map((q) => ({ label: q.quantity + ' ' + q.unit, value: q.quantity + ' ' + q.unit }))
+        )
+      )
+    ).map((q) => ({ label: q.quantity + ' ' + q.unit, value: q.quantity + ' ' + q.unit }))
     setOption((pre) => ({ ...pre, quantitystatus: false, quantity: quantityOp }))
   }
 
@@ -632,18 +633,19 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
   const [isAddProductModal, setIsAddProductModal] = useState(false)
   // add new production
   const addNewProduction = async () => {
-  
-   setIsAddProductModal(true)
+    setIsAddProductModal(true)
     try {
       for (const item of option.tempproduct) {
         let { key, quantity, ...newProduction } = item
-        
+
         // let quantityNumber = Number(quantity.split(' ')[0])
-        
-        const existingProductList = datas.product.find((productItem) => productItem.name === newProduction.productname && productItem.isDeleted === 0
-        // && productItem.flavour === newProduction.flavour &&  productItem.quantity === quantityNumber 
-      )
-        
+
+        const existingProductList = datas.product.find(
+          (productItem) =>
+            productItem.name === newProduction.productname && productItem.isDeleted === 0
+          // && productItem.flavour === newProduction.flavour &&  productItem.quantity === quantityNumber
+        )
+
         await addProduction({
           date: new Date().toISOString(),
           createdDate: new Date().toISOString(),
@@ -651,20 +653,24 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
           productId: existingProductList.id,
           isDeleted: 0,
           numberOfPacks: newProduction.numberOfPacks
-        });
-        
-        const existingProduct = datas.storage.find((storageItem) => storageItem.productId === String(existingProductList.id)  && storageItem.category === 'Product List' )
-        
-        console.log(existingProduct);
+        })
+
+        const existingProduct = datas.storage.find(
+          (storageItem) =>
+            storageItem.productId === String(existingProductList.id) &&
+            storageItem.category === 'Product List'
+        )
+
+        console.log(existingProduct)
         // setIsAddProductModal(false)
         await updateStorage(existingProduct.id, {
-          numberOfPacks: existingProduct.numberOfPacks + newProduction.numberOfPacks,
+          numberOfPacks: existingProduct.numberOfPacks + newProduction.numberOfPacks
         })
       }
       message.open({ type: 'success', content: 'Production added successfully' })
       setIsModalOpen(false)
-      await productionUpdateMt();
-      await storageUpdateMt();
+      await productionUpdateMt()
+      await storageUpdateMt()
       form2.resetFields()
       setOption((pre) => ({
         ...pre,
@@ -676,10 +682,10 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       }))
       setCount(0)
     } catch (e) {
-      message.open({type:'error',content: `${e} An error occurred while adding new production`})
+      message.open({ type: 'error', content: `${e} An error occurred while adding new production` })
       console.error('An error occurred while adding new production:', e)
     } finally {
-     setIsAddProductModal(false);
+      setIsAddProductModal(false)
     }
   }
 
@@ -709,8 +715,8 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       No: index + 1,
       Date: item.date,
       Name: item.productname,
-      Packs: item.numberOfPacks,
-    }));
+      Packs: item.numberOfPacks
+    }))
     jsonToExcel(specificData, `Production-List-${TimestampJs()}`)
     setSelectedRowKeys([])
     setEditingKey('')
@@ -748,8 +754,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
     }))
     setCount(0)
     setEditingKey('')
-  };
-
+  }
 
   const [freezerBoxHeight, setFreezerBoxHeight] = useState(window.innerHeight - 200) // Initial height adjustment
   useEffect(() => {
@@ -861,7 +866,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
                 layout="vertical"
                 initialValues={{ date: dayjs() }}
               >
-               <Form.Item
+                <Form.Item
                   className=" absolute top-[-2.8rem]"
                   name="date"
                   label=""
@@ -870,27 +875,27 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
                   <DatePicker className="w-[8.5rem]" format={'DD/MM/YYYY'} />
                 </Form.Item>
 
-                <div >
-                <Form.Item
-                  className="mt-5"
-                  name="productname"
-                  label="Product Name"
-                  rules={[{ required: true, message: false }]}
-                >
-                  <Select
-                    onChange={(value, i) => productOnchange(value, i)}
-                    showSearch
-                    placeholder="Select the Product"
-                    optionFilterProp="label"
-                    filterSort={(optionA, optionB) =>
-                      (optionA?.label ?? '')
-                        .toLowerCase()
-                        .localeCompare((optionB?.label ?? '').toLowerCase())
-                    }
-                    options={option.product}
-                  />
-                </Form.Item>
-                {/* <Form.Item
+                <div>
+                  <Form.Item
+                    className="mt-5"
+                    name="productname"
+                    label="Product Name"
+                    rules={[{ required: true, message: false }]}
+                  >
+                    <Select
+                      onChange={(value, i) => productOnchange(value, i)}
+                      showSearch
+                      placeholder="Select the Product"
+                      optionFilterProp="label"
+                      filterSort={(optionA, optionB) =>
+                        (optionA?.label ?? '')
+                          .toLowerCase()
+                          .localeCompare((optionB?.label ?? '').toLowerCase())
+                      }
+                      options={option.product}
+                    />
+                  </Form.Item>
+                  {/* <Form.Item
                   className="mb-1"
                   name="flavour"
                   label="Flavour"
@@ -930,48 +935,46 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
                   />
                 </Form.Item> */}
 
-                <Form.Item
-                  className="mt-7"
-                  name="numberOfPacks"
-                  label="Number of Pieces"
-                  rules={[{ required: true, message: false }]}
-                >
-                  <InputNumber
-                    min={0}
-                    type="number"
-                    className="w-full"
-                    placeholder="Enter the Number"
-                  />
-                </Form.Item>
+                  <Form.Item
+                    className="mt-7"
+                    name="numberOfPacks"
+                    label="Number of Pieces"
+                    rules={[{ required: true, message: false }]}
+                  >
+                    <InputNumber
+                      min={0}
+                      type="number"
+                      className="w-full"
+                      placeholder="Enter the Number"
+                    />
+                  </Form.Item>
 
-               
-
-                {/* <div 
+                  {/* <div 
                 // className="mb-3 w-full"
                 > */}
                   <Button className="w-full mt-4" type="primary" htmlType="submit">
                     Add To List
                   </Button>
-                {/* </div> */}
-              </div>
+                  {/* </div> */}
+                </div>
               </Form>
             </span>
             <span className="col-span-3">
-            <Form form={form3} component={false}>
-              <Table
-                virtual
-                components={{
-                body: {
-                  cell: temEditableCell
-                }
-              }}
-                className="w-full"
-                columns={temmergedColumns}
-                dataSource={option.tempproduct}
-                // pagination={{ pageSize: 4 }}
-                pagination={false} 
-                scroll={{  y: freezerBoxHeight }}
-              />
+              <Form form={form3} component={false}>
+                <Table
+                  virtual
+                  components={{
+                    body: {
+                      cell: temEditableCell
+                    }
+                  }}
+                  className="w-full"
+                  columns={temmergedColumns}
+                  dataSource={option.tempproduct}
+                  // pagination={{ pageSize: 4 }}
+                  pagination={false}
+                  scroll={{ y: freezerBoxHeight }}
+                />
               </Form>
             </span>
           </div>
