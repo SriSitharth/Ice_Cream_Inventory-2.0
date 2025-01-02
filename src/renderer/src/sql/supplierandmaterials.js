@@ -51,3 +51,20 @@ export const getMaterialsBySupplierId = async (id) => {
     throw error;
   }
 };
+
+export const getMaterialById = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/SupplierAndMaterial/getMaterialById`, {
+      params: { id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Material fetched by id successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching material by id:', error.message);
+    throw error;
+  }
+};

@@ -63,7 +63,7 @@ import './css/SupplierList.css'
 import { addSupplier } from '../sql/supplier'
 import { addStorage, updateStorage } from '../sql/storage'
 import { addSupplierPayment } from '../sql/supplier'
-import { getSupplierAndMaterials, addSupplierAndMaterial } from '../sql/supplierandmaterials'
+import { getSupplierAndMaterials, addSupplierAndMaterial, getMaterialsBySupplierId } from '../sql/supplierandmaterials'
 
 export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt }) {
   // states
@@ -94,12 +94,13 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
     // setData(filteredData)
 
     async function fetchMaterialItems() {
-      // let getAlldatas = await Promise.all(filteredData.map(async data=>{
-      //   let {materials,status} = await getMaterialDetailsById(data.id);
-      //   return ({...data,item:materials.filter(data=> data.isDeleted === false)})
-      // }))
-      setData(filteredData)
+      let getAlldatas = await Promise.all(filteredData.map(async data=>{
+        let materials = await getMaterialsBySupplierId(data.id);
+        return ({...data, supplierandmaterials:materials.filter(data=> data.isDeleted === 0)})
+      }))
+      setData(getAlldatas)
       setSupplierTbLoading(false)
+      console.log(getAlldatas)
     }
     fetchMaterialItems()
   }, [datas])
@@ -449,7 +450,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
           String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
           String(record.gender).toLowerCase().includes(value.toLowerCase()) ||
           record.item.some((data) =>
-            String(data.materialname).toLowerCase().includes(value.toLowerCase())
+            String(data.name).toLowerCase().includes(value.toLowerCase())
           )
         )
       }
@@ -496,37 +497,36 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       editable: true,
       width: 83
     },
-    // {
-    //   title: "Material",
-    //   dataIndex: 'material',
-    //   key: 'material',
-    //   width: 80,
-    //   render: (_, record) => {
-    //     return (
-    //       <>
-    //         <Button onClick={() => handlePopoverClick(record.id)} className="h-[1.7rem]">
-    //         <MdProductionQuantityLimits/>
-    //         </Button>
-    //         <Popover
-    //           content={<div>
-    //           {
-    //             record.item.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} /> : record.item.sort((a,b)=> a.materialname.localeCompare(b.materialname)).map((data,i)=>{
-    //             return <span>{i+1}.{data.materialname} {'-'} {data.unit}<br/> </span>
-    //           })
-    //          }
-    //             <IoCloseCircle color='red' size={20} className='absolute right-2 top-2 cursor-pointer' onClick={() => setOpenPopoverRow(null)}/>
-    //           </div>}
-    //           title="Material"
-    //           trigger="click"
-    //           open={openPopoverRow === record.id} // Open only for the clicked row
-    //           onOpenChange={(visible) => handlePopoverOpenChange(visible, record.id)}
-    //         >
-    //         </Popover>
-    //       </>
-    //     );
-    //   }
-    // },
-
+    {
+      title: "Material",
+      dataIndex: 'material',
+      key: 'material',
+      width: 80,
+      render: (_, record) => {
+        return (
+          <>
+            <Button onClick={() => handlePopoverClick(record.id)} className="h-[1.7rem]">
+            <MdProductionQuantityLimits/>
+            </Button>
+            <Popover
+              content={<div>
+              {
+                record.supplierandmaterials.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} /> : record.supplierandmaterials.sort((a,b)=> a.name.localeCompare(b.name)).map((data,i)=>{
+                return <span>{i+1}.{data.name} {'-'} {data.unit}<br/> </span>
+              })
+             }
+                <IoCloseCircle color='red' size={20} className='absolute right-2 top-2 cursor-pointer' onClick={() => setOpenPopoverRow(null)}/>
+              </div>}
+              title="Material"
+              trigger="click"
+              open={openPopoverRow === record.id} // Open only for the clicked row
+              onOpenChange={(visible) => handlePopoverOpenChange(visible, record.id)}
+            >
+            </Popover>
+          </>
+        );
+      }
+    },
     {
       title: 'Action',
       dataIndex: 'operation',
@@ -603,7 +603,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       // gender: record.gender,
       address: record.address,
       mobileNumber: record.mobileNumber,
-      material: record.item
+      material: record.supplierandmaterials
       // Ensure materialdetails is an array of objects with the expected structure
     })
 
@@ -651,7 +651,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       } else {
         setSupplierModalLoading(true)
         // update supplier
-        await updateSupplier(supplerId, { ...newdata, updateddate: TimestampJs() })
+        await updateSupplier(supplerId, { ...newdata })
 
         // update items
         if (compareArrObj === false) {
@@ -1502,7 +1502,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
                         <Form.Item
                           className="w-[69%] mb-[0.4rem]"
                           {...restField}
-                          name={[name, 'materialname']}
+                          name={[name, 'name']}
                           rules={[
                             {
                               required: true,

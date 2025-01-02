@@ -52,7 +52,7 @@ import './css/RawMaterial.css'
 import { addRawMaterial, updateRawMaterial, addRawMaterialDetail } from '../sql/rawmaterial'
 import { getStorages, updateStorage } from '../sql/storage'
 import { getSupplierById } from '../sql/supplier'
-import { getSupplierAndMaterials, getMaterialsBySupplierId } from '../sql/supplierandmaterials'
+import { getSupplierAndMaterials, getMaterialsBySupplierId , getMaterialById } from '../sql/supplierandmaterials'
 
 export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateMt }) {
   //states
@@ -363,15 +363,12 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
 
   // create the new add material entry
   const AddTemMaterial = async (values) => {
-    console.log(values)
-    let { material, status } = await getOneMaterialDetailsById(
-      values.suppliername,
-      values.materialName
-    )
+    
+    let material = await getMaterialById(values.materialName)
     let exsitingData = addMaterialMethod.temperorarydata.some(
       (data) => data.id === values.materialName
     )
-
+    console.log(values,material)
     // supplier data
     let supplierDatas = {
       supplierid: values.suppliername,
@@ -1206,7 +1203,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
 
       // New Material Add
       const materialPromises = materialArray.map(async (newmaterial) => {
-        // console.log(addMaterialMethod.temperorarydata);
+        console.log(newmaterial);
 
         const existingMaterial = await datas.storage.find(
           (storageItem) =>
@@ -1219,10 +1216,10 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
         const material = {
           sno: newmaterial.sno,
           rawMaterialId: addMaterialRef.id,
-          rawMaterial: newmaterial.materialName,
+          // rawMaterial: newmaterial.materialName,
           isDeleted: 0,
-          price: newmaterial.price,
-          quantity: newmaterial.quantity,
+          // price: newmaterial.price,
+          quantity: String(newmaterial.quantity),
           createdDate: new Date().toISOString(),
           modifiedDate: new Date().toISOString()
         }
