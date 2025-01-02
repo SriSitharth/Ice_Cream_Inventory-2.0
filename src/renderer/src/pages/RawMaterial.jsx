@@ -41,10 +41,10 @@ import { FaClipboardList } from 'react-icons/fa'
 import TableHeight from '../components/TableHeight'
 import './css/RawMaterial.css'
 
-import { addRawMaterial } from '../sql/rawmaterial'
+import { addRawMaterial, updateRawMaterial, addRawMaterialDetail } from '../sql/rawmaterial'
 import { getStorages, updateStorage } from '../sql/storage'
 import { getSupplierById } from '../sql/supplier'
-import { getMaterialsBySupplierId } from '../sql/supplierandmaterials'
+import { getSupplierAndMaterials, getMaterialsBySupplierId } from '../sql/supplierandmaterials'
 
 export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateMt }) {
   //states
@@ -124,7 +124,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
           }))
         )
         setMaterials(filteredMaterials);
-        form.resetFields(['materialName', 'quantity', 'unit', 'price', 'paymentstatus'])
+        form.resetFields(['materialName', 'quantity', 'unit', 'price', 'paymentStatus'])
       } else {
         setMaterials([])
       }
@@ -364,7 +364,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     /*
     setIsLoadingModal(true)
     try {
-      if (form.getFieldValue('partialamount') === '0') {
+      if (form.getFieldValue('partialAmount') === '0') {
         return message.open({ type: 'warning', content: 'Please enter a valid amount' })
       } else {
         const { date, materialName, suppliername, ...otherValues } = await values
@@ -375,7 +375,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
           materialid: materialName,
           ...otherValues,
           date: formattedDate,
-          partialamount: otherValues.partialamount || 0,
+          partialAmount: otherValues.partialAmount || 0,
           createdDate: TimestampJs(),
           isDeleted: false,
           type: 'Added'
@@ -424,10 +424,10 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
           String(record.date).toLowerCase().includes(value.toLowerCase()) ||
           String(supplierName).toLowerCase().includes(value.toLowerCase()) ||
           String(record.billamount === undefined ? '-' : record.billamount ).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.partialamount === undefined ? '-' : record.partialamount ).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.paymentmode === undefined ? '-' : record.paymentmode ).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.partialAmount === undefined ? '-' : record.partialAmount ).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.paymentMode === undefined ? '-' : record.paymentMode ).toLowerCase().includes(value.toLowerCase()) ||
           String(record.type === undefined ? '-' : record.type ).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.paymentstatus === undefined ? '-' : record.paymentstatus ).toLowerCase().includes(value.toLowerCase())
+          String(record.paymentStatus === undefined ? '-' : record.paymentStatus ).toLowerCase().includes(value.toLowerCase())
         )
       }
     },
@@ -443,7 +443,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       },
       // defaultSortOrder: 'descend',115
       render: (text) => dayjs(text).format('DD/MM/YYYY'),
-      width: 155
+      width: 115
     },
     {
       title: 'Supplier',
@@ -490,7 +490,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
           <Tag color={text === 'Paid' ? 'green' : text === 'Partial' ? 'yellow' : 'red'}>
             {text}{' '}
           </Tag>{' '}
-          {text === 'Partial' ? <Tag color="blue">{record.partialamount}</Tag> : null}
+          {text === 'Partial' ? <Tag color="blue">{record.partialAmount}</Tag> : null}
         </span>
       )
     },
@@ -657,7 +657,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKey('')
       } else {
-        await updateRawmaterial(key.id, { ...row, updateddate: TimestampJs() })
+        await updateRawMaterial(key.id, { ...row })
         rawmaterialUpdateMt()
         message.open({ type: 'success', content: 'Updated Successfully' })
         setEditingKey('')
@@ -739,7 +739,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
   // delete
   const deleteProduct = async (data) => {
     const { id, ...newData } = data
-    await updateRawmaterial(id, { isDeleted: true, deletedby: 'admin', deleteddate: TimestampJs() })
+    await updateRawMaterial(id, { isDeleted: 1 })
     rawmaterialUpdateMt()
     message.open({ type: 'success', content: 'Deleted Successfully' })
   }
@@ -747,12 +747,12 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
   const [radioBtn, setRadioBtn] = useState({
     status: true,
     value: '',
-    partialamount: 0
+    partialAmount: 0
   });
 
   const radioOnchange = debounce((e) => {
     setRadioBtn((pre) => ({ ...pre, status: false, value: e.target.value }))
-    addmaterialpaymentform.setFieldsValue({ partialamount: 0 })
+    addmaterialpaymentform.setFieldsValue({ partialAmount: 0 })
   },300);
 
 
@@ -906,20 +906,22 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       // )
       // .map((item) => ({ label: item.materialName, value: item.materialName }))
     
-   
-    const optionsuppliersr = await Promise.all(datas.suppliers.map(async data => (await getMaterialDetailsById(data.id))));
     
-   let listOfMaterial =  optionsuppliersr.map((supplierDetails, index) => {
-      const { materials, status } = supplierDetails; // Destructure each supplier's materials and status
-      return [...materials]
-    });
 
-    let flattenedMaterials = listOfMaterial.flat();
+  //   const optionsuppliersr = await Promise.all(datas.suppliers.map(async data => (await getMaterialDetailsById(data.id))));
     
-    let uniqueMaterials = flattenedMaterials.filter((material, index, self) => index === self.findIndex( (t) =>  t.materialName.trim().toLowerCase() === material.materialName.trim().toLowerCase() && t.unit.trim().toLowerCase() === material.unit.trim().toLowerCase())).map(data=>({label:data.materialName,value:data.materialName,unit:data.unit,key:data.id}));
+  //  let listOfMaterial =  optionsuppliersr.map((supplierDetails, index) => {
+  //     const { materials, status } = supplierDetails; // Destructure each supplier's materials and status
+  //     return [...materials]
+  //   });
+
+  //   let flattenedMaterials = listOfMaterial.flat();
+
+    const allMaterials = await getSupplierAndMaterials();
+    
+    const uniqueMaterials = allMaterials.filter((material, index, self) => index === self.findIndex( (t) =>  t.name.trim().toLowerCase() === material.name.trim().toLowerCase() && t.unit.trim().toLowerCase() === material.unit.trim().toLowerCase())).map(data=>({label:data.name,value:data.name,unit:data.unit,key:data.id}));
     
     setMtOption((pre) => ({ ...pre, material: uniqueMaterials }));
-    // console.log(uniqueMaterials);
     
     }
     fetchAllMaterial();
@@ -961,26 +963,34 @@ const addNewTemMaterial = async () => {
   let i = 1;
   setIsLoadMaterialUsedModal(true);
   try {
-    let materialDetailData = mtOption.tempproduct.map(data => ({
-      date: data.date,
-      isDeleted: false,
+    let rawMaterialData = mtOption.tempproduct.map(data => ({
+      date: new Date().toISOString(),
+      isDeleted: 0,
       type: usedmaterialform.getFieldValue().type,
-      paymentstatus: usedmaterialform.getFieldValue().type === 'Return' ? 'Returned' : 'Used',
-      createdDate: TimestampJs(),
+      paymentStatus: usedmaterialform.getFieldValue().type === 'Return' ? 'Returned' : 'Used',
+      createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
+      partialAmount: 0,
+      supplierId: 0,
+      paymentMode: "",
+      billAmount: 0,
     }))[0];
 
-    const supplierDbRef = collection(db, 'rawmaterial');
-    const createSupplierRef = await addDoc(supplierDbRef, { ...materialDetailData });
-    const materialDbRef = collection(createSupplierRef, 'materialdetails');
-    let { materials, status } = await getAllMaterialDetailsFromAllSuppliers();
+    // const supplierDbRef = collection(db, 'rawmaterial');
+    // const createSupplierRef = await addDoc(supplierDbRef, { ...materialDetailData });
+    // const materialDbRef = collection(createSupplierRef, 'materialdetails');
+    console.log(rawMaterialData)
+    const rawMaterialRef = await addRawMaterial(rawMaterialData)
 
-    if (status) {
+    let materials = await getSupplierAndMaterials();
+
+    if (materials) {
       let processedProducts = new Set(); // Track processed products
 
       // Use a for loop to process one by one
       for (let data of mtOption.tempproduct) {
         let matchingMaterial = materials.find(material =>
-          material.materialName === data.materialName &&
+          material.name === data.name &&
           material.unit === data.quantity.split(' ')[1] &&
           data.isDeleted === false
         );
@@ -990,14 +1000,18 @@ const addNewTemMaterial = async () => {
 
           let materialItem = {
             sno: i++,
-            supplierid: matchingMaterial.supplierId,
-            materialid: matchingMaterial.materialId,
-            quantity: Number(data.quantity.split(' ')[0]),
-            isDeleted: false
+            rawMaterial: matchingMaterial.materialId,
+            rawMaterialId: rawMaterialRef.id,
+            quantity: data.quantity.split(' ')[0],
+            isDeleted: 0,
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString()
           };
 
           // Add each material item to the database one by one
-          await addDoc(materialDbRef, materialItem);
+          // await addDoc(materialDbRef, materialItem);
+          console.log(materialItem)
+          await addRawMaterialDetail(materialItem);
 
           // Update storage based on the material type (Return/Used)
           let existingMaterial = datas.storage.find(storage =>
@@ -1074,35 +1088,39 @@ const addNewTemMaterial = async () => {
   // do not touch
   const AddNewMaterial = async ()=>{
     
-    let supplierObject = {...addMaterialMethod.supplierdata, partialamount:addmaterialpaymentform.getFieldsValue().partialamount === undefined ? 0 : addmaterialpaymentform.getFieldsValue().partialamount, paymentmode:addmaterialpaymentform.getFieldsValue().paymentstatus === 'Unpaid' ? '' : addmaterialpaymentform.getFieldsValue().paymentmode, paymentstatus:addmaterialpaymentform.getFieldsValue().paymentstatus, type:"Added", isDeleted:false, createdDate:TimestampJs()};
-    let materialArray= addMaterialMethod.temperorarydata.map((data, index) => ({sno:index + 1,id:data.id,isDeleted:false,price:data.price,quantity:data.quantity,createdDate:TimestampJs(),materialName:data.materialName}));
+    let supplierObject = {supplierId:addMaterialMethod.supplierdata.supplierid, partialAmount:addmaterialpaymentform.getFieldsValue().partialAmount === undefined ? 0 : addmaterialpaymentform.getFieldsValue().partialAmount, paymentMode:addmaterialpaymentform.getFieldsValue().paymentStatus === 'Unpaid' ? '' : addmaterialpaymentform.getFieldsValue().paymentMode, paymentStatus:addmaterialpaymentform.getFieldsValue().paymentStatus, type:"Added", isDeleted:0, date: new Date().toISOString(), createdDate: new Date().toISOString(), modifiedDate: new Date().toISOString()};
+    let materialArray= addMaterialMethod.temperorarydata.map((data, index) => ({sno:index + 1,id:data.id,isDeleted:0,price:data.price,quantity:data.quantity,createdDate:new Date().toISOString(),materialName:data.materialName}));
     let totalprice = materialArray.map(data=> data.price).reduce((a,b)=> a + b,0);
 
-    if(radioBtn.value === 'Partial' && addmaterialpaymentform.getFieldsValue().partialamount <=0 ){
+    if(radioBtn.value === 'Partial' && addmaterialpaymentform.getFieldsValue().partialAmount <=0 ){
       return message.open({type:'warning',content:'Check the partial amount value'})
     }
    
     try{
      setIsLoadingModal(true);
-    // DB Ref
-    const supplierDbRef = collection(db,'rawmaterial');
-    // New Supplier
-    const createSupplierRef = await addDoc(supplierDbRef,{...supplierObject,billamount:totalprice});
-    // DB Ref
-    const materialDbRef = collection(createSupplierRef,'materialdetails');
+
+     console.log("Supplier Details",supplierObject,totalprice)
+
+     const addMaterialRef = await addRawMaterial({...supplierObject,billAmount:totalprice})
+
+    // const supplierDbRef = collection(db,'rawmaterial');
+    // const createSupplierRef = await addDoc(supplierDbRef,{...supplierObject,billamount:totalprice});
+    // const materialDbRef = collection(createSupplierRef,'materialdetails');
 
      // New Material Add
      const materialPromises = materialArray.map(async newmaterial => {
       
       // console.log(addMaterialMethod.temperorarydata);
 
-      const existingMaterial = await datas.storage.find((storageItem) => (storageItem.category === 'Material List' && storageItem.materialName?.trim().toLowerCase() === newmaterial.materialName?.trim().toLowerCase()) && storageItem.isDeleted === false);
+      const existingMaterial = await datas.storage.find((storageItem) => (storageItem.category === 'Material List' && storageItem.materialName?.trim().toLowerCase() === newmaterial.materialName?.trim().toLowerCase()) && storageItem.isDeleted === 0);
       
-      const material = {sno:newmaterial.sno,materialid:newmaterial.id,isDeleted:false,price:newmaterial.price,quantity:newmaterial.quantity,createdDate:TimestampJs()}
+      const material = {sno:newmaterial.sno, rawMaterialId:addMaterialRef.id, rawMaterial:newmaterial.materialName, isDeleted:0,price:newmaterial.price,quantity:newmaterial.quantity,createdDate:new Date().toISOString(),modifiedDate: new Date().toISOString()}
       
-      console.log("Mat Details",materialDbRef,material)
+      console.log("Mat Details",material)
 
-      await addDoc(materialDbRef,material)
+      // await addDoc(materialDbRef,material)
+
+      await addRawMaterialDetail(material);
       
       console.log(existingMaterial);
       
@@ -1179,7 +1197,7 @@ const addNewTemMaterial = async () => {
   };
 
   // const AddNewMaterial = async () => {
-  //   if (radioBtn.value === 'Partial' && addmaterialpaymentform.getFieldsValue().partialamount <= 0) {
+  //   if (radioBtn.value === 'Partial' && addmaterialpaymentform.getFieldsValue().partialAmount <= 0) {
   //     return message.open({ type: 'warning', content: 'Check the partial amount value' });
   //   }
   
@@ -1188,9 +1206,9 @@ const addNewTemMaterial = async () => {
   
   //     let supplierObject = {
   //       ...addMaterialMethod.supplierdata,
-  //       partialamount: addmaterialpaymentform.getFieldsValue().partialamount === undefined ? 0 : addmaterialpaymentform.getFieldsValue().partialamount,
-  //       paymentmode: addmaterialpaymentform.getFieldsValue().paymentstatus === 'Unpaid' ? '' : addmaterialpaymentform.getFieldsValue().paymentmode,
-  //       paymentstatus: addmaterialpaymentform.getFieldsValue().paymentstatus,
+  //       partialAmount: addmaterialpaymentform.getFieldsValue().partialAmount === undefined ? 0 : addmaterialpaymentform.getFieldsValue().partialAmount,
+  //       paymentMode: addmaterialpaymentform.getFieldsValue().paymentStatus === 'Unpaid' ? '' : addmaterialpaymentform.getFieldsValue().paymentMode,
+  //       paymentStatus: addmaterialpaymentform.getFieldsValue().paymentStatus,
   //       type: "Added",
   //       isDeleted: false,
   //       createdDate: TimestampJs(),
@@ -1248,9 +1266,9 @@ const addNewTemMaterial = async () => {
   
   const [materialbill,setmaterialbill] = useState({materialdeails:[],
     supplierdetails:{name:'',
-          partialamount:0,
-          paymentmode:'',
-          paymentstatus:'',
+          partialAmount:0,
+          paymentMode:'',
+          paymentStatus:'',
           type:'',
           billamount:0,
           date:''}});
@@ -1286,9 +1304,9 @@ const addNewTemMaterial = async () => {
         {materialdeails:materialdatas,
         supplierdetails:{
           name:record.type === 'Return' || record.type ==='Used' ? '' : record.supplier.suppliername ,
-          partialamount:record.type === 'Return' || record.type === 'Used' ? '' :record.partialamount,
-          paymentmode:record.type === 'Return' || record.type === 'Used' ? '' :record.paymentmode,
-          paymentstatus:record.type === 'Return' || record.type === 'Used' ? '' :record.paymentstatus,
+          partialAmount:record.type === 'Return' || record.type === 'Used' ? '' :record.partialAmount,
+          paymentMode:record.type === 'Return' || record.type === 'Used' ? '' :record.paymentMode,
+          paymentStatus:record.type === 'Return' || record.type === 'Used' ? '' :record.paymentStatus,
           type:record.type,
           billamount:record.type === 'Return' || record.type === 'Used' ? '' : record.billamount,
           date:record.date
@@ -1309,9 +1327,9 @@ const addNewTemMaterial = async () => {
       Gender: item.supplier?.gender || '',
       Type: item.type,
       Billed: item.billamount,
-      Partial: item.partialamount,
-      Status: item.paymentstatus,
-      Mode: item.paymentmode
+      Partial: item.partialAmount,
+      Status: item.paymentStatus,
+      Mode: item.paymentMode
     }));
     jsonToExcel(specificData, `RawMaterials-List-${TimestampJs()}`)
     setSelectedRowKeys([])
@@ -1404,7 +1422,7 @@ const materialBillColumn = [
                 addmaterialaddform.resetFields()
                 addmaterialpaymentform.resetFields()
                 addmaterialtemtableform.resetFields()
-                form.setFields({ paymentstatus: 'Paid' })
+                form.setFields({ paymentStatus: 'Paid' })
                 form.resetFields() 
               }}
             >
@@ -1504,14 +1522,14 @@ const materialBillColumn = [
           <Form 
           onFinish={AddNewMaterial}
           form={addmaterialpaymentform}
-          initialValues={{ paymentstatus: 'Paid',paymentmode:'Cash' }}
+          initialValues={{ paymentStatus: 'Paid',paymentMode:'Cash' }}
           layout='horizontal'
           className='flex gap-x-2 justify-end '
           >
           <Form.Item
             // label='Payment Mode'
                 className="mb-0 absolute top-7 left-44"
-                name="paymentmode"
+                name="paymentMode"
                 rules={[{ required: true, message: 'Please select a payment method' }]}
               >
                 <Radio.Group
@@ -1525,7 +1543,7 @@ const materialBillColumn = [
               </Form.Item>
          <Form.Item
               className="mb-0"
-              name="paymentstatus"
+              name="paymentStatus"
               // label="Status"
               rules={[{ required: true, message: false }]}
             >
@@ -1538,12 +1556,12 @@ const materialBillColumn = [
 
             <Form.Item
               className="mb-0"
-              name="partialamount"
+              name="partialAmount"
               // label="Partial Amount"
               rules={[
                 {
                   required:
-                    radioBtn.value === 'Partial' || form.getFieldValue('partialamount') === 0
+                    radioBtn.value === 'Partial' || form.getFieldValue('partialAmount') === 0
                       ? true
                       : false,
                   message: false
@@ -1844,16 +1862,16 @@ const materialBillColumn = [
           pagination={false}
         />
         <span className='absolute -top-9 -translate-x-1/2 left-1/2 flex '> <span className='font-semibold inline-block pr-2'> {materialbill.supplierdetails.type === 'Return' ? 'RETURN ON' : materialbill.supplierdetails.type === 'Used'? 'USED ON' : 'RECEIVED ON' }  {materialbill.supplierdetails.date}</span>  
-        <Tag  className={`${materialbill.supplierdetails.paymentstatus === '' ? 'hidden':''}`} color={`${materialbill.supplierdetails.paymentstatus === 'Partial'?'yellow' : materialbill.supplierdetails.paymentstatus=== 'Paid'? 'green': materialbill.supplierdetails.paymentstatus === 'Unpaid'?'red': ''}`}>{materialbill.supplierdetails.paymentstatus}</Tag> 
-        <Tag className={`${materialbill.supplierdetails.paymentstatus === 'Unpaid' || materialbill.supplierdetails.paymentstatus === ''  ? 'hidden' : 'inline-block'}`} color='blue' >{materialbill.supplierdetails.paymentmode}  </Tag> </span>
+        <Tag  className={`${materialbill.supplierdetails.paymentStatus === '' ? 'hidden':''}`} color={`${materialbill.supplierdetails.paymentStatus === 'Partial'?'yellow' : materialbill.supplierdetails.paymentStatus=== 'Paid'? 'green': materialbill.supplierdetails.paymentStatus === 'Unpaid'?'red': ''}`}>{materialbill.supplierdetails.paymentStatus}</Tag> 
+        <Tag className={`${materialbill.supplierdetails.paymentStatus === 'Unpaid' || materialbill.supplierdetails.paymentStatus === ''  ? 'hidden' : 'inline-block'}`} color='blue' >{materialbill.supplierdetails.paymentMode}  </Tag> </span>
 
         <span className={`absolute -top-9 left-6 ${materialbill.supplierdetails.name === '' ?'hidden':''}`}><Tag color='blue' >{materialbill.supplierdetails.name}  </Tag>  </span>
         
         <span className={`text-[0.8rem] font-medium inline-block pt-4 ${materialbill.supplierdetails.billamount === '' ? 'hidden': ''}`}>Billing Amount: <Tag color='green'>{materialbill.supplierdetails.billamount}</Tag></span>
-        <span className={`text-[0.8rem] font-medium inline-block pt-4  ${materialbill.supplierdetails.paymentstatus !== 'Partial'  ? 'hidden' :'inline-bock'}`}>Partial Amount: <Tag color='yellow'>{materialbill.supplierdetails.partialamount}</Tag></span>
-        <span className={`text-[0.8rem] font-medium inline-block pt-4  ${materialbill.supplierdetails.paymentstatus !== 'Partial' ? 'hidden' :'inline-bock'}`}>Balance: <Tag color='red'>{materialbill.supplierdetails.billamount - materialbill.supplierdetails.partialamount}</Tag></span>
+        <span className={`text-[0.8rem] font-medium inline-block pt-4  ${materialbill.supplierdetails.paymentStatus !== 'Partial'  ? 'hidden' :'inline-bock'}`}>Partial Amount: <Tag color='yellow'>{materialbill.supplierdetails.partialAmount}</Tag></span>
+        <span className={`text-[0.8rem] font-medium inline-block pt-4  ${materialbill.supplierdetails.paymentStatus !== 'Partial' ? 'hidden' :'inline-bock'}`}>Balance: <Tag color='red'>{materialbill.supplierdetails.billamount - materialbill.supplierdetails.partialAmount}</Tag></span>
 
-        {/* ${materialbill.supplierdetails.paymentstatus === ''} */}
+        {/* ${materialbill.supplierdetails.paymentStatus === ''} */}
         </div>
         </Spin>
       </Modal>

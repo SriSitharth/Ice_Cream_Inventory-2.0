@@ -87,7 +87,7 @@ export default function Home({ datas }) {
   //   productname: '',
   //   flavour: '',
   //   quantity: '',
-  //   numberofpacks: 1
+  //   numberOfPacks: 1
   // })
 
   const [quotationft, setQuotationFt] = useState({
@@ -139,8 +139,8 @@ export default function Home({ datas }) {
     // },
     {
       title: <span className="text-[0.7rem]">Packs</span>,
-      dataIndex: 'numberofpacks',
-      key: 'numberofpacks',
+      dataIndex: 'numberOfPacks',
+      key: 'numberOfPacks',
       editable: quotationft.edpacks,
       render: (text) => <span className="text-[0.7rem]">{text}</span>,
       width: 80
@@ -271,7 +271,7 @@ export default function Home({ datas }) {
     ...restProps
   }) => {
     const inputNode =
-      dataIndex === 'numberofpacks' ? (
+      dataIndex === 'numberOfPacks' ? (
         <InputNumber
           size="small"
           type="number"
@@ -339,26 +339,26 @@ export default function Home({ datas }) {
     let row = temform.getFieldValue()
     try {
       if (
-        data.numberofpacks === row.numberofpacks &&
+        data.numberOfPacks === row.numberOfPacks &&
         data.margin === row.margin &&
         data.price === row.price
       ) {
         message.open({ type: 'info', content: 'No changes made' })
       } else if (
-        (data.numberofpacks !== row.numberofpacks &&
+        (data.numberOfPacks !== row.numberOfPacks &&
           data.margin === row.margin &&
           data.price === row.price) ||
-        (data.numberofpacks === row.numberofpacks &&
+        (data.numberOfPacks === row.numberOfPacks &&
           data.margin !== row.margin &&
           data.price === row.price)
       ) {
         // calculation
-        let mrp = row.numberofpacks * data.productprice
+        let mrp = row.numberOfPacks * data.productprice
         let updatedTempproduct = quotationft.tempproduct.map((product) =>
           product.key === row.key
             ? {
                 ...product,
-                numberofpacks: row.numberofpacks,
+                numberOfPacks: row.numberOfPacks,
                 margin: row.margin,
                 price: customRound(mrp - (mrp * row.margin) / 100),
                 mrp: mrp
@@ -377,17 +377,17 @@ export default function Home({ datas }) {
         }))
         message.open({ type: 'success', content: 'Updated Sucessfully' })
       } else if (
-        data.numberofpacks === row.numberofpacks &&
+        data.numberOfPacks === row.numberOfPacks &&
         data.margin === row.margin &&
         data.price !== row.price
       ) {
         // calculation
-        let mrp = row.numberofpacks * data.productprice
+        let mrp = row.numberOfPacks * data.productprice
         let updatedTempproduct = quotationft.tempproduct.map((product) =>
           product.key === row.key
             ? {
                 ...product,
-                numberofpacks: row.numberofpacks,
+                numberOfPacks: row.numberOfPacks,
                 margin: customRound(((mrp - row.price) / mrp) * 100),
                 price: row.price,
                 mrp: mrp
@@ -728,7 +728,7 @@ export default function Home({ datas }) {
               productname: material.materialname || '',
               // flavour: '',
               // quantity: material.unit || '',
-              numberofpacks: item.quantity || 0
+              numberOfPacks: item.quantity || 0
             }
           })
         )
@@ -950,10 +950,10 @@ export default function Home({ datas }) {
       //     quantity: pr.quantity + ' ' + pr.unit,
       //     margin: matchingData.margin,
       //     price:
-      //       matchingData.numberofpacks * pr.price -
-      //       matchingData.numberofpacks * pr.price * (matchingData.margin / 100),
-      //     numberofpacks: matchingData.numberofpacks,
-      //     producttotalamount: matchingData.numberofpacks * pr.price,
+      //       matchingData.numberOfPacks * pr.price -
+      //       matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
+      //     numberOfPacks: matchingData.numberOfPacks,
+      //     producttotalamount: matchingData.numberOfPacks * pr.price,
       //     returntype: matchingData.returntype
       //   }
       // })
@@ -969,10 +969,10 @@ export default function Home({ datas }) {
           quantity: `${pr.quantity} ${pr.unit}`,
           margin: matchingData.margin,
           price:
-            matchingData.numberofpacks * pr.price -
-            matchingData.numberofpacks * pr.price * (matchingData.margin / 100),
-          numberofpacks: matchingData.numberofpacks,
-          producttotalamount: matchingData.numberofpacks * pr.price,
+            matchingData.numberOfPacks * pr.price -
+            matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
+          numberOfPacks: matchingData.numberOfPacks,
+          producttotalamount: matchingData.numberOfPacks * pr.price,
           returntype: matchingData.returntype
         }))
       })
@@ -1009,10 +1009,10 @@ export default function Home({ datas }) {
   //         quantity: pr.quantity + ' ' + pr.unit,
   //         margin: matchingData.margin,
   //         price:
-  //         matchingData.numberofpacks * pr.price -
-  //         matchingData.numberofpacks * pr.price * (matchingData.margin / 100),
-  //         numberofpacks: matchingData.numberofpacks,
-  //         producttotalamount: matchingData.numberofpacks * pr.price,
+  //         matchingData.numberOfPacks * pr.price -
+  //         matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
+  //         numberOfPacks: matchingData.numberOfPacks,
+  //         producttotalamount: matchingData.numberOfPacks * pr.price,
   //         returntype: matchingData.returntype
   //       }
   //     });
@@ -1057,10 +1057,10 @@ export default function Home({ datas }) {
           quantity: `${pr.quantity} ${pr.unit}`,
           margin: matchingData.margin,
           price:
-            matchingData.numberofpacks * pr.price -
-            matchingData.numberofpacks * pr.price * (matchingData.margin / 100),
-          numberofpacks: matchingData.numberofpacks,
-          producttotalamount: matchingData.numberofpacks * pr.price,
+            matchingData.numberOfPacks * pr.price -
+            matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
+          numberOfPacks: matchingData.numberOfPacks,
+          producttotalamount: matchingData.numberOfPacks * pr.price,
           returntype: matchingData.returntype
         }))
       })
@@ -1110,7 +1110,7 @@ export default function Home({ datas }) {
       // flavour: data.flavour,
       // quantity: data.quantity,
       pieceamount: data.productprice,
-      numberofpacks: data.numberofpacks,
+      numberOfPacks: data.numberOfPacks,
       producttotalamount: data.mrp,
       margin: data.margin,
       price: data.price
@@ -1167,7 +1167,7 @@ export default function Home({ datas }) {
       // flavour: data.flavour,
       // quantity: data.quantity,
       pieceamount: data.productprice,
-      numberofpacks: data.numberofpacks,
+      numberOfPacks: data.numberOfPacks,
       producttotalamount: data.mrp,
       margin: data.margin,
       price: data.price
@@ -1689,8 +1689,8 @@ export default function Home({ datas }) {
     },
     {
       title: 'Qty',
-      key: 'numberofpacks',
-      dataIndex: 'numberofpacks'
+      key: 'numberOfPacks',
+      dataIndex: 'numberOfPacks'
     },
     {
       title: 'MRP',
@@ -1729,7 +1729,7 @@ export default function Home({ datas }) {
   const productOnchange = async (value, i) => {
     form.resetFields(['flavour'])
     form.resetFields(['quantity'])
-    // form.resetFields(['numberofpacks'])
+    // form.resetFields(['numberOfPacks'])
     const flavourOp = Array.from(
       new Set(
         datas.product
@@ -1749,7 +1749,7 @@ export default function Home({ datas }) {
   //flavour onchange value
   const flavourOnchange = async (value, i) => {
     form.resetFields(['quantity'])
-    form.resetFields(['numberofpacks'])
+    form.resetFields(['numberOfPacks'])
     const quantityOp = Array.from(
       new Set(
         datas.product.filter(
@@ -1781,10 +1781,10 @@ export default function Home({ datas }) {
       key: quotationft.count,
       date: formattedDate,
       createddate: TimestampJs(),
-      mrp: findPrice * values.numberofpacks,
+      mrp: findPrice * values.numberOfPacks,
       productprice: findPrice,
       margin: 0,
-      price: findPrice * values.numberofpacks
+      price: findPrice * values.numberOfPacks
     }
 
     const checkExsit = quotationft.tempproduct.some(
@@ -1842,8 +1842,8 @@ export default function Home({ datas }) {
     },
     {
       title: 'Number of pieces',
-      dataIndex: 'numberofpacks',
-      key: 'numberofpacks'
+      dataIndex: 'numberOfPacks',
+      key: 'numberOfPacks'
     }
   ]
 
@@ -2228,7 +2228,7 @@ export default function Home({ datas }) {
                         <td
                         // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
                         >
-                          {item.numberofpacks}
+                          {item.numberOfPacks}
                         </td>
                         <td
                         // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
@@ -2244,8 +2244,8 @@ export default function Home({ datas }) {
                         // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
                         >
                           {customRound(
-                            item.numberofpacks * item.pieceamount -
-                              (item.numberofpacks * item.pieceamount * item.margin) / 100
+                            item.numberOfPacks * item.pieceamount -
+                              (item.numberOfPacks * item.pieceamount * item.margin) / 100
                           )}
                         </td>
                       </tr>
@@ -2690,7 +2690,7 @@ Authorised Signature
                             }}
                             className={` border-b text-center`}
                           >
-                            {item.numberofpacks}
+                            {item.numberOfPacks}
                           </td>
                           <td
                             style={{
@@ -2715,8 +2715,8 @@ Authorised Signature
                             className={` border-b text-center`}
                           >
                             {customRound(
-                              item.numberofpacks * item.pieceamount -
-                                (item.numberofpacks * item.pieceamount * item.margin) / 100
+                              item.numberOfPacks * item.pieceamount -
+                                (item.numberOfPacks * item.pieceamount * item.margin) / 100
                             )}
                           </td>
                         </tr>
@@ -3229,7 +3229,7 @@ Authorised Signature
                     onChange={(e) => {
                       setQuotationFt((pre) => ({ ...pre, type: e.target.value }))
                       // setQuotationData(pre=>({...pre,type:e.target.value}))
-                      // form.resetFields(['productname','flavour','quantity', 'numberofpacks',]);
+                      // form.resetFields(['productname','flavour','quantity', 'numberOfPacks',]);
                       marginform.resetFields(['marginvalue'])
                     }}
                   >
@@ -3301,7 +3301,7 @@ Authorised Signature
                 </Form.Item> */}
                 <Form.Item
                   // className="mb-3 mt-0"
-                  name="numberofpacks"
+                  name="numberOfPacks"
                   label="Number of Pieces"
                   rules={[{ required: true, message: false }]}
                 >

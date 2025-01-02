@@ -117,19 +117,19 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             console.log(result)
             const freezerboxResult = item.boxId === '' ? item.boxId : await getFreezerboxById(item.boxId)
 
-            const customerName = result.status === 200 ? result.customer.name : item.customername
-            const mobileNumber = result.status === 200 ? result.customer.mobileNumber : item.mobilenumber
-            const gstNumber = result.status === 200 ? result.customer.gstin : item.gstin
-            const address = result.status === 200 ? result.customer.address : item.location
-            const boxNumber = freezerboxResult.status === 200 && freezerboxResult !== '' ? freezerboxResult.freezerbox.boxNumber : '';
+            const customerName = result.name || item.name
+            const mobileNumber = result.mobileNumber || item.mobileNumber
+            const gstNumber = result.gstin || item.gstin
+            const address = result.address || item.address
+            const boxNumber = freezerboxResult !== '' ? freezerboxResult.boxNumber : '';
             return {
               ...item,
               sno: index + 1,
               key: item.id || index,
               customername: customerName,
-              mobilenumber: mobileNumber,
+              mobileNumber: mobileNumber,
               gstin:gstNumber,
-              location: address,
+              address: address,
               boxNumber:boxNumber
             }
           }));
@@ -206,7 +206,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         return dateB.isAfter(dateA) ? -1 : 1
       },
       // defaultSortOrder: 'descend',
-      width: 155,
+      width: 115,
       render: (text) => dayjs(text).format('DD/MM/YYYY'),
       editable: false
     },
@@ -218,8 +218,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     },
     {
       title: 'Mobile',
-      dataIndex: 'mobilenumber',
-      key: 'mobilenumber',
+      dataIndex: 'mobileNumber',
+      key: 'mobileNumber',
       editable: false,
       render: (text, record) => {
         return <span>{text === undefined ? '-' : text}</span>
@@ -272,7 +272,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         ) : text === 'Partial' ? (
           <span className="flex gap-x-0">
             <Tag color="yellow">Partial</Tag>{' '}
-            <Tag color="blue">{formatToRupee(record.partialamount, true)}</Tag>
+            <Tag color="blue">{record.partialamount}</Tag>
           </span>
         ) : text === 'Return' ? (
           <Tag color="red">Returned</Tag>
@@ -1351,9 +1351,9 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       No: index + 1,
       Date: item.date,
       Name: item.customername,
-      Mobile: item.mobilenumber,
+      Mobile: item.mobileNumber,
       GSTIN: item.gstin,
-      Location: item.location,
+      Location: item.address,
       Type: item.type,
       Total: item.total,
       Billed: item.billamount,
@@ -2490,7 +2490,7 @@ console.log(filterdata);
 
               <div>
               <span className="font-bold">Mobile Number : </span>{' '}
-              <span>{invoiceDatas.customerdetails.mobilenumber}</span>
+              <span>{invoiceDatas.customerdetails.mobileNumber}</span>
               </div>
 
               <section className={`${gstin === true ? 'block' : 'hidden'}`}>
@@ -2505,12 +2505,12 @@ console.log(filterdata);
                   </span>
                 </div>
                 <div
-                  className={` ${invoiceDatas.customerdetails.location !== '' ? 'block' : 'hidden'}`}
+                  className={` ${invoiceDatas.customerdetails.address !== '' ? 'block' : 'hidden'}`}
                 >
                   <span className="font-bold">Customer Address :</span>{' '}
                   <span>
-                    {invoiceDatas.customerdetails.location
-                      ? invoiceDatas.customerdetails.location
+                    {invoiceDatas.customerdetails.address
+                      ? invoiceDatas.customerdetails.address
                       : 'N/A'}
                   </span>
                 </div>
@@ -3572,7 +3572,7 @@ console.log(filterdata);
                     <br />
                     <span className={`font-medium block pl-4`}>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? invoiceDatas.customerdetails.location
+                        ? invoiceDatas.customerdetails.address
                         : null}{' '}
                     </span>
                   </address>
@@ -3794,7 +3794,7 @@ console.log(filterdata);
                   >
                     Distination &#160;&#160;: <span className={`font-semibold`}>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? invoiceDatas.customerdetails.location
+                        ? invoiceDatas.customerdetails.address
                         : null}{' '}
                     </span>
                     <br />
