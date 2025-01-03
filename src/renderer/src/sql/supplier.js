@@ -45,11 +45,16 @@ export const getSupplierById = async (id) => {
       },
     });
 
-    console.log('Supplier fetched successfully:', response.data);
-    return response.data;
+    if (response.data) {
+      console.log('Supplier fetched successfully:', response.data);
+      return response.data;
+    } else {
+      console.warn('No supplier found for the given ID:', id);
+      return {};
+    }
   } catch (error) {
     console.error('Error fetching supplier by ID:', error.message);
-    throw error;
+    return {};
   }
 };
 

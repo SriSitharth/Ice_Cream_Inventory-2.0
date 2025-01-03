@@ -52,6 +52,23 @@ export const updateRawMaterial = async (id, rawmaterialData) => {
   }
 };
 
+export const getRawMaterialById = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/RawMaterial/GetRawMaterialById`, {
+      params: { id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Rawmaterial fetched successfully by ID:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching rawmaterial by ID:', error.message);
+    throw error;
+  }
+};
+
 export const getRawMaterialDetails = async (params = {}) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/RawMaterial/GetRawMaterialDetails`, {
@@ -98,6 +115,23 @@ export const updateRawMaterialDetail = async (id, rawmaterialdetailData) => {
     return response.data;
   } catch (error) {
     console.error('Error updating rawmaterial detail:', error.message);
+    throw error;
+  }
+};
+
+export const getRawMaterialDetailsByRawMaterialId = async (rawmaterialId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/RawMaterial/GetRawMaterialDetailsByRawMaterialId`, {
+      params: { rawmaterialId },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Rawmaterial details fetched successfully by rawmaterial ID:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching rawmaterial details by rawmaterial ID:', error.message);
     throw error;
   }
 };

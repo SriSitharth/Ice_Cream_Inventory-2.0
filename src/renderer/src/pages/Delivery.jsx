@@ -65,7 +65,7 @@ import { getFreezerbox, getFreezerboxById } from '../firebase/data-tables/freeze
 import TableHeight from '../components/TableHeight'
 import { ClockCircleOutlined } from '@ant-design/icons'
 
-import { addDelivery, getDeliveryById, updateDelivery, addDeliveryDetail } from '../sql/delivery'
+import { addDelivery, getDeliveryById, updateDelivery, addDeliveryDetail, getDeliveryDetailById } from '../sql/delivery'
 import { getCustomerById } from '../sql/customer'
 import { updateStorage } from '../sql/storage'
 import { getProductById } from '../sql/product'
@@ -284,7 +284,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           <Tag color="green">Paid</Tag>
         ) : text === 'Partial' ? (
           <span className="flex gap-x-0">
-            <Tag color="yellow">Partial</Tag> <Tag color="blue">{record.partialamount}</Tag>
+            <Tag color="yellow">Partial</Tag> <Tag color="blue">{record.partialAmount}</Tag>
           </span>
         ) : text === 'Return' ? (
           <Tag color="red">Returned</Tag>
@@ -410,9 +410,9 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       <td {...restProps}>
         {editing ? (
           <>
-            {dataIndex === 'paymentstatus' ? (
+            {dataIndex === 'paymentStatus' ? (
               <Form.Item
-                name="paymentstatus"
+                name="paymentStatus"
                 style={{ margin: 0 }}
                 rules={[{ required: true, message: false }]}
               >
@@ -977,15 +977,15 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   useEffect(() => {
     const productOp = datas.product
       .filter(
-        (item, i, s) => item.isDeleted === false
+        (item, i, s) => item.isDeleted === 0
         // && s.findIndex((item2) => item2.productname === item.productname) === i
       )
-      .map((data) => ({ label: data.productname, value: data.productname }))
+      .map((data) => ({ label: data.name, value: data.id }))
     setOption((pre) => ({ ...pre, product: productOp }))
 
     const optionscustomers = datas.customers
-      .filter((item) => item.isDeleted === false)
-      .map((item) => ({ label: item.customername, value: item.id }))
+      .filter((item) => item.isDeleted === 0)
+      .map((item) => ({ label: item.name, value: item.id }))
     setOption((pre) => ({ ...pre, customer: optionscustomers }))
   }, [])
 
@@ -1012,6 +1012,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const [freezerBoxState, setFreezerBoxState] = useState(false)
 
   const customerOnchange = debounce(async (value, i) => {
+    console.log(value)
     let filterBoxs = datas.freezerbox
       .filter((data) => data.customerId === value)
       .map((box) => ({ label: box.boxNumber, value: box.id }))
@@ -1079,11 +1080,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     // form2.resetFields(['quantity'])
     // form2.resetFields(['numberOfPacks'])
     form5.resetFields(['marginvalue'])
+    console.log(value)
 
-    let productId = datas.product.find((data) => data.name === value && data.isDeleted === 0).id
-    let numberofpackCount = datas.storage.find(
-      (data) => data.productId === productId && data.isDeleted === 0
-    ).numberOfPacks
+    // let productId = datas.product.find((data) => data.id === value && data.isDeleted === 0).id
+    // console.log(productId)
+    const storageData = datas.storage.find(
+      (data) => data.productId === String(value) && data.isDeleted === 0
+    );
+    const numberofpackCount = storageData?.numberOfPacks || 0;
     setProductCount(numberofpackCount)
 
     // setMarginValue({ amount: 0, discount: 0, percentage: 0 })
@@ -1126,25 +1130,25 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     setCount(count + 1)
     const formattedDate = values.date ? values.date.format('DD/MM/YYYY') : ''
     // let [quantityvalue, units] = values.quantity.split(' ')
-    const findPrice = await datas.product.find(
-      (item) => item.isDeleted === false && item.productname === values.productname
-      // && item.flavour === values.flavour &&
-      // item.quantity === Number(quantityvalue) &&
-      // item.unit === units
-    ).price
+    console.log(values)
+    const productData = await datas.product.find((item) => item.isDeleted === 0 && item.id === values.productname)
+    const findPrice = productData.price
 
     const newProduct = {
       ...values,
+      productId: values.productname,
+      productname: productData.name,
       key: count,
-      date: formattedDate,
-      createddate: TimestampJs(),
+      date: new Date().toISOString(),
+      createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
       mrp: findPrice * values.numberOfPacks,
       productprice: findPrice,
       margin: 0,
       price: findPrice * values.numberOfPacks
     }
 
-    // console.log(newProduct);
+    console.log(newProduct);
 
     // console.log(option.tempproduct);
 
@@ -1196,8 +1200,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       // deliveryUpdateMt()
       // setMarginValue({ amount: 0, discount: 0, percentage: 0, paymentstaus: 'Paid' })
       form5.resetFields(['marginvalue'])
-      form4.resetFields(['partialamount'])
-      form4.setFieldsValue({ paymentstatus: 'Paid' })
+      form4.resetFields(['partialAmount'])
+      form4.setFieldsValue({ paymentStatus: 'Paid' })
     }
   }, 200)
 
@@ -1210,7 +1214,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     setTotalAmount(totalmt)
     setOption((pre) => ({ ...pre, tempproduct: newTempProduct }))
     setMarginValue((pre) => ({ ...pre, amount: netamt }))
-    form4.setFieldsValue({ paymentstatus: 'Paid' })
+    form4.setFieldsValue({ paymentStatus: 'Paid' })
   }
 
   const [isDeliverySpiner, setIsDeliverySpiner] = useState(false)
@@ -1242,39 +1246,44 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     )
 
     // Partial amount (value)
-    let { partialamount, paymentMode } = form4.getFieldsValue()
+    let { partialAmount, paymentMode } = form4.getFieldsValue()
     let { customername } = form2.getFieldsValue()
     // Create delivery new
     const newDelivery =
       returnDelivery.state === true
         ? {
             customerId: customername,
-            date: dayjs(form2.getFieldValue().date).format('DD/MM/YYYY'),
+            // date: dayjs(form2.getFieldValue().date).format('DD/MM/YYYY'),
+            date: new Date().toISOString(),
             total: totalamount,
-            billamount: option.tempproduct.map((data) => data.price).reduce((a, b) => a + b, 0),
-            paymentstatus: 'Return',
-            partialamount:
-              partialamount === undefined || partialamount === null ? 0 : partialamount,
-            isDeleted: false,
+            billAmount: option.tempproduct.map((data) => data.price).reduce((a, b) => a + b, 0),
+            paymentStatus: 'Return',
+            paymentMode: '',
+            partialAmount:
+              partialAmount === undefined || partialAmount === null ? 0 : partialAmount,
+            isDeleted: 0,
             type: returnDelivery.state === true ? 'return' : 'order',
-            createddate: TimestampJs(),
-            boxid:
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString(),
+            boxId:
               form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
           }
         : {
             customerId: customername,
-            date: dayjs(form2.getFieldValue().date).format('DD/MM/YYYY'),
+            // date: dayjs(form2.getFieldValue().date).format('DD/MM/YYYY'),
+            date: new Date().toISOString(),
             total: totalamount,
-            billamount: marginValue.amount,
-            // paymentstatus: marginValue.paymentstaus,
-            paymentstatus: form4.getFieldsValue().paymentstatus,
-            partialamount:
-              partialamount === undefined || partialamount === null ? 0 : partialamount,
+            billAmount: marginValue.amount,
+            // paymentStatus: marginValue.paymentstaus,
+            paymentStatus: form4.getFieldsValue().paymentStatus,
+            partialAmount:
+              partialAmount === undefined || partialAmount === null ? 0 : partialAmount,
             paymentMode: marginValue.paymentstaus === 'Unpaid' ? '' : paymentMode,
-            isDeleted: false,
+            isDeleted: 0,
             type: returnDelivery.state === true ? 'return' : 'order',
-            createddate: TimestampJs(),
-            boxid:
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString(),
+            boxId:
               form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
           }
 
@@ -1289,6 +1298,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
       for (const item of productItems) {
         console.log(itemsCollectionRef, item, deliveryRef.id)
+
+        
         await addDeliveryDetail(deliveryRef.id, item)
         // await addDoc(itemsCollectionRef, item)
 
@@ -1333,7 +1344,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       setTotalAmount(0)
       setMarginValue((pre) => ({ ...pre, amount: 0 }))
       form5.resetFields(['marginvalue'])
-      form4.resetFields(['partialamount'])
+      form4.resetFields(['partialAmount'])
       // await setIsDeliverySpiner(true)
       warningModalOk()
       setIsDeliverySpiner(false)
@@ -1350,7 +1361,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       setIsModalOpen(false)
       form2.resetFields()
       form5.resetFields(['marginvalue'])
-      form4.resetFields(['partialamount'])
+      form4.resetFields(['partialAmount'])
       setOption((pre) => ({
         ...pre,
         tempproduct: [],
@@ -1363,7 +1374,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       setCount(0)
       setTotalAmount(0)
       setMarginValue({ amount: 0, discount: 0, percentage: 0 })
-      form4.setFieldsValue({ paymentstatus: 'Paid' })
+      form4.setFieldsValue({ paymentStatus: 'Paid' })
       setLastOrderData({ customerdetails: {}, products: [] })
       setlastOrderBtnState(true)
       setOption((pre) => ({ ...pre, editingKeys: [] }))
@@ -1375,7 +1386,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     setIsModalOpen(false)
     form2.resetFields()
     form5.resetFields(['marginvalue'])
-    form4.resetFields(['partialamount'])
+    form4.resetFields(['partialAmount'])
     setOption((pre) => ({
       ...pre,
       tempproduct: [],
@@ -1388,7 +1399,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     setCount(0)
     setTotalAmount(0)
     setMarginValue({ amount: 0, discount: 0, percentage: 0 })
-    form4.setFieldsValue({ paymentstatus: 'Paid' })
+    form4.setFieldsValue({ paymentStatus: 'Paid' })
     setLastOrderData({ customerdetails: {}, products: [] })
     setlastOrderBtnState(true)
     setOption((pre) => ({ ...pre, editingKeys: [] }))
@@ -1406,9 +1417,9 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       Location: item.address,
       Type: item.type,
       Total: item.total,
-      Billed: item.billamount,
-      Partial: item.partialamount,
-      Status: item.paymentstatus,
+      Billed: item.billAmount,
+      Partial: item.partialAmount,
+      Status: item.paymentStatus,
       Mode: item.paymentMode
     }))
     jsonToExcel(specificData, `Delivery-List-${TimestampJs()}`)
@@ -1423,7 +1434,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     console.log(allInvoiceData)
     for (let record of exportDatas) {
       const { items, status } = await fetchItemsForDelivery(record.id)
-      const { freezerbox } = await getFreezerboxById(record.boxid)
+      const { freezerbox } = await getFreezerboxById(record.boxId)
       let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber
       if (status === 200) {
         let prData = datas.product.filter((item) => items.find((item2) => item.id === item2.id))
@@ -1556,7 +1567,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       ...values,
       date: formattedDate,
       key: mtOption.count,
-      createddate: TimestampJs(),
+      createdDate: TimestampJs(),
       isDeleted: false,
       quantity: values.quantity + ' ' + values.unit
     }
@@ -1638,12 +1649,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
   const radioOnchange = debounce((e) => {
     setMarginValue((pre) => ({ ...pre, paymentstaus: e.target.value }))
-    form4.resetFields(['partialamount'])
+    form4.resetFields(['partialAmount'])
     if (e.target.value === 'Partial') {
       if (partialAmountRef.current) {
         setTimeout(() => {
           if (partialAmountRef.current) {
-            const inputField = form.getFieldInstance('partialamount')
+            const inputField = form.getFieldInstance('partialAmount')
             if (inputField) {
               inputField.focus()
             }
@@ -1737,11 +1748,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     const getItems = async () => {
       if (deliveryBill.prdata.id !== '') {
         setDeliveryBill((pre) => ({ ...pre, loading: true }))
+        console.log(deliveryBill.prdata.id)
 
-        const { items, status } = await fetchItemsForDelivery(deliveryBill.prdata.id)
+        const items = await getDeliveryDetailById(deliveryBill.prdata.id)
         const { paymenthistory } = await fetchPayDetailsForDelivery(deliveryBill.prdata.id)
 
-        if (status === 200) {
+        if (items) {
           let prItems = datas.product.flatMap((item) =>
             items
               .filter((item2) => item.id === item2.id)
@@ -1786,7 +1798,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   ])
 
   const onOpenDeliveryBill = debounce(async (data) => {
-    let { freezerbox } = await getFreezerboxById(data.boxid)
+    let { freezerbox } = await getFreezerboxById(data.boxId)
     let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber
 
     setDeliveryBill((pre) => ({
@@ -2080,7 +2092,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
   const handleDownloadPdf = async (record) => {
     const { items, status } = await fetchItemsForDelivery(record.id)
-    const { freezerbox } = await getFreezerboxById(record.boxid)
+    const { freezerbox } = await getFreezerboxById(record.boxId)
     let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber
     if (status === 200) {
       let prData = datas.product.filter((item, i) => items.find((item2) => item.id === item2.id))
@@ -2186,7 +2198,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     let itemsObject = lastOrderData.products
       .sort((a, b) => a.sno - b.sno)
       .map((data, i) => ({
-        createddate: TimestampJs(),
+        createdDate: TimestampJs(),
         customername: lastOrderData.customerdetails.customerId,
         date: form2.getFieldValue().date ? form2.getFieldValue().date.format('DD/MM/YYYY') : '',
         // flavour: data.flavour,
@@ -2228,7 +2240,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const openQuickSaleModalMt = () => {
     setPayModalState((pre) => ({ ...pre, btndisable: false, type: 'create' }))
     quicksalepayForm.setFieldsValue({
-      amount: deliveryBill.data.billamount - deliveryBill.data.partialamount
+      amount: deliveryBill.data.billAmount - deliveryBill.data.partialAmount
     })
     setPopupModal((pre) => ({ ...pre, quicksaleform: true }))
   }
@@ -2245,12 +2257,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       deliveryid: billId,
       date: formateDate,
       type: 'Payment',
-      createddate: TimestampJs(),
+      createdDate: TimestampJs(),
       description: description === undefined || description === null ? '' : description,
       isDeleted: false
     }
 
-    let balanceAmount = deliveryBill.data.billamount - deliveryBill.data.partialamount
+    let balanceAmount = deliveryBill.data.billAmount - deliveryBill.data.partialAmount
     let newPayAmount = balanceAmount - newData.amount
 
     if (paydetails.amount === 0) {
@@ -2265,7 +2277,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         if (newPayAmount === 0) {
           // Payed in full
           setPayModalState((pre) => ({ ...pre, btndisable: true }))
-          let updateData = { partialamount: 0, paymentstatus: 'Paid' }
+          let updateData = { partialAmount: 0, paymentStatus: 'Paid' }
           await updateDelivery(deliveryBill.data.id, updateData)
           const DeliveryDocRef = doc(db, 'delivery', billId)
           const payDetailsRef = collection(DeliveryDocRef, 'paydetails')
@@ -2275,15 +2287,15 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         } else {
           // Partial payment update
           setPayModalState((pre) => ({ ...pre, btndisable: true }))
-          let partialamount = {
-            partialamount: deliveryBill.data.partialamount + newData.amount,
-            paymentstatus:
-              deliveryBill.data.paymentstatus === 'Unpaid'
+          let partialAmount = {
+            partialAmount: deliveryBill.data.partialAmount + newData.amount,
+            paymentStatus:
+              deliveryBill.data.paymentStatus === 'Unpaid'
                 ? 'Partial'
-                : deliveryBill.data.paymentstatus,
+                : deliveryBill.data.paymentStatus,
             updateddate: TimestampJs()
           }
-          await updateDelivery(deliveryBill.data.id, partialamount)
+          await updateDelivery(deliveryBill.data.id, partialAmount)
           const DeliveryDocRef = doc(db, 'delivery', billId)
           const payDetailsRef = collection(DeliveryDocRef, 'paydetails')
           await addDoc(payDetailsRef, newData)
@@ -2378,12 +2390,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         size={17} className='text-blue-500 cursor-pointer'/>  */}
               </span>
             ),
-            date: data.createddate
+            date: data.createdDate
           }))
         : []
 
     // paid
-    if (deliveryBill.prdata.paymentstatus === 'Paid') {
+    if (deliveryBill.prdata.paymentStatus === 'Paid') {
       setHistoryBtn((pre) => ({
         ...pre,
         data: [
@@ -2392,14 +2404,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             dot: <MdOutlineDoneOutline className="timeline-clock-icon text-green-500 pb-0" />,
             label: 'Paid',
             children: (
-              <span className="pb-0 mb-0">{`${deliveryBill.data.billamount === undefined ? 0 : formatToRupee(deliveryBill.data.billamount)}`}</span>
+              <span className="pb-0 mb-0">{`${deliveryBill.data.billAmount === undefined ? 0 : formatToRupee(deliveryBill.data.billAmount)}`}</span>
             )
           }
         ]
       }))
     }
     // unpaid
-    else if (deliveryBill.prdata.paymentstatus === 'Unpaid') {
+    else if (deliveryBill.prdata.paymentStatus === 'Unpaid') {
       setHistoryBtn((pre) => ({
         ...pre,
         data: [
@@ -2407,19 +2419,19 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           {
             dot: <GiCancel className="timeline-clock-icon text-red-500" />,
             label: 'Unpaid',
-            children: ` ${deliveryBill.data.billamount === undefined ? 0 : formatToRupee(deliveryBill.data.billamount)}`
+            children: ` ${deliveryBill.data.billAmount === undefined ? 0 : formatToRupee(deliveryBill.data.billAmount)}`
           }
         ]
       }))
     }
     // partial
-    else if (deliveryBill.prdata.paymentstatus === 'Partial') {
+    else if (deliveryBill.prdata.paymentStatus === 'Partial') {
       let isPartial =
         sortedHistory.length > 0
           ? undefined
           : {
               label: 'Partial',
-              children: ` ${deliveryBill.data.partialamount === 0 ? '' : formatToRupee(deliveryBill.data.partialamount)}`
+              children: ` ${deliveryBill.data.partialAmount === 0 ? '' : formatToRupee(deliveryBill.data.partialAmount)}`
             }
       setHistoryBtn((pre) => ({ ...pre, data: [...paydetails, isPartial] }))
     }
@@ -2430,8 +2442,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const updateQuickSalePayMt = async () => {
     let { date, amount, description } = quicksalepayForm.getFieldValue()
     let oldAmount = payModalState.data.amount
-    let partialAmount = deliveryBill.data.partialamount
-    let billingAmount = deliveryBill.data.billamount
+    let partialAmount = deliveryBill.data.partialAmount
+    let billingAmount = deliveryBill.data.billAmount
     if (
       payModalState.data.date === dayjs(date).format('DD/MM/YYYY') &&
       payModalState.data.amount === amount &&
@@ -2640,19 +2652,19 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               Bill Amount:{' '}
               <span className=" font-bold">
                 {Object.keys(invoiceDatas.customerdetails).length !== 0
-                  ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                  ? formatToRupee(invoiceDatas.customerdetails.billAmount)
                   : null}
               </span>
             </p>
             <p
-              className={` ${invoiceDatas.customerdetails.partialamount !== 0 || invoiceDatas.customerdetails.paymentstatus === 'Paid' ? 'block text-end' : 'hidden'}`}
+              className={` ${invoiceDatas.customerdetails.partialAmount !== 0 || invoiceDatas.customerdetails.paymentStatus === 'Paid' ? 'block text-end' : 'hidden'}`}
             >
               Paid Amount:{' '}
               <span className=" font-bold ">
                 {Object.keys(invoiceDatas.customerdetails).length !== 0
-                  ? invoiceDatas.customerdetails.paymentstatus === 'Paid'
-                    ? formatToRupee(invoiceDatas.customerdetails.billamount)
-                    : formatToRupee(invoiceDatas.customerdetails.partialamount)
+                  ? invoiceDatas.customerdetails.paymentStatus === 'Paid'
+                    ? formatToRupee(invoiceDatas.customerdetails.billAmount)
+                    : formatToRupee(invoiceDatas.customerdetails.partialAmount)
                   : null}
               </span>
             </p>
@@ -2665,14 +2677,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             <p className="text-end ">Authorised Signature</p>
 
             <p
-              className={` ${invoiceDatas.customerdetails.partialamount !== 0 ? 'block text-end' : 'hidden'}`}
+              className={` ${invoiceDatas.customerdetails.partialAmount !== 0 ? 'block text-end' : 'hidden'}`}
             >
               Balance:{' '}
               <span className=" font-bold ">
                 {Object.keys(invoiceDatas.customerdetails).length !== 0
                   ? formatToRupee(
-                      invoiceDatas.customerdetails.billamount -
-                        invoiceDatas.customerdetails.partialamount
+                      invoiceDatas.customerdetails.billAmount -
+                        invoiceDatas.customerdetails.partialAmount
                     )
                   : null}
               </span>
@@ -2723,7 +2735,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                 setIsModalOpen(true)
                 setReturnDelivery((pre) => ({ ...pre, state: false }))
                 setFreezerBoxState(true)
-                form4.resetFields(['partialamount'])
+                form4.resetFields(['partialAmount'])
                 form.resetFields()
                 setProductCount(0)
               }}
@@ -2800,15 +2812,15 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                 disabled={option.tempproduct.length === 0 || isDeliverySpiner ? true : false}
                 form={form4}
                 initialValues={{
-                  partialamount: null,
+                  partialAmount: null,
                   price: 'Price',
-                  paymentstatus: 'Paid',
+                  paymentStatus: 'Paid',
                   paymentMode: 'Cash'
                 }}
                 onFinish={addNewDelivery}
               >
                 <span className="flex gap-x-3 m-0 justify-center items-center">
-                  <Form.Item name="paymentstatus">
+                  <Form.Item name="paymentStatus">
                     <Radio.Group
                       disabled={option.tempproduct.length === 0 || isDeliverySpiner ? true : false}
                       buttonStyle="solid"
@@ -2835,7 +2847,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                   )}
 
                   <Form.Item
-                    name="partialamount"
+                    name="partialAmount"
                     rules={[
                       {
                         required: marginValue.paymentstaus === 'Partial' ? true : false,
@@ -2862,11 +2874,11 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                 className={`${returnDelivery.state === true ? '' : 'hidden'}`}
                 disabled={option.tempproduct.length <= 0 || isDeliverySpiner ? true : false}
                 form={form4}
-                initialValues={{ price: 'Price', paymentstatus: 'Paid' }}
+                initialValues={{ price: 'Price', paymentStatus: 'Paid' }}
                 onFinish={addNewDelivery}
               >
                 <span className="flex gap-x-3 m-0 justify-center items-center">
-                  <Form.Item name="paymentstatus">
+                  <Form.Item name="paymentStatus">
                     <Radio.Group
                       className={`${returnDelivery.state === true ? 'hidden' : 'block'}`}
                       disabled={option.tempproduct.length <= 0 ? true : false}
@@ -2878,7 +2890,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                       <Radio.Button value="Partial">PARTIAL</Radio.Button>
                     </Radio.Group>
                   </Form.Item>
-                  <Form.Item name="partialamount">
+                  <Form.Item name="partialAmount">
                     <InputNumber
                       className={`${returnDelivery.state === true ? 'hidden' : 'block'}`}
                       disabled={marginValue.paymentstaus === 'Partial' ? false : true}
@@ -3173,9 +3185,9 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               </span>
               <Tag
                 className="m-0"
-                color={`${deliveryBill.data.paymentstatus === 'Paid' ? 'green' : deliveryBill.data.paymentstatus === 'Unpaid' ? 'red' : deliveryBill.data.paymentstatus === 'Partial' ? 'yellow' : 'blue'}`}
+                color={`${deliveryBill.data.paymentStatus === 'Paid' ? 'green' : deliveryBill.data.paymentStatus === 'Unpaid' ? 'red' : deliveryBill.data.paymentStatus === 'Partial' ? 'yellow' : 'blue'}`}
               >
-                {deliveryBill.data.paymentstatus}
+                {deliveryBill.data.paymentStatus}
               </Tag>
               <Tag
                 color="green"
@@ -3283,7 +3295,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               </Popconfirm>
               <Button
                 onClick={historyBtnMt}
-                className={`${deliveryBill.data.paymentstatus === 'Return' ? 'hidden' : ''}`}
+                className={`${deliveryBill.data.paymentStatus === 'Return' ? 'hidden' : ''}`}
               >
                 <RiHistoryLine />
               </Button>
@@ -3317,32 +3329,32 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             Billing Amount:
             <Tag className="text-[1.1rem]" color="green">
               {formatToRupee(
-                deliveryBill.data.billamount === undefined ? 0 : deliveryBill.data.billamount
+                deliveryBill.data.billAmount === undefined ? 0 : deliveryBill.data.billAmount
               )}
             </Tag>
           </span>
 
-          <span className={`${deliveryBill.data.partialamount === 0 ? 'hidden' : 'inline-block'}`}>
+          <span className={`${deliveryBill.data.partialAmount === 0 ? 'hidden' : 'inline-block'}`}>
             Partial Amount:
             <Tag className="text-[1.1rem]" color="yellow">
               {formatToRupee(
-                deliveryBill.data.total === undefined ? 0 : deliveryBill.data.partialamount
+                deliveryBill.data.total === undefined ? 0 : deliveryBill.data.partialAmount
               )}
             </Tag>
           </span>
 
           <span
-            className={`${deliveryBill.prdata.paymentstatus === 'Paid' || deliveryBill.prdata.paymentstatus === 'Return' ? 'hidden' : 'inline-block'}`}
+            className={`${deliveryBill.prdata.paymentStatus === 'Paid' || deliveryBill.prdata.paymentStatus === 'Return' ? 'hidden' : 'inline-block'}`}
           >
             Balance Amount:{' '}
             <Tag color="red" className="text-sm font-medium">
-              {formatToRupee(deliveryBill.data.billamount - deliveryBill.data.partialamount)}
+              {formatToRupee(deliveryBill.data.billAmount - deliveryBill.data.partialAmount)}
             </Tag>
           </span>
         </div>
 
         <div
-          className={`${deliveryBill.prdata.paymentstatus === 'Paid' || deliveryBill.prdata.type === 'order' || deliveryBill.prdata.type === 'return' ? 'hidden' : 'block'}`}
+          className={`${deliveryBill.prdata.paymentStatus === 'Paid' || deliveryBill.prdata.type === 'order' || deliveryBill.prdata.type === 'return' ? 'hidden' : 'block'}`}
         >
           <div className="w-full flex items-center justify-end">
             <Button
@@ -3506,7 +3518,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                   </span>{' '}
                   <span>
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
-                      ? invoiceDatas.customerdetails.createddate
+                      ? invoiceDatas.customerdetails.createdDate
                       : null}
                   </span>
                 </span>
@@ -3713,7 +3725,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                     <td className="px-1 text-center">
                       <span className=" font-bold">
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                          ? formatToRupee(invoiceDatas.customerdetails.billAmount)
                           : null}
                       </span>
                     </td>
@@ -3748,7 +3760,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                   <td>
                     <span>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount)
                         : null}
                     </span>
                   </td>
@@ -3756,7 +3768,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                   <td>
                     <span>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.09)
                         : null}
                     </span>
                   </td>
@@ -3764,7 +3776,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                   <td>
                     <span>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.09)
                         : null}
                     </span>
                   </td>
@@ -3776,7 +3788,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                   <td>
                     <span className=" font-semibold">
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.09)
                         : null}
                     </span>
                   </td>
@@ -3784,14 +3796,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                   <td>
                     <span className=" font-semibold">
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.09)
                         : null}
                     </span>
                   </td>
                   <td>
                     <span className=" font-semibold">
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.18)
                         : null}
                     </span>
                   </td>
@@ -3837,7 +3849,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
                           ? formatToRupee(
                               invoiceDatas.customerdetails.total -
-                                invoiceDatas.customerdetails.billamount
+                                invoiceDatas.customerdetails.billAmount
                             )
                           : null}
                       </span>
@@ -3869,14 +3881,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                 Total :{' '}
                 <span>
                   {Object.keys(invoiceDatas.customerdetails).length !== 0
-                    ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                    ? formatToRupee(invoiceDatas.customerdetails.billAmount)
                     : null}
                 </span>
                 <br />
                 GST @ 18% :{' '}
                 <span>
                   {Object.keys(invoiceDatas.customerdetails).length !== 0
-                    ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
+                    ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.18)
                     : null}
                 </span>
                 <br />
@@ -3886,8 +3898,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                   <span>
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
                       ? formatToRupee(
-                          invoiceDatas.customerdetails.billamount +
-                            invoiceDatas.customerdetails.billamount * 0.18
+                          invoiceDatas.customerdetails.billAmount +
+                            invoiceDatas.customerdetails.billAmount * 0.18
                         )
                       : null}
                   </span>

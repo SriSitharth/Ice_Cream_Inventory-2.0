@@ -49,7 +49,7 @@ import { FaClipboardList } from 'react-icons/fa'
 import TableHeight from '../components/TableHeight'
 import './css/RawMaterial.css'
 
-import { addRawMaterial, updateRawMaterial, addRawMaterialDetail } from '../sql/rawmaterial'
+import { addRawMaterial, updateRawMaterial, getRawMaterialById, addRawMaterialDetail, getRawMaterialDetailsByRawMaterialId } from '../sql/rawmaterial'
 import { getStorages, updateStorage } from '../sql/storage'
 import { getSupplierById } from '../sql/supplier'
 import { getSupplierAndMaterials, getMaterialsBySupplierId , getMaterialById } from '../sql/supplierandmaterials'
@@ -78,12 +78,14 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
   useEffect(() => {
     const fetchData = async () => {
       setIsMaterialTbLoading(true)
+
       let rawTableDtas = await Promise.all(
-        datas.rawmaterials.slice(offset, offset + chunkSize).map(async (data) => ({
+        datas.rawmaterials.map(async (data) => {
+          const supplierData = await getSupplierById(data.supplierId);
+          return {
           ...data,
-          ...(data.supplierId ? await getSupplierById(data.supplierId) : '-')
-          //  ...(data.supplierid && data.materialid ? await getOneMaterialDetailsById(data.supplierid,data.materialid): '-')
-        }))
+          name: supplierData?.name || '-',
+        }})
       )
 
       const filteredMaterials = await Promise.all(
@@ -92,13 +94,11 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
           .map((item, index) => ({ ...item, key: item.id || index }))
       )
       console.log(filteredMaterials)
-      setData((prevData) =>
-        offset === 0 ? filteredMaterials : [...prevData, ...filteredMaterials]
-      )
+      setData(filteredMaterials)
       setIsMaterialTbLoading(false)
     }
     fetchData()
-  }, [datas.rawmaterials, dateRange, offset])
+  }, [datas.rawmaterials, dateRange])
 
   useEffect(() => {
     setOffset(0)
@@ -456,7 +456,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
         return (
           String(record.date).toLowerCase().includes(value.toLowerCase()) ||
           String(supplierName).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.billamount === undefined ? '-' : record.billamount)
+          String(record.billAmount === undefined ? '-' : record.billAmount)
             .toLowerCase()
             .includes(value.toLowerCase()) ||
           String(record.partialAmount === undefined ? '-' : record.partialAmount)
@@ -810,8 +810,8 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     },
     {
       title: <span className="text-[0.7rem]">Material</span>,
-      dataIndex: 'materialName',
-      key: 'materialName',
+      dataIndex: 'name',
+      key: 'name',
       editable: false,
       render: (text) => <span className="text-[0.7rem]">{text}</span>
     },
@@ -1000,13 +1000,13 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       key: mtOption.count,
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString(),
-      isDeleted: false,
+      isDeleted: 0,
       quantity: values.quantity + ' ' + unitOnchange
     }
     console.log(mtOption.tempproduct, newMaterial)
 
     const checkExist = mtOption.tempproduct.find(
-      (item) => item.materialName === newMaterial.materialName && item.date === newMaterial.date
+      (item) => item.materialName === newMaterial.name && item.date === newMaterial.date
     )
 
     if (checkExist) {
@@ -1043,11 +1043,11 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       // const supplierDbRef = collection(db, 'rawmaterial');
       // const createSupplierRef = await addDoc(supplierDbRef, { ...materialDetailData });
       // const materialDbRef = collection(createSupplierRef, 'materialdetails');
-      console.log(rawMaterialData)
+      
       const rawMaterialRef = await addRawMaterial(rawMaterialData)
 
       let materials = await getSupplierAndMaterials()
-
+      console.log(rawMaterialData,materials)
       if (materials) {
         let processedProducts = new Set() // Track processed products
 
@@ -1057,15 +1057,15 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
             (material) =>
               material.name === data.name &&
               material.unit === data.quantity.split(' ')[1] &&
-              data.isDeleted === false
+              data.isDeleted === 0
           )
-
-          if (matchingMaterial && !processedProducts.has(data.materialName)) {
-            processedProducts.add(data.materialName) // Mark as processed
+          console.log(matchingMaterial)
+          if (matchingMaterial && !processedProducts.has(data.name)) {
+            processedProducts.add(data.name)
 
             let materialItem = {
               sno: i++,
-              rawMaterial: matchingMaterial.materialId,
+              materialId: matchingMaterial.id,
               rawMaterialId: rawMaterialRef.id,
               quantity: data.quantity.split(' ')[0],
               isDeleted: 0,
@@ -1075,13 +1075,13 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
 
             // Add each material item to the database one by one
             // await addDoc(materialDbRef, materialItem);
-            console.log(materialItem)
+            console.log(materialItem, data)
             await addRawMaterialDetail(materialItem)
 
             // Update storage based on the material type (Return/Used)
             let existingMaterial = datas.storage.find(
               (storage) =>
-                storage.materialName === data.materialName && storage.category === 'Material List'
+                storage.materialName === data.name && storage.category === 'Material List'
             )
 
             if (data.type === 'Return') {
@@ -1198,7 +1198,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       const addMaterialRef = await addRawMaterial({ ...supplierObject, billAmount: totalprice })
 
       // const supplierDbRef = collection(db,'rawmaterial');
-      // const createSupplierRef = await addDoc(supplierDbRef,{...supplierObject,billamount:totalprice});
+      // const createSupplierRef = await addDoc(supplierDbRef,{...supplierObject,billAmount:totalprice});
       // const materialDbRef = collection(createSupplierRef,'materialdetails');
 
       // New Material Add
@@ -1216,9 +1216,9 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
         const material = {
           sno: newmaterial.sno,
           rawMaterialId: addMaterialRef.id,
-          // rawMaterial: newmaterial.materialName,
+          materialId: newmaterial.id,
           isDeleted: 0,
-          // price: newmaterial.price,
+          price: newmaterial.price,
           quantity: String(newmaterial.quantity),
           createdDate: new Date().toISOString(),
           modifiedDate: new Date().toISOString()
@@ -1378,7 +1378,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       paymentMode: '',
       paymentStatus: '',
       type: '',
-      billamount: 0,
+      billAmount: 0,
       date: ''
     }
   })
@@ -1389,22 +1389,18 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
 
   const materialbillbtn = async (record) => {
     setMaterialBillState((pre) => ({ ...pre, modal: true, loading: true }))
+    let materialitem = await getRawMaterialDetailsByRawMaterialId(record.id)
 
-    let { materialitem, status } = await fetchMaterials(record.id)
-    if (status) {
-      // Use Promise.all to wait for all promises to resolve
+    if (materialitem) {
+      console.log(record,materialitem,materialitem.materialId)
       let materialdatas = await Promise.all(
         materialitem.map(async (data) => {
-          let { material, status } = await getOneMaterialDetailsById(
-            record.type === 'Return' || record.type === 'Used'
-              ? data.supplierid
-              : record.supplierid,
-            data.materialid
-          )
-          if (status) {
+          let material = await getMaterialById(data.materialId)
+          if (data) {
             return {
-              ...material,
               sno: data.sno,
+              name: material.name,
+              unit: material.unit,
               price: data.price,
               quantity: data.quantity,
               date: record.date
@@ -1421,14 +1417,14 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
         materialdeails: materialdatas,
         supplierdetails: {
           name:
-            record.type === 'Return' || record.type === 'Used' ? '' : record.supplier.suppliername,
+            record.type === 'Return' || record.type === 'Used' ? '' : record.name,
           partialAmount:
             record.type === 'Return' || record.type === 'Used' ? '' : record.partialAmount,
           paymentMode: record.type === 'Return' || record.type === 'Used' ? '' : record.paymentMode,
           paymentStatus:
             record.type === 'Return' || record.type === 'Used' ? '' : record.paymentStatus,
           type: record.type,
-          billamount: record.type === 'Return' || record.type === 'Used' ? '' : record.billamount,
+          billAmount: record.type === 'Return' || record.type === 'Used' ? '' : record.billAmount,
           date: record.date
         }
       })
@@ -1446,7 +1442,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       Location: item.supplier?.location || '',
       Gender: item.supplier?.gender || '',
       Type: item.type,
-      Billed: item.billamount,
+      Billed: item.billAmount,
       Partial: item.partialAmount,
       Status: item.paymentStatus,
       Mode: item.paymentMode
@@ -1473,8 +1469,8 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     // },
     {
       title: 'Material Name',
-      dataIndex: 'materialName',
-      key: 'materialName',
+      dataIndex: 'name',
+      key: 'name',
       editable: true,
       render: (text) => {
         return text
@@ -1913,7 +1909,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
 
                 <Form.Item
                   // className="mb-2"
-                  name="materialName"
+                  name="name"
                   label="Material Name"
                   rules={[{ required: true, message: false }]}
                 >
@@ -2047,9 +2043,9 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
             </span>
 
             <span
-              className={`text-[0.8rem] font-medium inline-block pt-4 ${materialbill.supplierdetails.billamount === '' ? 'hidden' : ''}`}
+              className={`text-[0.8rem] font-medium inline-block pt-4 ${materialbill.supplierdetails.billAmount === '' ? 'hidden' : ''}`}
             >
-              Billing Amount: <Tag color="green">{materialbill.supplierdetails.billamount}</Tag>
+              Billing Amount: <Tag color="green">{materialbill.supplierdetails.billAmount}</Tag>
             </span>
             <span
               className={`text-[0.8rem] font-medium inline-block pt-4  ${materialbill.supplierdetails.paymentStatus !== 'Partial' ? 'hidden' : 'inline-bock'}`}
@@ -2061,7 +2057,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
             >
               Balance:{' '}
               <Tag color="red">
-                {materialbill.supplierdetails.billamount -
+                {materialbill.supplierdetails.billAmount -
                   materialbill.supplierdetails.partialAmount}
               </Tag>
             </span>

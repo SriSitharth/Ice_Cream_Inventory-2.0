@@ -101,3 +101,20 @@ export const addDeliveryDetail = async (deliverydetailData) => {
     throw error;
   }
 };
+
+export const getDeliveryDetailById = async (deliveryId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Delivery/GetDeliveryDetailById`, {
+      params: { deliveryId },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Delivery details fetched successfully by delivery ID:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching delivery details by delivery ID:', error.message);
+    throw error;
+  }
+};
