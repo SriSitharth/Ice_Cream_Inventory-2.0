@@ -23,21 +23,13 @@ import { debounce } from 'lodash'
 import { SolutionOutlined } from '@ant-design/icons'
 import { PiExport } from 'react-icons/pi'
 import { IoMdAdd } from 'react-icons/io'
-import { MdOutlineModeEditOutline, MdProductionQuantityLimits } from 'react-icons/md'
+import { MdOutlineModeEditOutline } from 'react-icons/md'
 import { LuSave } from 'react-icons/lu'
 import { TiCancel } from 'react-icons/ti'
 import { AiOutlineDelete } from 'react-icons/ai'
 import { MdOutlinePayments } from 'react-icons/md'
 import { TimestampJs } from '../js-files/time-stamp'
 import jsonToExcel from '../js-files/json-to-excel'
-import {
-  createCustomer,
-  // updateCustomer,
-  getCustomerPayDetailsById,
-  updatePaydetailsCustomer
-} from '../firebase/data-tables/customer'
-import { addDoc, collection, doc, getDocs } from 'firebase/firestore'
-import { db } from '../firebase/firebase'
 import dayjs from 'dayjs'
 import { formatToRupee } from '../js-files/formate-to-rupee'
 const { Search, TextArea } = Input
@@ -45,19 +37,19 @@ import { PiWarningCircleFill } from 'react-icons/pi'
 import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import { truncateString } from '../js-files/letter-length-sorting'
 import { BsBox2 } from 'react-icons/bs'
-import { createFreezerbox, getFreezerboxById } from '../firebase/data-tables/freezerbox'
 import { IoCloseCircle } from 'react-icons/io5'
 import { BsBoxSeam } from 'react-icons/bs'
-import { areArraysEqual, compareArrays } from '../js-files/compare-two-array-of-object'
+import { compareArrays } from '../js-files/compare-two-array-of-object'
 import './css/CustomerList.css'
 import TableHeight from '../components/TableHeight'
-
+// APIs
 import {
   addCustomer,
   updateCustomer,
   getCustomerById,
   addCustomerPayment,
-  getCustomerPaymentsById
+  getCustomerPaymentsById,
+  updateCustomerPayment
 } from '../sql/customer'
 import { addFreezerbox, updateFreezerbox } from '../sql/freezerbox'
 
@@ -894,7 +886,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     console.log(data, paydetails)
     if (paydetails.length > 0) {
       paydetails.map(async (paydata) => {
-        await updatePaydetailsCustomer(id, paydata.id, { isdeleted: true })
+        await updateCustomerPayment(id, paydata.id, { isDeleted: 1 })
       })
     }
 
@@ -1021,7 +1013,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   // useEffect(()=>{
   // async function updateData(){
   //  await setFreezerBox(pre=>({...pre,spinner:true}));
-  //   let freezerBoxData = await datas.freezerbox.filter(box => box.isdeleted === false).map( async fz =>{
+  //   let freezerBoxData = await datas.freezerbox.filter(box => box.isDeleted === false).map( async fz =>{
   //     let {customer,status} = await getCustomerById(fz.customerId === '' || fz.customerId === undefined ? undefined : fz.customerId);
   //     if(status){
   //      return {...fz,name:customer === undefined ? '-': customer.name}
@@ -1039,7 +1031,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
       try {
         // Get freezer box data
-        const freezerBoxData = datas.freezerbox.filter((box) => !box.isdeleted)
+        const freezerBoxData = datas.freezerbox.filter((box) => !box.isDeleted)
 
         // Process each box and await customer data
         const processTabledata = await Promise.all(

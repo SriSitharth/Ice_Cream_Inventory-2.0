@@ -64,8 +64,13 @@ export const getFreezerboxById = async (id) => {
     console.log('Freezerbox by Id fetched successfully:', response.data);
     return response.data;
   } catch (error) {
+    if (error.response && error.response.status === 404) {
+      console.warn(`No freezerbox found for ID: ${deliveryId}`);
+      return [];
+    } else {
     console.error('Error fetching freezerbox by Id:', error.message);
-    throw error;
+    throw [];
+    }
   }
 };
 

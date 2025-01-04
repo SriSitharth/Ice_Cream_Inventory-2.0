@@ -22,15 +22,11 @@ import { TimestampJs } from '../js-files/time-stamp'
 const { Search } = Input
 const { RangePicker } = DatePicker
 import dayjs from 'dayjs'
-// import { createProduction, updateProduction } from '../firebase/data-tables/production'
 import jsonToExcel from '../js-files/json-to-excel'
-// import { updateStorage } from '../firebase/data-tables/storage'
-// import { getProductById } from '../firebase/data-tables/products'
 import { PiWarningCircleFill } from 'react-icons/pi'
-import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import { MdOutlineModeEditOutline } from 'react-icons/md'
-import { chunk, debounce } from 'lodash'
-
+import { debounce } from 'lodash'
+// APIs
 import { getProductById } from '../sql/product'
 import { updateStorage } from '../sql/storage'
 import { addProduction, updateProduction } from '../sql/production'

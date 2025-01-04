@@ -102,10 +102,10 @@ export const addDeliveryDetail = async (deliverydetailData) => {
   }
 };
 
-export const getDeliveryDetailById = async (deliveryId) => {
+export const getDeliveryDetailById = async (id) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/Delivery/GetDeliveryDetailById`, {
-      params: { deliveryId },
+      params: { id },
       headers: {
         'Content-Type': 'application/json',
       },
@@ -114,7 +114,83 @@ export const getDeliveryDetailById = async (deliveryId) => {
     console.log('Delivery details fetched successfully by delivery ID:', response.data);
     return response.data;
   } catch (error) {
+    if (error.response && error.response.status === 404) {
+      console.warn(`No delivery details found for delivery ID: ${id}`);
+      return [];
+    } else {
     console.error('Error fetching delivery details by delivery ID:', error.message);
+    throw [];
+    }
+  }
+};
+
+export const addDeliveryPayment = async (paymentData) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/Payment/AddDeliveryPayment`, paymentData, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Delivery payment added successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error adding delivery payment:', error.message);
+    throw error;
+  }
+};
+
+export const getDeliveryPayments = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Payment/GetDeliveryPayments`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('All delivery payments fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all delivery payments:', error.message);
+    throw error;
+  }
+};
+
+export const getDeliveryPaymentsById = async (deliveryId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Payment/GetDeliveryPaymentsById`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      params: { id: deliveryId },
+    });
+
+    console.log('Payments for delivery fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      console.warn(`No delivery payments found for delivery ID: ${deliveryId}`);
+      return [];
+    } else {
+    console.error('Error fetching delivery payments by delivery ID:', error.message);
+    throw [];
+    }
+  }
+};
+
+export const updateDeliveryPayment = async (deliveryid , id , paymentData) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Payment/UpdateDeliveryPayment`, paymentData, {
+      params: { deliveryid, id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Payment updated fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching payments for delivery:', error.message);
     throw error;
   }
 };

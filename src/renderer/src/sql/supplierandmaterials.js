@@ -68,3 +68,20 @@ export const getMaterialById = async (id) => {
     throw error;
   }
 };
+
+export const updateSupplierAndMaterial = async (id, materialData) => {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/SupplierAndMaterial/UpdateSupplierAndMaterial`, materialData, {
+      params: { id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Material updated successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating material:', error.message);
+    throw error;
+  }
+};

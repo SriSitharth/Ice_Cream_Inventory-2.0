@@ -24,16 +24,6 @@ import { FaRupeeSign } from 'react-icons/fa'
 import { FaRegFilePdf } from 'react-icons/fa6'
 import { IoPerson } from 'react-icons/io5'
 import { DatestampJs } from '../js-files/date-stamp'
-import { fetchMaterials } from '../firebase/data-tables/rawmaterial'
-import {
-  getDeliveryById,
-  fetchItemsForDelivery,
-  getAllPayDetailsFromAllDelivery
-  // getDeliveryUsingDates
-} from '../firebase/data-tables/delivery'
-// import { getEmployeeById } from '../firebase/data-tables/employee'
-// import { getCustomerById } from '../firebase/data-tables/customer'
-import { getOneMaterialDetailsById } from '../firebase/data-tables/supplier'
 import { jsPDF } from 'jspdf'
 const { RangePicker } = DatePicker
 import { debounce } from 'lodash'
@@ -49,18 +39,18 @@ import { AiOutlineDelete } from 'react-icons/ai'
 import { customRound } from '../js-files/round-amount'
 import WarningModal from '../components/WarningModal'
 import { toDigit } from '../js-files/tow-digit'
-import { getFreezerboxById } from '../firebase/data-tables/freezerbox'
 import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import './css/Home.css'
 import TableHeight from '../components/TableHeight'
-
-// import { lastestFirstSort } from '../js-files/sort-time-date-sec'
-
 dayjs.extend(isSameOrAfter)
-
+// APIs
 import { getCustomerById } from '../sql/customer'
 import { getSupplierById } from '../sql/supplier'
 import { getEmployeeById } from '../sql/employee'
+import { getDeliveryById, getDeliveryDetailById, getDeliveryPayments } from '../sql/delivery'
+import { getFreezerboxById } from '../sql/freezerbox'
+import { getMaterialById } from '../sql/supplierandmaterials'
+import { getRawMaterialDetailsByRawMaterialId } from '../sql/rawmaterial'
 
 export default function Home({ datas }) {
   const today = dayjs(DatestampJs(), 'DD/MM/YYYY')
@@ -468,7 +458,10 @@ export default function Home({ datas }) {
 
       const initialData = await Promise.all(
         datas.delivery
-          .filter((data) => !data.isDeleted && data.date === today.format('DD/MM/YYYY'))
+          .filter((data) => {
+            const formattedDate = dayjs(data.date).format('DD/MM/YYYY');
+            return !data.isDeleted && formattedDate === today.format('DD/MM/YYYY')
+            })
           .map(async (item, index) => {
             const result = await getCustomerById(item.customerId)
             const customerName = result.name || item.customername
@@ -574,8 +567,8 @@ export default function Home({ datas }) {
       )
       setFilteredRawmaterials(newFilteredRawmaterials)
 
-      let { deliverys, status } = await getAllPayDetailsFromAllDelivery()
-      if (status) {
+      let deliverys = await getDeliveryPayments()
+      if (deliverys.length > 0) {
         let filterData = await Promise.all(
           deliverys
             .filter(
@@ -703,54 +696,48 @@ export default function Home({ datas }) {
   }
 
   const showModal = async (record) => {
+    console.log(record)
     setSelectedRecord(null)
     let itemsWithProductNames = []
     if (record.customerId) {
-      const { items, status } = await fetchItemsForDelivery(record.id)
-      if (status === 200) {
+      const items = await getDeliveryDetailById(record.id)
+      if (items.length > 0) {
         itemsWithProductNames = items.map((item) => {
           const product = datas.product.find(
-            (product) => product.id === item.id && product.isDeleted === false
+            (product) => product.id === item.productId && product.isDeleted === 0
           )
           return {
             ...item,
             productname: product ? product.productname : ''
-            // flavour: product ? product.flavour : '',
-            // quantity: product ? product.quantity : ''
           }
         })
       }
     } else if (record.supplierId) {
-      const { materialitem, status } = await fetchMaterials(record.id)
-      if (status === 200) {
+      const materialitem = await getRawMaterialDetailsByRawMaterialId(record.id)
+      if (materialitem.length > 0) {
         itemsWithProductNames = await Promise.all(
           materialitem.map(async (item, i) => {
-            let { material, status } = await getOneMaterialDetailsById(
-              record.supplierId,
+            let material = await getMaterialById(
               item.materialid
             )
             return {
               sno: materialitem[i].sno, //add on sno(10/10/24, 5.52 pm)
-              productname: material.materialname || '',
-              // flavour: '',
-              // quantity: material.unit || '',
+              productname: material.name || '',
               numberOfPacks: item.quantity || 0
             }
           })
         )
       }
     } else {
-      const { items, status } = await fetchItemsForDelivery(record.id)
-      if (status === 200) {
+      const items = await getDeliveryDetailById(record.id)
+      if (items.length > 0) {
         itemsWithProductNames = items.map((item) => {
           const product = datas.product.find(
-            (product) => product.id === item.id && product.isDeleted === false
+            (product) => product.id === item.productId && product.isDeleted === 0
           )
           return {
             ...item,
             productname: product ? product.productname : ''
-            // flavour: product ? product.flavour : '',
-            // quantity: product ? product.quantity : ''
           }
         })
       }
@@ -941,13 +928,13 @@ export default function Home({ datas }) {
   const [hasPdf, setHasPdf] = useState(false)
 
   const handleDownloadPdf = async (record) => {
-    const { items, status } = await fetchItemsForDelivery(record.id)
+    const items = await getDeliveryDetailById(record.id)
     const result = await getCustomerById(record.customerId)
-    const { freezerbox } = await getFreezerboxById(record.boxid)
-    let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber
+    const freezerbox = await getFreezerboxById(record.boxid)
+    let boxnumber = freezerbox?.boxnumber || ''
     const gstin = result.gstin || ''
     const address = result.address || ''
-    if (status === 200) {
+    if (items.length > 0) {
       let prData = datas.product.filter((item, i) => items.find((item2) => item.id === item2.id))
       // let prItems = await prData.map((pr, i) => {
       //   let matchingData = items.find((item, i) => item.id === pr.id)
@@ -1039,13 +1026,14 @@ export default function Home({ datas }) {
   // }
 
   const handlePrint = async (record) => {
+    console.log(record)
     try {
-      const { items, status } = await fetchItemsForDelivery(record.id)
-      if (status !== 200) {
-        throw new Error(`Failed to fetch items: ${status}`)
+      const items = await getDeliveryDetailById(record.id)
+      if (items.length === 0) {
+        throw new Error(`Failed to fetch items`)
       }
-      const { freezerbox } = await getFreezerboxById(record.boxid)
-      let boxnumber = freezerbox === undefined ? '' : freezerbox.boxnumber
+      const freezerbox = await getFreezerboxById(record.boxid)
+      let boxnumber = freezerbox?.boxnumber || ''
       const result = await getCustomerById(record.customerId)
       const gstin = result.customer?.gstin || ''
       const address = result.customer?.address || ''

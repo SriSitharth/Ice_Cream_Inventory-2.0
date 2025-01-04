@@ -26,21 +26,14 @@ import { AiOutlineDelete } from 'react-icons/ai'
 import { MdOutlinePayments } from 'react-icons/md'
 import { TimestampJs } from '../js-files/time-stamp'
 import jsonToExcel from '../js-files/json-to-excel'
-import {
-  createEmployee,
-  fetchPayDetailsForEmployee,
-  updatePayDetailsForEmployee
-} from '../firebase/data-tables/employee'
 const { Search, TextArea } = Input
 import dayjs from 'dayjs'
-import { addDoc, collection, doc } from 'firebase/firestore'
-import { db } from '../firebase/firebase'
 import { formatToRupee } from '../js-files/formate-to-rupee'
 import { debounce } from 'lodash'
 import { PiWarningCircleFill } from 'react-icons/pi'
 import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import { truncateString } from '../js-files/letter-length-sorting'
-
+// APIs
 import {
   addEmployee,
   updateEmployee,
@@ -684,56 +677,56 @@ export default function Employee({ datas, employeeUpdateMt }) {
 
   const [empdetailpayform] = Form.useForm()
   // edid cell save
-  const payDetailSave = async (value) => {
-    try {
-      const row = await empdetailpayform.validateFields()
-      const oldData = [...employeePayDetails.data]
-      const index = oldData.findIndex((item) => value.id === item.id)
-      const existingData = oldData.filter((item) => item.id === value.id)[0]
-      const newDatas = { ...row, date: row.date.format('DD/MM/YYYY'), updateddate: TimestampJs() }
-      if (
-        existingData.amount === row.amount &&
-        existingData.description === row.description &&
-        existingData.date === row.date.format('DD/MM/YYYY') &&
-        index !== null
-      ) {
-        message.open({
-          type: 'info',
-          content: 'No changes made',
-          duration: 2
-        })
-        setEmployeePayDetails((pre) => ({ ...pre, isedit: [] }))
-        return
-      } else {
-        await updatePayDetailsForEmployee(employeePayDetails.parentid, value.id, newDatas)
-        setEmployeePayDetails((pre) => ({ ...pre, isedit: [] }))
-        employeeUpdateMt()
-        let { paydetails, status } = await fetchPayDetailsForEmployee(employeePayDetails.parentid)
-        if (status) {
-          let checkPayData = paydetails.filter((item) => item.isdeleted === false)
-          setEmployeePayDetails((pre) => ({ ...pre, data: checkPayData }))
-        }
-        message.open({ type: 'success', content: 'Payment Data updated successfully' })
-      }
-    } catch (e) {
-      console.log(e)
-    }
-  }
+  // const payDetailSave = async (value) => {
+  //   try {
+  //     const row = await empdetailpayform.validateFields()
+  //     const oldData = [...employeePayDetails.data]
+  //     const index = oldData.findIndex((item) => value.id === item.id)
+  //     const existingData = oldData.filter((item) => item.id === value.id)[0]
+  //     const newDatas = { ...row, date: row.date.format('DD/MM/YYYY'), updateddate: TimestampJs() }
+  //     if (
+  //       existingData.amount === row.amount &&
+  //       existingData.description === row.description &&
+  //       existingData.date === row.date.format('DD/MM/YYYY') &&
+  //       index !== null
+  //     ) {
+  //       message.open({
+  //         type: 'info',
+  //         content: 'No changes made',
+  //         duration: 2
+  //       })
+  //       setEmployeePayDetails((pre) => ({ ...pre, isedit: [] }))
+  //       return
+  //     } else {
+  //       await updatePayDetailsForEmployee(employeePayDetails.parentid, value.id, newDatas)
+  //       setEmployeePayDetails((pre) => ({ ...pre, isedit: [] }))
+  //       employeeUpdateMt()
+  //       let { paydetails, status } = await fetchPayDetailsForEmployee(employeePayDetails.parentid)
+  //       if (status) {
+  //         let checkPayData = paydetails.filter((item) => item.isdeleted === false)
+  //         setEmployeePayDetails((pre) => ({ ...pre, data: checkPayData }))
+  //       }
+  //       message.open({ type: 'success', content: 'Payment Data updated successfully' })
+  //     }
+  //   } catch (e) {
+  //     console.log(e)
+  //   }
+  // }
 
   // delete row
-  const payDetailDelete = async (value) => {
-    await updatePayDetailsForEmployee(employeePayDetails.parentid, value.id, {
-      isdeleted: true,
-      updateddate: TimestampJs()
-    })
-    employeeUpdateMt()
-    let { paydetails, status } = await fetchPayDetailsForEmployee(employeePayDetails.parentid)
-    if (status) {
-      let checkPayData = paydetails.filter((item) => item.isdeleted === false)
-      setEmployeePayDetails((pre) => ({ ...pre, data: checkPayData }))
-    }
-    message.open({ type: 'success', content: 'Payment Data deleted successfully' })
-  }
+  // const payDetailDelete = async (value) => {
+  //   await updatePayDetailsForEmployee(employeePayDetails.parentid, value.id, {
+  //     isdeleted: true,
+  //     updateddate: TimestampJs()
+  //   })
+  //   employeeUpdateMt()
+  //   let { paydetails, status } = await fetchPayDetailsForEmployee(employeePayDetails.parentid)
+  //   if (status) {
+  //     let checkPayData = paydetails.filter((item) => item.isdeleted === false)
+  //     setEmployeePayDetails((pre) => ({ ...pre, data: checkPayData }))
+  //   }
+  //   message.open({ type: 'success', content: 'Payment Data deleted successfully' })
+  // }
 
   const [historyHeight, setHistoryHeight] = useState(window.innerHeight - 200) // Initial height adjustment
   useEffect(() => {

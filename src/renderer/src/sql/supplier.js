@@ -58,6 +58,23 @@ export const getSupplierById = async (id) => {
   }
 };
 
+export const updateSupplier = async (id, supplierData) => {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/Supplier/UpdateSupplier`, supplierData, {
+      params: { id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Supplier updated successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating supplier:', error.message);
+    throw error;
+  }
+};
+
 export const addSupplierPayment = async (paymentData) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/Payment/AddSupplierPayment`, paymentData, {
@@ -100,6 +117,23 @@ export const getSupplierPaymentsById = async (supplierId) => {
     });
 
     console.log('Payments for supplier fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching payments for supplier:', error.message);
+    throw error;
+  }
+};
+
+export const updateSupplierPayment = async (supplierid , id , paymentData) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Payment/UpdateSupplierPayment`, paymentData, {
+      params: { supplierid , id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Payment updated fetched successfully:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching payments for supplier:', error.message);

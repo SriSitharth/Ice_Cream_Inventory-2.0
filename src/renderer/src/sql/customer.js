@@ -123,3 +123,20 @@ export const getCustomerPaymentsById = async (customerId) => {
     }
   }
 };
+
+export const updateCustomerPayment = async (customerid , id , paymentData) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Payment/UpdateCustomerPayment`, paymentData, {
+      params: { customerid, id },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Payment updated fetched successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching payments for customer:', error.message);
+    throw error;
+  }
+};

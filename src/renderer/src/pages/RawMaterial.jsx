@@ -13,8 +13,7 @@ import {
   DatePicker,
   Radio,
   Tag,
-  Spin,
-  Badge
+  Spin
 } from 'antd'
 import { debounce } from 'lodash'
 import { PiExport, PiGarageBold } from 'react-icons/pi'
@@ -24,32 +23,18 @@ import { TiCancel } from 'react-icons/ti'
 import { IoMdRemove } from 'react-icons/io'
 import { AiOutlineDelete } from 'react-icons/ai'
 import jsonToExcel from '../js-files/json-to-excel'
-import {
-  createRawmaterial,
-  fetchMaterials,
-  updateRawmaterial
-} from '../firebase/data-tables/rawmaterial'
 import { TimestampJs } from '../js-files/time-stamp'
-// import { createStorage, getStorage, updateStorage } from '../firebase/data-tables/storage'
 import dayjs from 'dayjs'
-import {
-  getAllMaterialDetailsFromAllSuppliers,
-  getMaterialDetailsById,
-  getOneMaterialDetailsById
-} from '../firebase/data-tables/supplier'
 const { Search } = Input
 const { RangePicker } = DatePicker
 import { PiWarningCircleFill } from 'react-icons/pi'
-import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import { MdOutlineModeEditOutline } from 'react-icons/md'
-import { addDoc, collection } from 'firebase/firestore'
-import { db } from '../firebase/firebase'
 import { formatToRupee } from '../js-files/formate-to-rupee'
 import { FaClipboardList } from 'react-icons/fa'
 import TableHeight from '../components/TableHeight'
 import './css/RawMaterial.css'
-
-import { addRawMaterial, updateRawMaterial, getRawMaterialById, addRawMaterialDetail, getRawMaterialDetailsByRawMaterialId } from '../sql/rawmaterial'
+// APIs
+import { addRawMaterial, updateRawMaterial, addRawMaterialDetail, getRawMaterialDetailsByRawMaterialId } from '../sql/rawmaterial'
 import { getStorages, updateStorage } from '../sql/storage'
 import { getSupplierById } from '../sql/supplier'
 import { getSupplierAndMaterials, getMaterialsBySupplierId , getMaterialById } from '../sql/supplierandmaterials'

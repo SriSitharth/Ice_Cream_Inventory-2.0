@@ -29,7 +29,7 @@ import { DatestampJs } from '../js-files/date-stamp'
 import companyLogo from '../assets/img/companylogo.png'
 import { generatPDF } from '../js-files/pdf-generator'
 import { formatName } from '../js-files/letter-or-name'
-
+// APIs
 import { addProduct, updateProduct } from '../sql/product'
 import { addStorage } from '../sql/storage'
 

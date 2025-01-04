@@ -23,8 +23,7 @@ import { IoCloseCircle } from 'react-icons/io5'
 import {
   SolutionOutlined,
   PlusOutlined,
-  MinusCircleOutlined,
-  ConsoleSqlOutlined
+  MinusCircleOutlined
 } from '@ant-design/icons'
 import { IoMdAdd } from 'react-icons/io'
 import { MdOutlineModeEditOutline } from 'react-icons/md'
@@ -35,18 +34,9 @@ import { AiOutlineDelete } from 'react-icons/ai'
 import { MdOutlinePayments } from 'react-icons/md'
 import { TimestampJs } from '../js-files/time-stamp'
 import {
-  addNewMaterialItem,
-  getMaterialDetailsById,
   updateMaterialItsms,
-  updateSupplier,
-  getSupplierPayDetailsById,
-  getAllMaterialDetailsFromAllSuppliers,
-  updatePaydetailsChildSupplier
 } from '../firebase/data-tables/supplier'
-import { createStorage, deleteStorage } from '../firebase/data-tables/storage'
 import jsonToExcel from '../js-files/json-to-excel'
-import { addDoc, collection, doc } from 'firebase/firestore'
-import { db } from '../firebase/firebase'
 import dayjs from 'dayjs'
 import { formatToRupee } from '../js-files/formate-to-rupee'
 import { PiWarningCircleFill } from 'react-icons/pi'
@@ -56,14 +46,13 @@ import { areArraysEqual } from '../js-files/compare-two-array-of-object'
 import { getMissingIds } from '../js-files/missing-id'
 import { latestFirstSort } from '../js-files/sort-time-date-sec'
 import { formatName } from '../js-files/letter-or-name'
-import { getRawmaterial } from '../firebase/data-tables/rawmaterial'
 import { truncateString } from '../js-files/letter-length-sorting'
 import './css/SupplierList.css'
-
-import { addSupplier } from '../sql/supplier'
+// APIs
+import { addSupplier, updateSupplier, addSupplierPayment, getSupplierPaymentsById, updateSupplierPayment } from '../sql/supplier'
 import { addStorage, updateStorage } from '../sql/storage'
-import { addSupplierPayment } from '../sql/supplier'
-import { getSupplierAndMaterials, addSupplierAndMaterial, getMaterialsBySupplierId } from '../sql/supplierandmaterials'
+import { getRawMaterials } from '../sql/rawmaterial'
+import { addSupplierAndMaterial, getMaterialsBySupplierId, getSupplierAndMaterials } from '../sql/supplierandmaterials'
 
 export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt }) {
   // states
@@ -292,13 +281,13 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
 
   const showPayDetailsModal = async (record) => {
     try {
-      let { rawmaterial, status } = await getRawmaterial()
-      let { paydetails } = await getSupplierPayDetailsById(record.id)
-      if (status) {
+      let rawmaterial = await getRawMaterials()
+      let paydetails = await getSupplierPaymentsById(record.id)
+      if (rawmaterial.length > 0) {
         let filterBillOrders = rawmaterial
-          .filter((data) => record.id === data.supplierId && data.isDeleted === false)
+          .filter((data) => record.id === data.supplierId && data.isDeleted === 0)
           .map((data) => ({ ...data, name: record.name }))
-        let getPaydetials = paydetails.filter((paydata) => paydata.isDeleted === false)
+        let getPaydetials = paydetails.filter((paydata) => paydata.isDeleted === 0)
 
         let sortData = await latestFirstSort([...filterBillOrders, ...getPaydetials])
         setPayDetailsData(sortData)
@@ -735,7 +724,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
           const newItem = material.find(
             (mItem) => mItem.materialname === oldItem.materialname && mItem.unit === oldItem.unit
           )
-          const { materials: allMaterials, status } = await getAllMaterialDetailsFromAllSuppliers()
+          const allMaterials = await getSupplierAndMaterials()
           const isMaterialInSupplierList = allMaterials.find(
             (mItem) => mItem.materialname === oldItem.materialname && mItem.unit === oldItem.unit
           )
@@ -880,7 +869,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKeys([])
       } else {
-        await updateSupplier(key.id, { ...row, updateddate: TimestampJs() })
+        await updateSupplier(key.id, { ...row })
         supplierUpdateMt()
         message.open({ type: 'success', content: 'Updated Successfully' })
         setEditingKeys([])
@@ -1199,16 +1188,14 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
   const deleteProduct = async (data) => {
     // await deleteproduct(data.id);
     const { id, ...newData } = data
-    let { paydetails, status } = await getSupplierPayDetailsById(data.id)
+    let paydetails = await getSupplierPaymentsById(data.id)
     if (paydetails.length > 0) {
       paydetails.map(async (paydata) => {
-        await updatePaydetailsChildSupplier(id, paydata.id, { isDeleted: true })
+        await updateSupplierPayment(id, paydata.id, { isDeleted: 1 })
       })
     }
     await updateSupplier(id, {
-      isDeleted: true,
-      // deletedby: 'admin',
-      deleteddate: TimestampJs()
+      isDeleted: 1
     })
     message.open({ type: 'success', content: 'Deleted Successfully' })
     supplierUpdateMt()

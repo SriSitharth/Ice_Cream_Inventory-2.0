@@ -16,8 +16,7 @@ import {
   Tag,
   Segmented,
   Spin,
-  Timeline,
-  Badge
+  Timeline
 } from 'antd'
 import { RiHistoryLine } from 'react-icons/ri'
 import { PiGarageBold, PiWarningCircleFill } from 'react-icons/pi'
@@ -32,27 +31,14 @@ import { TimestampJs } from '../js-files/time-stamp'
 const { Search } = Input
 const { RangePicker } = DatePicker
 import dayjs from 'dayjs'
-// import { getProductById } from '../firebase/data-tables/products'
-// import { updateStorage } from '../firebase/data-tables/storage'
 import jsonToExcel from '../js-files/json-to-excel'
 import { MdAddShoppingCart } from 'react-icons/md'
-import {
-  createDelivery,
-  fetchItemsForDelivery,
-  fetchPayDetailsForDelivery,
-  // getDeliveryById,
-  // updateDelivery,
-  updatePaydetailsChild
-} from '../firebase/data-tables/delivery'
 import { MdOutlineDoneOutline } from 'react-icons/md'
 import { GiCancel } from 'react-icons/gi'
 import { formatToRupee } from '../js-files/formate-to-rupee'
-import { addDoc, collection, doc } from 'firebase/firestore'
-import { db } from '../firebase/firebase'
 import { FaClipboardList } from 'react-icons/fa'
 import { TbFileDownload } from 'react-icons/tb'
 import { MdOutlineModeEditOutline } from 'react-icons/md'
-// import { getCustomerById } from '../firebase/data-tables/customer'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import companyLogo from '../assets/img/companylogo.png'
@@ -61,14 +47,13 @@ import { TbFileSymlink } from 'react-icons/tb'
 import { toDigit } from '../js-files/tow-digit'
 import { latestFirstSort, oldestFirstSort } from '../js-files/sort-time-date-sec'
 import '../pages/css/Delivery.css'
-import { getFreezerbox, getFreezerboxById } from '../firebase/data-tables/freezerbox'
 import TableHeight from '../components/TableHeight'
-import { ClockCircleOutlined } from '@ant-design/icons'
-
-import { addDelivery, getDeliveryById, updateDelivery, addDeliveryDetail, getDeliveryDetailById } from '../sql/delivery'
+// APIs
+import { addDelivery, getDeliveryById, updateDelivery, addDeliveryDetail, getDeliveryDetailById ,getDeliveryPaymentsById, updateDeliveryPayment, addDeliveryPayment } from '../sql/delivery'
 import { getCustomerById } from '../sql/customer'
 import { updateStorage } from '../sql/storage'
 import { getProductById } from '../sql/product'
+import { getFreezerboxById } from '../sql/freezerbox'
 
 const { TextArea } = Input
 export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, customerUpdateMt }) {
@@ -553,11 +538,11 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const deleteProduct = async (data) => {
     const { id, ...newData } = data
 
-    let { paymenthistory, status } = await fetchPayDetailsForDelivery(data.id)
+    let paymenthistory = await getDeliveryPaymentsById(data.id)
 
     if (paymenthistory.length > 0) {
       paymenthistory.map(async (paydata) => {
-        await updatePaydetailsChild(id, paydata.id, { isDeleted: true })
+        await updateDeliveryPayment(id, paydata.id, { isDeleted: 1 })
       })
     }
 
@@ -1030,9 +1015,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         let latestOrderData = await latestFirstSort(lastOrderDatas)
         latestOrderData = latestOrderData.length > 0 ? latestOrderData[0] : []
 
-        let { items, status } = await fetchItemsForDelivery(latestOrderData.id)
+        console.log(latestOrderData.id)
+        let items = await getDeliveryDetailById(latestOrderData.id)
 
-        if (status) {
+        if (items.length > 0) {
           let customerDetails = lastOrderDatas[0]
           let products = await Promise.all(
             items.map(async (item) => {
@@ -1227,21 +1213,22 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
     setEditingKey('')
     setIsDeliverySpiner(true)
-
+    console.log(option.tempproduct)
     let productItems = option.tempproduct.flatMap((temp, tempIndex) =>
       datas.product
         .filter(
-          (pr) => temp.productname === pr.productname && pr.isDeleted === false
-          // && temp.flavour === pr.flavour &&
-          // pr.quantity == temp.quantity.split(' ')[0] &&
-          // pr.unit === temp.quantity.split(' ')[1]
+          (pr) => temp.productname === pr.name
         )
         .map((pr) => ({
           numberOfPacks: temp.numberOfPacks,
-          id: pr.id,
-          returntype: temp.returntype,
+          productId: pr.id,
+          price: pr.price,
+          returnType: temp.returntype,
           margin: temp.margin === '' ? 0 : temp.margin,
-          sno: tempIndex + 1
+          sno: tempIndex + 1,
+          date: new Date().toISOString(),
+          createdDate: new Date().toISOString(),
+          modifiedDate: new Date().toISOString(),
         }))
     )
 
@@ -1297,15 +1284,15 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       let deliveryRef = await addDelivery(newDelivery)
 
       for (const item of productItems) {
-        console.log(itemsCollectionRef, item, deliveryRef.id)
 
-        
-        await addDeliveryDetail(deliveryRef.id, item)
+        console.log(item, deliveryRef.id)
+
+      await addDeliveryDetail({...item,deliveryId: deliveryRef.id})
         // await addDoc(itemsCollectionRef, item)
 
-        const product = await getProductById(item.id)
+        const product = await getProductById(item.productId)
 
-        if (product) {
+        if (product.length > 0) {
           const existingProduct = datas.storage.find(
             (storageItem) =>
               storageItem.productId === product.id && storageItem.category === 'Product List'
@@ -1433,10 +1420,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     let allInvoiceData = []
     console.log(allInvoiceData)
     for (let record of exportDatas) {
-      const { items, status } = await fetchItemsForDelivery(record.id)
-      const { freezerbox } = await getFreezerboxById(record.boxId)
-      let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber
-      if (status === 200) {
+      const items = await getDeliveryDetailById(record.id)
+      const freezerbox = await getFreezerboxById(record.boxId)
+      let boxNumber = freezerbox?.boxNumber || '';
+      if (items.length > 0) {
         let prData = datas.product.filter((item) => items.find((item2) => item.id === item2.id))
         let prItems = prData.flatMap((pr) => {
           let matchingItems = items.filter((item) => item.id === pr.id)
@@ -1751,9 +1738,9 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         console.log(deliveryBill.prdata.id)
 
         const items = await getDeliveryDetailById(deliveryBill.prdata.id)
-        const { paymenthistory } = await fetchPayDetailsForDelivery(deliveryBill.prdata.id)
+        const paymenthistory = await getDeliveryPaymentsById(deliveryBill.prdata.id)
 
-        if (items) {
+        if (items.length > 0) {
           let prItems = datas.product.flatMap((item) =>
             items
               .filter((item2) => item.id === item2.id)
@@ -1798,8 +1785,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   ])
 
   const onOpenDeliveryBill = debounce(async (data) => {
-    let { freezerbox } = await getFreezerboxById(data.boxId)
-    let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber
+    console.log(data)
+    let boxNumber = '';
+    if(data.boxId){
+      const freezerbox = await getFreezerboxById(data.boxId)
+      boxNumber = freezerbox?.boxNumber || '';
+    }
 
     setDeliveryBill((pre) => ({
       ...pre,
@@ -2091,10 +2082,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const [loadingWithoutGstin, setLoadingWithoutGstin] = useState(false)
 
   const handleDownloadPdf = async (record) => {
-    const { items, status } = await fetchItemsForDelivery(record.id)
-    const { freezerbox } = await getFreezerboxById(record.boxId)
-    let boxNumber = freezerbox === undefined ? '' : freezerbox.boxNumber
-    if (status === 200) {
+    const items = await getDeliveryDetailById(record.id)
+    const freezerbox = await getFreezerboxById(record.boxId)
+    let boxNumber = freezerbox?.boxNumber || '';
+    if (items.length > 0) {
       let prData = datas.product.filter((item, i) => items.find((item2) => item.id === item2.id))
 
       // let prItems = await prData.map((pr, i) => {
@@ -2279,9 +2270,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           setPayModalState((pre) => ({ ...pre, btndisable: true }))
           let updateData = { partialAmount: 0, paymentStatus: 'Paid' }
           await updateDelivery(deliveryBill.data.id, updateData)
-          const DeliveryDocRef = doc(db, 'delivery', billId)
-          const payDetailsRef = collection(DeliveryDocRef, 'paydetails')
-          await addDoc(payDetailsRef, newData)
+          // const DeliveryDocRef = doc(db, 'delivery', billId)
+          // const payDetailsRef = collection(DeliveryDocRef, 'paydetails')
+          // await addDoc(payDetailsRef, newData)
+          await addDeliveryPayment(newData)
           await deliveryUpdateMt()
           // await message.open({ type: 'success', content: `Paid successfully` });
         } else {
@@ -2296,9 +2288,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             updateddate: TimestampJs()
           }
           await updateDelivery(deliveryBill.data.id, partialAmount)
-          const DeliveryDocRef = doc(db, 'delivery', billId)
-          const payDetailsRef = collection(DeliveryDocRef, 'paydetails')
-          await addDoc(payDetailsRef, newData)
+          // const DeliveryDocRef = doc(db, 'delivery', billId)
+          // const payDetailsRef = collection(DeliveryDocRef, 'paydetails')
+          // await addDoc(payDetailsRef, newData)
+          await addDeliveryPayment(newData)
           await deliveryUpdateMt()
           // await message.open({ type: 'success', content: `Payment pay successfully` });
         }
@@ -2360,8 +2353,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     //modal
     setPopupModal((pre) => ({ ...pre, payhistory: true }))
     // get data
-    const { paymenthistory } = await fetchPayDetailsForDelivery(deliveryBill.prdata.id)
-    let filterdata = paymenthistory.filter((data) => data.isDeleted === false)
+    const paymenthistory = await getDeliveryPaymentsById(deliveryBill.prdata.id)
+    let filterdata = paymenthistory.filter((data) => data.isDeleted === 0)
     console.log(filterdata)
 
     const sortedHistory = await oldestFirstSort(filterdata)
@@ -3214,7 +3207,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                     setDeliveryBill((pre) => ({ ...pre, loading: true }))
                     await updateDelivery(deliveryBill.data.id, { bookingstatus: 'Delivered' })
 
-                    let { items, status } = await fetchItemsForDelivery(deliveryBill.data.id)
+                    let items = await getDeliveryDetailById(deliveryBill.data.id)
                     items.map(async (data) => {
                       const existingProduct = datas.storage.find(
                         (storageItem) =>

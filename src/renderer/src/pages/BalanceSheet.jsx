@@ -15,20 +15,16 @@ import {
   Select,
   InputNumber
 } from 'antd'
-// import { getCustomerPayDetailsById } from '../firebase/data-tables/customer'
-// import { getFreezerboxById } from '../firebase/data-tables/freezerbox'
 import { LuFileCog } from 'react-icons/lu'
 import { PiExport } from 'react-icons/pi'
 import { TimestampJs } from '../js-files/time-stamp'
 import { FaBackward, FaForward } from 'react-icons/fa'
 import { generatPDF } from '../js-files/pdf-generator'
-import { addDoc, collection, doc, getDocs, getDoc } from 'firebase/firestore'
-import { db } from '../firebase/firebase'
 import companyLogo from '../assets/img/companylogo.png'
 import dayjs from 'dayjs'
 import './css/BalanceSheet.css'
 const { Search } = Input
-
+// APIs
 import { addCustomerPayment, getCustomerById, getCustomerPaymentsById } from '../sql/customer'
 import { getFreezerboxById, getFreezerboxByCustomerId } from '../sql/freezerbox'
 

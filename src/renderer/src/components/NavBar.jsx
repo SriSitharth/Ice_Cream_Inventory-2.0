@@ -42,6 +42,7 @@ import '../components/css/NavBar.css'
 import { addCustomerPayment } from '../sql/customer';
 import { addSpending } from '../sql/spending';
 import { updateStorage } from '../sql/storage';
+import { addDelivery, addDeliveryDetail, addDeliveryPayment } from '../sql/delivery';
 
 export default function NavBar({
   navPages,
@@ -463,17 +464,21 @@ export default function NavBar({
       }
 
       try {
-        const deliveryCollectionRef = collection(db, 'delivery')
-        const deliveryDocRef = await addDoc(deliveryCollectionRef, newDelivery)
-        const itemsCollectionRef = collection(deliveryDocRef, 'items');
-        const paydetailsHistoryRef = collection(deliveryDocRef, 'paydetails');
+        // const deliveryCollectionRef = collection(db, 'delivery')
+        // const deliveryDocRef = await addDoc(deliveryCollectionRef, newDelivery)
+        // const itemsCollectionRef = collection(deliveryDocRef, 'items');
+        // const paydetailsHistoryRef = collection(deliveryDocRef, 'paydetails');
+
+        const deliveryRef = await addDelivery(newDelivery)
 
         if((isQuickSale.type === 'booking' || isQuickSale.type === 'quick') && isQuickSale.paymentstatus === 'Partial'){
-          await addDoc(paydetailsHistoryRef, paydetailsHistory)
+          // await addDoc(paydetailsHistoryRef, paydetailsHistory)
+          await addDeliveryPayment({...paydetailsHistory,deliveryId: deliveryRef.id})
         }
 
         for (const item of productItems) {
-          await addDoc(itemsCollectionRef, item)
+          // await addDoc(itemsCollectionRef, item)
+          await addDeliveryDetail({...item, deliveryId: deliveryRef.id})
         }
         message.open({ type: 'success', content: 'Production added successfully' })
         await deliveryUpdateMt()
