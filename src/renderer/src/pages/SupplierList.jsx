@@ -33,9 +33,6 @@ import { TiCancel } from 'react-icons/ti'
 import { AiOutlineDelete } from 'react-icons/ai'
 import { MdOutlinePayments } from 'react-icons/md'
 import { TimestampJs } from '../js-files/time-stamp'
-import {
-  updateMaterialItsms,
-} from '../firebase/data-tables/supplier'
 import jsonToExcel from '../js-files/json-to-excel'
 import dayjs from 'dayjs'
 import { formatToRupee } from '../js-files/formate-to-rupee'
@@ -52,7 +49,7 @@ import './css/SupplierList.css'
 import { addSupplier, updateSupplier, addSupplierPayment, getSupplierPaymentsById, updateSupplierPayment } from '../sql/supplier'
 import { addStorage, updateStorage } from '../sql/storage'
 import { getRawMaterials } from '../sql/rawmaterial'
-import { addSupplierAndMaterial, getMaterialsBySupplierId, getSupplierAndMaterials } from '../sql/supplierandmaterials'
+import { addSupplierAndMaterial, getMaterialsBySupplierId, getSupplierAndMaterials, updateSupplierAndMaterial } from '../sql/supplierandmaterials'
 
 export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt }) {
   // states
@@ -146,7 +143,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       name: formatName(value.name),
       mobileNumber: value.mobileNumber,
       address: value.address,
-      gender: 'Male',
+      // gender: 'Male',
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString(),
       isDeleted: 0
@@ -250,7 +247,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
     let formateDate = dayjs(date).format('DD/MM/YYYY')
     const payData = {
       ...Datas,
-      date: new Date().toISOString(),
+      date: dayjs().format('YYYY-MM-DD'),
       modifiedDate: new Date().toISOString(),
       decription: decription || '',
       createdDate: new Date().toISOString(),
@@ -437,7 +434,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
           String(record.materialname).toLowerCase().includes(value.toLowerCase()) ||
           String(record.address).toLowerCase().includes(value.toLowerCase()) ||
           String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.gender).toLowerCase().includes(value.toLowerCase()) ||
+          // String(record.gender).toLowerCase().includes(value.toLowerCase()) ||
           record.item.some((data) =>
             String(data.name).toLowerCase().includes(value.toLowerCase())
           )
@@ -479,13 +476,13 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       editable: true,
       width: 136
     },
-    {
-      title: 'Gender',
-      dataIndex: 'gender',
-      key: 'gender',
-      editable: true,
-      width: 83
-    },
+    // {
+    //   title: 'Gender',
+    //   dataIndex: 'gender',
+    //   key: 'gender',
+    //   editable: true,
+    //   width: 83
+    // },
     {
       title: "Material",
       dataIndex: 'material',
@@ -605,15 +602,15 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       let { id, ...olddata } = editBtnData
       let supplerId = id
       let { material, ...newdata } = form.getFieldValue()
-      let oldmaterial = olddata.item.filter((data) => data.isDeleted === false)
-
-      let missingIds = await getMissingIds(olddata.item, material)
+      let oldmaterial = olddata.supplierandmaterials
+      console.log(oldmaterial,supplerId,olddata)
+      let missingIds = await getMissingIds(olddata.supplierandmaterials, material)
       // let missingIds = await material.filter(aObj => !olddata.item.some(bObj => aObj.id === bObj.id));
       let newMaterialItems = material
         .filter((item) => !item.hasOwnProperty('id'))
         .map((data) => ({ ...data, materialname: formatName(data.materialname) }))
       let updatedMaterialItems = material.filter((item) => item.hasOwnProperty('id'))
-      let compareArrObj = await areArraysEqual(updatedMaterialItems, olddata.item)
+      let compareArrObj = await areArraysEqual(updatedMaterialItems, olddata.supplierandmaterials)
 
       // check same material
       let sameItem = oldmaterial.filter((old) =>
@@ -633,7 +630,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
         olddata.address === newdata.address &&
         olddata.mobileNumber === newdata.mobileNumber &&
         olddata.name === newdata.name &&
-        material.length === olddata.item.length &&
+        material.length === olddata.supplierandmaterials.length &&
         compareArrObj
       ) {
         message.open({ content: 'No changes found', type: 'info' })
@@ -647,9 +644,9 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
           for (const items of updatedMaterialItems) {
             const { id, createddate, isDeleted, ...newupdateddata } = items
             const itemId = id
-            await updateMaterialItsms(supplerId, itemId, {
-              ...newupdateddata,
-              updateddate: TimestampJs()
+            // add supplierId if want
+            await updateSupplierAndMaterial( itemId, {
+              ...newupdateddata
             })
 
             console.log('Checking for material:', items.materialname, items.unit)
@@ -713,14 +710,13 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
         // delete the items
         if (missingIds.length > 0) {
           missingIds.map(async (id) => {
-            await updateMaterialItsms(supplerId, id, {
-              isDeleted: true,
-              updateddate: TimestampJs()
+            await updateSupplierAndMaterial(id, {
+              isDeleted: 1
             })
           })
         }
 
-        for (const oldItem of olddata.item) {
+        for (const oldItem of olddata.supplierandmaterials) {
           const newItem = material.find(
             (mItem) => mItem.materialname === oldItem.materialname && mItem.unit === oldItem.unit
           )
@@ -786,30 +782,6 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
     return (
       <td {...restProps}>
         {editing ? (
-          <>
-            {dataIndex === 'gender' ? (
-              <span className="flex gap-x-1">
-                <Form.Item
-                  name="gender"
-                  style={{ margin: 0 }}
-                  rules={[{ required: true, message: false }]}
-                >
-                  <Select
-                    placeholder="Select Gender"
-                    optionFilterProp="label"
-                    filterSort={(optionA, optionB) =>
-                      (optionA?.label ?? '')
-                        .toLowerCase()
-                        .localeCompare((optionB?.label ?? '').toLowerCase())
-                    }
-                    options={[
-                      { value: 'Male', label: 'Male' },
-                      { value: 'Female', label: 'Female' }
-                    ]}
-                  />
-                </Form.Item>
-              </span>
-            ) : (
               <Form.Item
                 name={dataIndex}
                 style={{ margin: 0 }}
@@ -817,8 +789,6 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
               >
                 {inputNode}
               </Form.Item>
-            )}
-          </>
         ) : (
           children
         )}
@@ -967,9 +937,8 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
 
   const deleteExpantableTableMaterial = async (record) => {
     setSupplierTbLoading(true)
-    await updateMaterialItsms(expandTableSupplierId, record.id, {
-      isDeleted: true,
-      updateddate: TimestampJs()
+    await updateSupplierAndMaterial( record.id, {
+      isDeleted: 1
     })
     setSupplierTbLoading(false)
   }
@@ -1102,9 +1071,8 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
         setSupplierTbLoading(true)
         // console.log(expandTableSupplierId);
         // console.log(key.id, { ...row, updateddate: TimestampJs() });
-        await updateMaterialItsms(expandTableSupplierId, key.id, {
-          ...row,
-          updateddate: TimestampJs()
+        await updateSupplierAndMaterial( key.id, {
+          ...row
         })
         // await updateSupplier(key.id, { ...row, updateddate: TimestampJs() })
         supplierUpdateMt()

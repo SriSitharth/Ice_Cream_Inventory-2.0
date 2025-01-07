@@ -53,7 +53,7 @@ import { getMaterialById } from '../sql/supplierandmaterials'
 import { getRawMaterialDetailsByRawMaterialId } from '../sql/rawmaterial'
 
 export default function Home({ datas }) {
-  const today = dayjs(DatestampJs(), 'DD/MM/YYYY')
+  const today = dayjs();
   const [dateRange, setDateRange] = useState([today, today])
   const [filteredDelivery, setFilteredDelivery] = useState([])
   const [filteredRawmaterials, setFilteredRawmaterials] = useState([])
@@ -459,8 +459,7 @@ export default function Home({ datas }) {
       const initialData = await Promise.all(
         datas.delivery
           .filter((data) => {
-            const formattedDate = dayjs(data.date).format('DD/MM/YYYY');
-            return !data.isDeleted && formattedDate === today.format('DD/MM/YYYY')
+            return !data.isDeleted && data.date === today
             })
           .map(async (item, index) => {
             const result = await getCustomerById(item.customerId)
@@ -515,7 +514,7 @@ export default function Home({ datas }) {
         if (!dateRange[0] || !dateRange[1]) {
           return true
         }
-        const dayjsDate = dayjs(date, 'DD/MM/YYYY')
+        const dayjsDate = dayjs(date, 'YYYY-MM-DD')
         return (
           dayjsDate.isSame(dateRange[0], 'day') ||
           dayjsDate.isSame(dateRange[1], 'day') ||
@@ -560,8 +559,8 @@ export default function Home({ datas }) {
               ...item,
               key: item.id,
               customername: supplierName,
-              total: item.billamount,
-              billamount: item.billamount
+              total: item.billAmount,
+              billAmount: item.billAmount
             }
           })
       )
@@ -681,7 +680,7 @@ export default function Home({ datas }) {
             key: item.id,
             customername: item.name,
             // total: item.amount,
-            billamount: item.amount,
+            billAmount: item.amount,
             type: item.description
           }))
       )
@@ -749,14 +748,14 @@ export default function Home({ datas }) {
 
   const totalSales = filteredDelivery
     .filter((product) => product.type !== 'return')
-    .reduce((total, product) => total + product.billamount, 0)
+    .reduce((total, product) => total + product.billAmount, 0)
 
   const totalRawSpend = filteredRawmaterials
     .filter((material) => material.type === 'Added')
     .reduce((total, material) => {
-      if (material.paymentstatus === 'Paid') {
-        return total + material.billamount
-      } else if (material.paymentstatus === 'Partial') {
+      if (material.paymentStatus === 'Paid') {
+        return total + material.billAmount
+      } else if (material.paymentStatus === 'Partial') {
         return total + material.partialamount
       }
       return total
@@ -770,7 +769,7 @@ export default function Home({ datas }) {
 
   const totalReturn = filteredDelivery
     .filter((product) => product.type === 'return')
-    .reduce((total, product) => total + product.billamount, 0)
+    .reduce((total, product) => total + product.billAmount, 0)
 
   const totalGeneralSpending = filteredSpending.reduce(
     (total, product) => total + product.amount,
@@ -787,20 +786,20 @@ export default function Home({ datas }) {
   }).length
 
   const totalPaid = filteredDelivery.reduce((total, product) => {
-    if (product.paymentstatus === 'Paid' && product.type !== 'return') {
-      return total + (Number(product.billamount) || 0)
+    if (product.paymentStatus === 'Paid' && product.type !== 'return') {
+      return total + (Number(product.billAmount) || 0)
     }
-    // else if (product.paymentstatus === 'Partial' && product.type === 'order') {
+    // else if (product.paymentStatus === 'Partial' && product.type === 'order') {
     //   return total + (Number(product.partialamount) || 0)
     // }
     return total
   }, 0)
 
   const totalUnpaid = filteredDelivery.reduce((total, product) => {
-    if (product.paymentstatus === 'Unpaid') {
-      return total + (Number(product.billamount) || 0)
-    } else if (product.paymentstatus === 'Partial') {
-      return total + ((Number(product.billamount) || 0) - (Number(product.partialamount) || 0))
+    if (product.paymentStatus === 'Unpaid') {
+      return total + (Number(product.billAmount) || 0)
+    } else if (product.paymentStatus === 'Partial') {
+      return total + ((Number(product.billAmount) || 0) - (Number(product.partialamount) || 0))
     }
     return total
   }, 0)
@@ -833,12 +832,12 @@ export default function Home({ datas }) {
         const rawMaterialsData = filteredRawmaterials.filter(
           (material) =>
             material.type === 'Added' &&
-            (material.paymentstatus === 'Paid' || material.paymentstatus === 'Partial')
+            (material.paymentStatus === 'Paid' || material.paymentStatus === 'Partial')
         )
         const otherSpend = filteredSpendingPayments.map((pay) => ({
           ...pay,
           customername: pay.name,
-          billamount: pay.amount
+          billAmount: pay.amount
         }))
         newSelectedTableData = [...rawMaterialsData, ...otherSpend]
         break
@@ -870,19 +869,19 @@ export default function Home({ datas }) {
         const deliveryData = filteredDelivery.filter(
           (product) =>
             product.type !== 'return' &&
-            (product.paymentstatus === 'Paid' || product.paymentstatus === 'Partial')
+            (product.paymentStatus === 'Paid' || product.paymentStatus === 'Partial')
         )
         const filterPayment = filteredPayments.map((pay) => ({
           ...pay,
           customername: pay.name,
-          billamount: pay.amount
+          billAmount: pay.amount
         }))
         newSelectedTableData = [...deliveryData, ...filterPayment]
         break
       }
       case 'totalUnpaid':
         newSelectedTableData = filteredDelivery.filter(
-          (product) => product.paymentstatus === 'Unpaid' || product.paymentstatus === 'Partial'
+          (product) => product.paymentStatus === 'Unpaid' || product.paymentStatus === 'Partial'
         )
         break
       default:
@@ -896,7 +895,7 @@ export default function Home({ datas }) {
     const filtered = filteredDelivery.filter(
       (product) =>
         product.type !== 'return' &&
-        (product.paymentstatus === 'Paid' || product.paymentstatus === 'Partial') &&
+        (product.paymentStatus === 'Paid' || product.paymentStatus === 'Partial') &&
         product.paymentmode === paymentMode
     )
     const filterPayment = filteredPayments
@@ -904,7 +903,7 @@ export default function Home({ datas }) {
       .map((pay) => ({
         ...pay,
         customername: pay.name,
-        billamount: pay.amount
+        billAmount: pay.amount
       }))
     let combinedData = [...filtered, ...filterPayment]
     let filterLatestData = await latestFirstSort(combinedData)
@@ -1095,7 +1094,7 @@ export default function Home({ datas }) {
       date,
       gstin: '',
       total: quotationft.mrpamount,
-      billamount: quotationft.totalamount,
+      billAmount: quotationft.totalamount,
       address: '',
       partialamount: 0
     }
@@ -1152,7 +1151,7 @@ export default function Home({ datas }) {
         date,
         gstin: '',
         total: quotationft.mrpamount,
-        billamount: quotationft.totalamount,
+        billAmount: quotationft.totalamount,
         address: '',
         partialamount: 0
       }
@@ -1313,11 +1312,11 @@ export default function Home({ datas }) {
       key: 'date',
       width: 150,
       sorter: (a, b) => {
-        const format = 'DD/MM/YYYY'
-        const dateA = dayjs(a.date, format)
-        const dateB = dayjs(b.date, format)
+        const dateA = dayjs(a.date)
+        const dateB = dayjs(b.date)
         return dateB.isAfter(dateA) ? -1 : 1
-      }
+      },
+      render: (text) => dayjs(text).format('DD/MM/YYYY'),
       // defaultSortOrder: 'descend'
     },
     {
@@ -1374,15 +1373,15 @@ export default function Home({ datas }) {
     },
     {
       title: 'Amount',
-      dataIndex: 'billamount',
-      key: 'billamount',
+      dataIndex: 'billAmount',
+      key: 'billAmount',
       render: (text) => <span>{formatToRupee(text, true)}</span>,
       width: 120
     },
     {
       title: 'Status',
-      dataIndex: 'paymentstatus',
-      key: 'paymentstatus',
+      dataIndex: 'paymentStatus',
+      key: 'paymentStatus',
       render: (text, record) => {
         const { partialamount, bookingstatus } = record
         if (text === 'Paid') {
@@ -1977,14 +1976,14 @@ export default function Home({ datas }) {
       .reduce((total, payment) => total + (Number(payment.amount) || 0), 0)
     const deliveryAmount = filteredDelivery.reduce((total, product) => {
       if (
-        product.paymentstatus === 'Paid' &&
+        product.paymentStatus === 'Paid' &&
         product.type !== 'return' &&
         product.paymentmode === paymentMode
       ) {
-        return total + (Number(product.billamount) || 0)
+        return total + (Number(product.billAmount) || 0)
       }
       // else if (
-      //   product.paymentstatus === 'Partial' &&
+      //   product.paymentStatus === 'Partial' &&
       //   product.type === 'order' &&
       //   product.paymentmode === paymentMode
       // ) {
@@ -2327,13 +2326,13 @@ export default function Home({ datas }) {
                   <span className=" font-bold">
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
                       ? formatToRupee(
-                          invoiceDatas.customerdetails.billamount -
+                          invoiceDatas.customerdetails.billAmount -
                             invoiceDatas.customerdetails.partialamount
                         )
                       : null}
                     {/* {(Object.keys(invoiceDatas.customerdetails).length !== 0) && (invoiceDatas.customerdetails.partialamount !== 0 )
-                  ? formatToRupee( invoiceDatas.customerdetails.billamount - invoiceDatas.customerdetails.partialamount)
-                   : (Object.keys(invoiceDatas.customerdetails).length !== 0) && (invoiceDatas.customerdetails.partialamount === 0 && invoiceDatas.customerdetails.paymentstatus === 'Unpaid') ? formatToRupee(invoiceDatas.customerdetails.billamount) :0} */}
+                  ? formatToRupee( invoiceDatas.customerdetails.billAmount - invoiceDatas.customerdetails.partialamount)
+                   : (Object.keys(invoiceDatas.customerdetails).length !== 0) && (invoiceDatas.customerdetails.partialamount === 0 && invoiceDatas.customerdetails.paymentStatus === 'Unpaid') ? formatToRupee(invoiceDatas.customerdetails.billAmount) :0} */}
                   </span>
                 </p>
               </span>
@@ -2365,19 +2364,19 @@ export default function Home({ datas }) {
                   Bill Amount:{' '}
                   <span className=" font-bold">
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
-                      ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                      ? formatToRupee(invoiceDatas.customerdetails.billAmount)
                       : null}
                   </span>
                 </p>
                 <p
                   className={`${invoiceDatas.customerdetails.type === 'return' ? 'hidden' : 'block'}`}
-                  // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} ${invoiceDatas.customerdetails.partialamount !== 0 || invoiceDatas.customerdetails.paymentstatus === 'Paid' ? 'block text-end' : 'hidden'}`}
+                  // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} ${invoiceDatas.customerdetails.partialamount !== 0 || invoiceDatas.customerdetails.paymentStatus === 'Paid' ? 'block text-end' : 'hidden'}`}
                 >
                   Paid Amount:{' '}
                   <span className=" font-bold">
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
-                      ? invoiceDatas.customerdetails.paymentstatus === 'Paid'
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                      ? invoiceDatas.customerdetails.paymentStatus === 'Paid'
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount)
                         : formatToRupee(invoiceDatas.customerdetails.partialamount)
                       : null}
                   </span>
@@ -2780,7 +2779,7 @@ export default function Home({ datas }) {
                     <td className="px-1 text-center">
                       <span className=" font-bold">
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
-                          ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                          ? formatToRupee(invoiceDatas.customerdetails.billAmount)
                           : null}
                       </span>
                     </td>
@@ -2825,7 +2824,7 @@ export default function Home({ datas }) {
                   <td>
                     <span>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount)
                         : null}
                     </span>
                   </td>
@@ -2833,7 +2832,7 @@ export default function Home({ datas }) {
                   <td>
                     <span>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.09)
                         : null}
                     </span>
                   </td>
@@ -2841,7 +2840,7 @@ export default function Home({ datas }) {
                   <td>
                     <span>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.09)
                         : null}
                     </span>
                   </td>
@@ -2853,7 +2852,7 @@ export default function Home({ datas }) {
                   <td>
                     <span className=" font-semibold">
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.09)
                         : null}
                     </span>
                   </td>
@@ -2861,14 +2860,14 @@ export default function Home({ datas }) {
                   <td>
                     <span className=" font-semibold">
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.09)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.09)
                         : null}
                     </span>
                   </td>
                   <td>
                     <span className=" font-semibold">
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.18)
                         : null}
                     </span>
                   </td>
@@ -2929,7 +2928,7 @@ export default function Home({ datas }) {
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
                           ? formatToRupee(
                               invoiceDatas.customerdetails.total -
-                                invoiceDatas.customerdetails.billamount
+                                invoiceDatas.customerdetails.billAmount
                             )
                           : null}
                       </span>
@@ -2938,14 +2937,14 @@ export default function Home({ datas }) {
                     Total :{' '}
                     <span>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount)
                         : null}
                     </span>
                     <br />
                     GST @ 18% :{' '}
                     <span>
                       {Object.keys(invoiceDatas.customerdetails).length !== 0
-                        ? formatToRupee(invoiceDatas.customerdetails.billamount * 0.18)
+                        ? formatToRupee(invoiceDatas.customerdetails.billAmount * 0.18)
                         : null}
                     </span>
                     <br />
@@ -2990,8 +2989,8 @@ export default function Home({ datas }) {
                   <span>
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
                       ? formatToRupee(
-                          invoiceDatas.customerdetails.billamount +
-                            invoiceDatas.customerdetails.billamount * 0.18
+                          invoiceDatas.customerdetails.billAmount +
+                            invoiceDatas.customerdetails.billAmount * 0.18
                         )
                       : null}
                   </span>
@@ -3050,7 +3049,6 @@ export default function Home({ datas }) {
             className="w-[16rem]"
             onChange={handleDateChange}
             defaultValue={[today, today]}
-            format="DD/MM/YYYY"
           />
           <Button
             type="primary"
@@ -3172,7 +3170,7 @@ export default function Home({ datas }) {
               <Descriptions.Item label="Customer">{selectedRecord.customername}</Descriptions.Item>
               <Descriptions.Item label="Date">{selectedRecord.date}</Descriptions.Item>
               <Descriptions.Item label="Gross Amount">{selectedRecord.total}</Descriptions.Item>
-              <Descriptions.Item label="Net Amount">{selectedRecord.billamount}</Descriptions.Item>
+              <Descriptions.Item label="Net Amount">{selectedRecord.billAmount}</Descriptions.Item>
               {selectedRecord.mobileNumber && (
                 <Descriptions.Item label="Mobile">{selectedRecord.mobileNumber}</Descriptions.Item>
               )}

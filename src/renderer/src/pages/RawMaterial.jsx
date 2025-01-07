@@ -94,7 +94,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     if (!dateRange || !dateRange[0] || !dateRange[1]) {
       return true
     }
-    const dayjsDate = dayjs(date, 'DD/MM/YYYY')
+    const dayjsDate = dayjs(date, 'YYYY-MM-DD')
     return (
       dayjsDate.isSame(dateRange[0], 'day') ||
       dayjsDate.isSame(dateRange[1], 'day') ||
@@ -464,12 +464,10 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       dataIndex: 'date',
       key: 'date',
       sorter: (a, b) => {
-        const format = 'DD/MM/YYYY'
-        const dateA = dayjs(a.date, format)
-        const dateB = dayjs(b.date, format)
+        const dateA = dayjs(a.date)
+        const dateB = dayjs(b.date)
         return dateB.isAfter(dateA) ? -1 : 1
       },
-      // defaultSortOrder: 'descend',115
       render: (text) => dayjs(text).format('DD/MM/YYYY'),
       width: 115
     },
@@ -978,10 +976,10 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
   // create material
   const createUsedMaterial = async (values) => {
     setMtOption((pre) => ({ ...pre, count: pre.count + 1 }))
-    const formattedDate = values.date ? values.date.format('DD/MM/YYYY') : ''
+    const formattedDate = values.date ? values.date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
     const newMaterial = {
       ...values,
-      date: new Date().toISOString(),
+      date: formattedDate,
       key: mtOption.count,
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString(),
@@ -1013,7 +1011,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     setIsLoadMaterialUsedModal(true)
     try {
       let rawMaterialData = mtOption.tempproduct.map((data) => ({
-        date: new Date().toISOString(),
+        date: dayjs().format('YYYY-MM-DD'),
         isDeleted: 0,
         type: usedmaterialform.getFieldValue().type,
         paymentStatus: usedmaterialform.getFieldValue().type === 'Return' ? 'Returned' : 'Used',
@@ -1153,7 +1151,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       paymentStatus: addmaterialpaymentform.getFieldsValue().paymentStatus,
       type: 'Added',
       isDeleted: 0,
-      date: new Date().toISOString(),
+      date: dayjs().format('YYYY-MM-DD'),
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString()
     }
@@ -1164,6 +1162,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       price: data.price,
       quantity: data.quantity,
       createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
       materialName: data.materialName
     }))
     let totalprice = materialArray.map((data) => data.price).reduce((a, b) => a + b, 0)

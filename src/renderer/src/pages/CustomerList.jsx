@@ -51,7 +51,7 @@ import {
   getCustomerPaymentsById,
   updateCustomerPayment
 } from '../sql/customer'
-import { addFreezerbox, updateFreezerbox } from '../sql/freezerbox'
+import { addFreezerbox, updateFreezerbox, getFreezerboxById } from '../sql/freezerbox'
 
 export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdateMt }) {
   // states
@@ -139,7 +139,9 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
       if (boxnumbers.length > 0 && boxnumbers) {
         boxnumbers.forEach(async (box) => {
+          const existingBox = await getFreezerboxById(box);
           await updateFreezerbox(box, {
+            boxNumber: existingBox.boxNumber,
             customerId: result.id
           })
           await freezerboxUpdateMt()
@@ -177,11 +179,11 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   const customerPay = async (value) => {
     setIsCustomerPayLoading(true)
     let { date, description, ...Datas } = value
-    let formateDate = dayjs(date).format('DD/MM/YYYY')
+    let formatedDate = dayjs(date).format('YYYY-MM-DD')
     const payData = {
       ...Datas,
       collectionType: 'customer',
-      date: new Date().toISOString(),
+      date: formatedDate,
       customerId: customerPayId,
       decription: description || '',
       createdDate: new Date().toISOString(),
@@ -898,9 +900,9 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     if (newData.freezerbox.length > 0) {
       let boxIds = await datas.freezerbox
         .filter((fz) => newData.freezerbox.some((box) => box.boxNumber === fz.boxNumber))
-        .map((box) => ({ id: box.id }))
+        .map((box) => ({ id: box.id, boxNumber: box.boxNumber }))
       boxIds.forEach(async (box) => {
-        await updateFreezerbox(box.id, { customerId: null })
+        await updateFreezerbox(box.id, { boxNumber: box.boxNumber, customerId: null })
         await freezerboxUpdateMt()
       })
     }
@@ -1284,7 +1286,8 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
         //add new box
         if (newBoxes.length > 0) {
           newBoxes.forEach(async (id) => {
-            await updateFreezerbox(id, { customerId: updateCustomerDetails.data.id })
+            const existingBox = await getFreezerboxById(id);
+            await updateFreezerbox(id, { boxNumber: existingBox.boxNumber, customerId: updateCustomerDetails.data.id })
             await freezerboxUpdateMt()
           })
         }
@@ -1292,7 +1295,8 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
         //remove box
         if (removedBoxes.length > 0) {
           removedBoxes.forEach(async (id) => {
-            await updateFreezerbox(id, { customerId: null })
+            const existingBox = await getFreezerboxById(id);
+            await updateFreezerbox(id, { boxNumber: existingBox.boxNumber, customerId: null })
             await freezerboxUpdateMt()
           })
         }

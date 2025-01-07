@@ -24,7 +24,6 @@ import { LuSave } from 'react-icons/lu'
 import { TiCancel } from 'react-icons/ti'
 import { AiOutlineDelete } from 'react-icons/ai'
 import { MdOutlinePayments } from 'react-icons/md'
-import { TimestampJs } from '../js-files/time-stamp'
 import jsonToExcel from '../js-files/json-to-excel'
 const { Search, TextArea } = Input
 import dayjs from 'dayjs'
@@ -85,7 +84,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
         ...values,
         name: values.employeename,
         address: values.address,
-        mobileNumber: values.mobilenumber,
+        mobileNumber: values.mobileNumber,
         createdDate: new Date().toISOString(),
         modifiedDate: new Date().toISOString(),
         isDeleted: 0
@@ -164,7 +163,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
       dataIndex: 'gender',
       key: 'gender',
       editable: true,
-      width: 105
+      width: 95
     },
     {
       title: 'Action',
@@ -206,13 +205,10 @@ export default function Employee({ datas, employeeUpdateMt }) {
                 setEmployeePay((pre) => ({ ...pre, name: record }))
                 setEmpListTb(true)
                 let paydetails = await getEmployeePaymentsById(record.id)
-                console.log(paydetails)
                 if (paydetails) {
-                  let checkPayData = paydetails.filter((item) => item.isDeleted === 1)
-                  console.log(checkPayData, paydetails)
-                  let lastestSort = await latestFirstSort(
-                    checkPayData.filter((paydata) => !paydata.isDeleted)
-                  )
+                  let checkPayData = paydetails.filter((item) => item.isDeleted === 0)
+                  let lastestSort = await latestFirstSort(checkPayData)
+                  console.log(checkPayData, paydetails,lastestSort)
                   const totalPayment = checkPayData.reduce((total, item) => {
                     if (item.type === 'Payment') {
                       return total + (Number(item.amount) || 0)
@@ -357,7 +353,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
       ...col,
       onCell: (record) => ({
         record,
-        inputType: col.dataIndex === 'mobilenumber' ? 'number' : 'text',
+        inputType: col.dataIndex === 'mobileNumber' ? 'number' : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: isEditing(record)
@@ -374,7 +370,6 @@ export default function Employee({ datas, employeeUpdateMt }) {
       const row = await form.validateFields()
       const newData = [...data]
       const index = newData.findIndex((item) => key.id === item.key)
-      console.log(row, key)
       if (
         index != null &&
         row.name === key.name &&
@@ -467,7 +462,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
     const { id, ...newData } = data
     console.log(id, data)
     let paydetails = await getEmployeePaymentsById(id)
-    if (paydetails & (paydetails.length > 0)) {
+    if (paydetails.length > 0) {
       await Promise.all(
         paydetails.map(async (paydata) => {
           await updateEmployeePayment(id, paydata.id, { isDeleted: 1 })
@@ -488,13 +483,14 @@ export default function Employee({ datas, employeeUpdateMt }) {
     const exportDatas = data.filter((item) => selectedRowKeys.includes(item.key))
     const excelDatas = exportDatas.map((pr, i) => ({
       No: i + 1,
-      Employee: pr.employeename,
+      Employee: pr.name,
       Gender: pr.gender,
-      Mobile: pr.mobilenumber,
+      Mobile: pr.mobileNumber,
       Address: pr.address,
       Position: pr.position
     }))
-    jsonToExcel(excelDatas, `Employee-List-${TimestampJs()}`)
+    const timestamp = dayjs().format('DD-MM-YYYY_HH-mm-ss');
+    jsonToExcel(excelDatas, `Employee-List-${timestamp}`)
     setSelectedRowKeys([])
     setEditingKeys('')
   }
@@ -511,17 +507,17 @@ export default function Employee({ datas, employeeUpdateMt }) {
   const empPayMt = async (value) => {
     setIsEmpLoading(true)
     let { date, description, ...Datas } = value
-    let formateDate = dayjs(date).format('DD/MM/YYYY')
+    let formatedDate = dayjs(date).format('YYYY-MM-DD')
     const empId = employeePay.name.id
     const payData = {
       ...Datas,
       collectionType: 'employee',
       employeeId: empId,
-      date: new Date().toISOString(),
+      date: formatedDate,
       decription: description === undefined ? '' : description,
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString(),
-      isDeleted: 1
+      isDeleted: 0
     }
 
     try {
@@ -562,11 +558,12 @@ export default function Employee({ datas, employeeUpdateMt }) {
       dataIndex: 'date',
       key: 'date',
       sorter: (a, b) => {
-        const dateA = dayjs(a.date, 'DD/MM/YYYY')
-        const dateB = dayjs(b.date, 'DD/MM/YYYY')
+        const dateA = dayjs(a.date)
+        const dateB = dayjs(b.date)
         return dateA.isAfter(dateB) ? 1 : -1
       },
       defaultSortOrder: 'descend',
+      render: (text) => dayjs(text).format('DD/MM/YYYY'),
       editable: true,
       width: 115
     },
@@ -928,7 +925,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
 
             <Form.Item
               className="mb-2 w-full"
-              name="mobilenumber"
+              name="mobileNumber"
               label="Mobile Number"
               rules={[
                 { required: true, message: false },
@@ -977,7 +974,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
       >
         <Spin spinning={isEmpLoading}>
           <span className="block w-full text-center mb-7 text-xl font-bold">
-            {employeePay.name.employeename}
+            {employeePay.name.name}
           </span>
           <Form
             onFinish={empPayMt}
@@ -1047,7 +1044,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
         title={
           <div className="relative">
             <Tag color="blue" className="absolute left-4">
-              {employeePay.name.employeename}
+              {employeePay.name.name}
             </Tag>
             <span className="text-center w-full block pb-5">PAY DETAILS</span>
           </div>

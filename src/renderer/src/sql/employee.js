@@ -111,7 +111,7 @@ export const getEmployeePaymentsById = async (employeeId) => {
     });
 
     console.log('Payments for employee fetched successfully:', response.data);
-    return response.data;
+    return response.data || [];
   } catch (error) {
     if (error.response?.status === 404) {
       console.log('No payments found for this employee.');
@@ -123,10 +123,10 @@ export const getEmployeePaymentsById = async (employeeId) => {
   }
 };
 
-export const updateEmployeePayment = async (employeeId , id , paymentData) => {
+export const updateEmployeePayment = async (empid , id , data) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/Payment/UpdateEmployeePayment`, paymentData, {
-      params: { empid:employeeId , id:id },
+    const response = await axios.put(`${API_BASE_URL}/Payment/UpdateEmployeePayment`, data, {
+      params: { empid , id },
       headers: {
         'Content-Type': 'application/json',
       },

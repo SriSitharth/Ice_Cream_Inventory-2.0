@@ -298,12 +298,12 @@ export default function BalanceSheet({ datas }) {
 
   const balancesheetPay = async (value) => {
     let { date, amount, decription, paymentMode, ...Datas } = value
-    let formateDate = dayjs(date).format('DD/MM/YYYY')
+    let formatedDate = dayjs(date).format('YYYY-MM-DD')
     const type = decription === 'Pay' ? 'Payment' : 'Balance'
     const payData = {
       ...Datas,
       amount: Number(amount),
-      date: new Date().toISOString(),
+      date: formatedDate,
       type: type,
       paymentMode: decription === 'Pay' ? paymentMode : '',
       decription: decription,

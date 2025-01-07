@@ -136,7 +136,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     if (!dateRange || !dateRange[0] || !dateRange[1]) {
       return true
     }
-    const dayjsDate = dayjs(date, 'DD/MM/YYYY')
+    const dayjsDate = dayjs(date, 'YYYY-MM-DD')
     return (
       dayjsDate.isSame(dateRange[0], 'day') ||
       dayjsDate.isSame(dateRange[1], 'day') ||
@@ -176,7 +176,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           String(record.date).toLowerCase().includes(value.toLowerCase()) ||
           String(record.customername).toLowerCase().includes(value.toLowerCase()) ||
           String(record.billAmount).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.type).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
           String(record.paymentStatus).toLowerCase().includes(value.toLowerCase()) ||
           String(record.boxNumber).toLowerCase().includes(value.toLowerCase())
         )
@@ -187,9 +187,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       dataIndex: 'date',
       key: 'date',
       sorter: (a, b) => {
-        const format = 'DD/MM/YYYY'
-        const dateA = dayjs(a.date, format)
-        const dateB = dayjs(b.date, format)
+        const dateA = dayjs(a.date)
+        const dateB = dayjs(b.date)
         return dateB.isAfter(dateA) ? -1 : 1
       },
       // defaultSortOrder: 'descend',
@@ -1114,7 +1113,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
   const createTemDeliveryMt = debounce(async (values) => {
     setCount(count + 1)
-    const formattedDate = values.date ? values.date.format('DD/MM/YYYY') : ''
+    const formattedDate = values.date ? values.date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
     // let [quantityvalue, units] = values.quantity.split(' ')
     console.log(values)
     const productData = await datas.product.find((item) => item.isDeleted === 0 && item.id === values.productname)
@@ -1125,7 +1124,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       productId: values.productname,
       productname: productData.name,
       key: count,
-      date: new Date().toISOString(),
+      date: formattedDate,
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString(),
       mrp: findPrice * values.numberOfPacks,
@@ -1226,7 +1225,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           returnType: temp.returntype,
           margin: temp.margin === '' ? 0 : temp.margin,
           sno: tempIndex + 1,
-          date: new Date().toISOString(),
+          date: dayjs().format('YYYY-MM-DD'),
           createdDate: new Date().toISOString(),
           modifiedDate: new Date().toISOString(),
         }))
@@ -1240,8 +1239,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       returnDelivery.state === true
         ? {
             customerId: customername,
-            // date: dayjs(form2.getFieldValue().date).format('DD/MM/YYYY'),
-            date: new Date().toISOString(),
+            date: dayjs(form2.getFieldValue().date).format('YYYY-MM-DD'),
+            //date: new Date().toISOString(),
             total: totalamount,
             billAmount: option.tempproduct.map((data) => data.price).reduce((a, b) => a + b, 0),
             paymentStatus: 'Return',
@@ -1257,8 +1256,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           }
         : {
             customerId: customername,
-            // date: dayjs(form2.getFieldValue().date).format('DD/MM/YYYY'),
-            date: new Date().toISOString(),
+            date: dayjs(form2.getFieldValue().date).format('YYYY-MM-DD'),
+            //date: new Date().toISOString(),
             total: totalamount,
             billAmount: marginValue.amount,
             // paymentStatus: marginValue.paymentstaus,
@@ -2699,7 +2698,6 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           />
           <span className="flex gap-x-3 justify-center items-center">
             <RangePicker
-              format="DD/MM/YYYY"
               className="w-[16rem]"
               onChange={(dates) => setDateRange(dates)}
             />

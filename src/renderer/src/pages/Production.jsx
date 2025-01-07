@@ -79,7 +79,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
     if (!dateRange || !dateRange[0] || !dateRange[1]) {
       return true
     }
-    const dayjsDate = dayjs(date, 'DD/MM/YYYY')
+    const dayjsDate = dayjs(date, 'YYYY-MM-DD')
     return (
       dayjsDate.isSame(dateRange[0], 'day') ||
       dayjsDate.isSame(dateRange[1], 'day') ||
@@ -126,9 +126,8 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
       dataIndex: 'date',
       key: 'date',
       sorter: (a, b) => {
-        const format = 'DD/MM/YYYY'
-        const dateA = dayjs(a.date, format)
-        const dateB = dayjs(b.date, format)
+        const dateA = dayjs(a.date)
+        const dateB = dayjs(b.date)
         return dateB.isAfter(dateA) ? -1 : 1
       },
       // defaultSortOrder: 'descend',
@@ -643,7 +642,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         )
 
         await addProduction({
-          date: new Date().toISOString(),
+          date: dayjs().format('YYYY-MM-DD'),
           createdDate: new Date().toISOString(),
           modifiedDate: new Date().toISOString(),
           productId: existingProductList.id,
@@ -787,7 +786,6 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
           <span className="flex gap-x-3 justify-center items-center">
             <RangePicker
               className="w-[16rem]"
-              format="DD/MM/YYYY"
               onChange={(dates) => setDateRange(dates)}
             />
             <Button onClick={exportExcel} disabled={selectedRowKeys.length === 0}>
