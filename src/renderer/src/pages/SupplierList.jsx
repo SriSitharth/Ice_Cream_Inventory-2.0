@@ -106,12 +106,12 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
   // create new project
   const createNewSupplier = async (values) => {
     let correctNameData = values.material.map((data) => ({
-      ...data,
-      materialname: formatName(data.materialname)
+      ...data
     }))
+    console.log(correctNameData)
     // Create a map to count occurrences of each materialname
     const nameCount = correctNameData.reduce((acc, data) => {
-      acc[data.materialname] = (acc[data.materialname] || 0) + 1
+      acc[data.name] = (acc[data.name] || 0) + 1
       return acc
     }, {})
 
@@ -133,8 +133,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
 
     const correctMaterialName = await Promise.all(
       material.map(async (data) => ({
-        ...data,
-        materialname: await formatName(data.materialname)
+        ...data
       }))
     )
 
@@ -161,7 +160,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       (item) =>
         !datas.storage.some(
           (storage) =>
-            storage.materialname === item.materialname &&
+            storage.materialName === item.name &&
             storage.category === 'Material List' &&
             storage.unit === item.unit
         )
@@ -177,7 +176,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       for (const materialItem of correctMaterialName) {
         console.log(materialItem)
         await addSupplierAndMaterial({
-          name: materialItem.materialname,
+          name: materialItem.name,
           unit: materialItem.unit,
           supplierId: addedSupplier.id,
           isDeleted: 0,
@@ -206,7 +205,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       if (materialExist.length > 0) {
         for (const items of materialExist) {
           await addStorage({
-            materialName: items.materialname,
+            materialName: items.name,
             unit: items.unit,
             alertCount: 0,
             quantity: 0,
@@ -287,15 +286,16 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
         let getPaydetials = paydetails.filter((paydata) => paydata.isDeleted === 0)
 
         let sortData = await latestFirstSort([...filterBillOrders, ...getPaydetials])
+        console.log(sortData)
         setPayDetailsData(sortData)
         setSupplierName(record.name)
 
         // calculation
         const totalBalance = sortData.reduce((total, item) => {
-          if (item.type === 'Added' && item.paymentstatus === 'Unpaid') {
-            return total + (Number(item.billamount) || 0)
-          } else if (item.type === 'Added' && item.paymentstatus === 'Partial') {
-            return total + (Number(item.billamount) - Number(item.partialamount) || 0)
+          if (item.type === 'Added' && item.paymentStatus === 'Unpaid') {
+            return total + (Number(item.billAmount) || 0)
+          } else if (item.type === 'Added' && item.paymentStatus === 'Partial') {
+            return total + (Number(item.billAmount) - Number(item.partialamount) || 0)
           } else if (item.type !== 'Added') {
             return total - (Number(item.amount) || 0)
           }
@@ -304,9 +304,9 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
         setTotalBalanceAmount(totalBalance)
 
         const totalPayment = sortData.reduce((total, item) => {
-          if (item.type === 'Added' && item.paymentstatus === 'Paid') {
-            return total + (Number(item.billamount) || 0)
-          } else if (item.type === 'Added' && item.paymentstatus === 'Partial') {
+          if (item.type === 'Added' && item.paymentStatus === 'Paid') {
+            return total + (Number(item.billAmount) || 0)
+          } else if (item.type === 'Added' && item.paymentStatus === 'Partial') {
             return total + (Number(item.partialamount) || 0)
           } else if (item.type !== 'Added') {
             return total + (Number(item.amount) || 0)
@@ -317,7 +317,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
 
         const totalPurchase = sortData.reduce((total, item) => {
           if (item.type === 'Added') {
-            return total + (Number(item.billamount) || 0)
+            return total + (Number(item.billAmount) || 0)
           }
           return total
         }, 0)
@@ -343,11 +343,12 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       dataIndex: 'date',
       key: 'date',
       sorter: (a, b) => {
-        const dateA = dayjs(a.date, 'DD/MM/YYYY')
-        const dateB = dayjs(b.date, 'DD/MM/YYYY')
+        const dateA = dayjs(a.date)
+        const dateB = dayjs(b.date)
         return dateA.isAfter(dateB) ? 1 : -1
       },
       defaultSortOrder: 'descend',
+      render: (text) => dayjs(text).format('DD/MM/YYYY'),
       width: 115
     },
     // {
@@ -369,9 +370,9 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       dataIndex: 'price',
       key: 'price',
       render: (text, record) =>
-        record.billamount === undefined
+        record.billAmount === undefined
           ? formatToRupee(record.amount, true)
-          : formatToRupee(record.billamount, true),
+          : formatToRupee(record.billAmount, true),
       width: 130
     },
     {
@@ -384,28 +385,28 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
     },
     {
       title: 'Payment Status',
-      dataIndex: 'paymentstatus',
-      key: 'paymentstatus',
+      dataIndex: 'paymentStatus',
+      key: 'paymentStatus',
       render: (text, record) =>
-        record.paymentstatus === undefined ? (
+        record.paymentStatus === undefined ? (
           <>
-            <Tag color="cyan">{record.paymentmode}</Tag>
+            <Tag color="cyan">{record.paymentMode}</Tag>
             <span></span>
           </>
-        ) : record.paymentstatus === 'Paid' ? (
+        ) : record.paymentStatus === 'Paid' ? (
           <span className="flex items-center">
             <Tag color="green">Paid</Tag>
-            {record.paymentmode && <Tag color="cyan">{record.paymentmode}</Tag>}
+            {record.paymentMode && <Tag color="cyan">{record.paymentMode}</Tag>}
           </span>
-        ) : record.paymentstatus === 'Unpaid' ? (
+        ) : record.paymentStatus === 'Unpaid' ? (
           <Tag color="red">UnPaid</Tag>
-        ) : record.paymentstatus === 'Partial' ? (
+        ) : record.paymentStatus === 'Partial' ? (
           <span className="flex items-center">
             <Tag color="yellow">Partial</Tag>{' '}
             <Tag color="blue" className=" text-[0.7rem]">
               {formatToRupee(record.partialamount, true)}
             </Tag>
-            {record.paymentmode && <Tag color="cyan">{record.paymentmode}</Tag>}
+            {record.paymentMode && <Tag color="cyan">{record.paymentMode}</Tag>}
           </span>
         ) : (
           <></>
@@ -431,7 +432,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       onFilter: (value, record) => {
         return (
           String(record.name).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.materialname).toLowerCase().includes(value.toLowerCase()) ||
+          // String(record.materialname).toLowerCase().includes(value.toLowerCase()) ||
           String(record.address).toLowerCase().includes(value.toLowerCase()) ||
           String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
           // String(record.gender).toLowerCase().includes(value.toLowerCase()) ||
@@ -603,25 +604,26 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       let supplerId = id
       let { material, ...newdata } = form.getFieldValue()
       let oldmaterial = olddata.supplierandmaterials
-      console.log(oldmaterial,supplerId,olddata)
+      
       let missingIds = await getMissingIds(olddata.supplierandmaterials, material)
       // let missingIds = await material.filter(aObj => !olddata.item.some(bObj => aObj.id === bObj.id));
       let newMaterialItems = material
         .filter((item) => !item.hasOwnProperty('id'))
-        .map((data) => ({ ...data, materialname: formatName(data.materialname) }))
+        .map((data) => ({ ...data }))
       let updatedMaterialItems = material.filter((item) => item.hasOwnProperty('id'))
       let compareArrObj = await areArraysEqual(updatedMaterialItems, olddata.supplierandmaterials)
 
+      console.log(oldmaterial,newMaterialItems,material)
       // check same material
       let sameItem = oldmaterial.filter((old) =>
-        newMaterialItems.find((newdata) => newdata.materialname === old.materialname)
+        newMaterialItems.find((newdata) => newdata.name === old.name)
       )
 
-      if (sameItem.length > 0) {
+      if (sameItem.length === oldmaterial.length) {
         return message.open({
           type: 'warning',
           content: `Not allow same material ${sameItem.map((data) => {
-            return data.materialname
+            return data.name
           })}`
         })
       }
@@ -649,19 +651,19 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
               ...newupdateddata
             })
 
-            console.log('Checking for material:', items.materialname, items.unit)
+            console.log('Checking for material:', items.name, items.unit)
             console.log('Storage data:', datas.storage)
 
             const materialExists = datas.storage.find(
               (storageItem) =>
                 storageItem.category === 'Material List' &&
-                storageItem.materialname?.trim().toLowerCase() ===
-                  items.materialname?.trim().toLowerCase() &&
+                storageItem.materialName?.trim().toLowerCase() ===
+                  items.name?.trim().toLowerCase() &&
                 storageItem.unit?.trim().toLowerCase() === items.unit?.trim().toLowerCase()
             )
             if (!materialExists) {
               await addStorage({
-                materialName: items.materialname,
+                materialName: items.name,
                 unit: items.unit,
                 alertCount: 0,
                 quantity: 0,
@@ -680,20 +682,22 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
           for (const items of newMaterialItems) {
             const { id, createddate, isDeleted, ...newupdateddata } = items
             console.log(supplerId, newupdateddata, items)
-            await addSupplierAndMaterial(supplerId, {
+            await addSupplierAndMaterial({
               ...newupdateddata,
-              updateddate: TimestampJs(),
-              isDeleted: false
+              SupplierId: supplerId,
+              createdDate: new Date().toISOString(),
+              modifiedDate: new Date().toISOString(),
+              isDeleted: 0
             })
             const materialExists = datas.storage.find(
               (storageItem) =>
-                storageItem.materialname === newupdateddata.materialname &&
+                storageItem.materialName === newupdateddata.name &&
                 storageItem.category === 'Material List' &&
                 storageItem.unit === newupdateddata.unit
             )
             if (!materialExists) {
               await addStorage({
-                materialName: newupdateddata.materialname,
+                materialName: newupdateddata.name,
                 unit: newupdateddata.unit,
                 alertCount: 0,
                 quantity: 0,
@@ -718,16 +722,16 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
 
         for (const oldItem of olddata.supplierandmaterials) {
           const newItem = material.find(
-            (mItem) => mItem.materialname === oldItem.materialname && mItem.unit === oldItem.unit
+            (mItem) => mItem.name === oldItem.name && mItem.unit === oldItem.unit
           )
           const allMaterials = await getSupplierAndMaterials()
           const isMaterialInSupplierList = allMaterials.find(
-            (mItem) => mItem.materialname === oldItem.materialname && mItem.unit === oldItem.unit
+            (mItem) => mItem.name === oldItem.name && mItem.unit === oldItem.unit
           )
           if (!newItem && !isMaterialInSupplierList) {
             const oldMaterialExists = datas.storage.find(
               (storageItem) =>
-                storageItem.materialname === oldItem.materialname &&
+                storageItem.name === oldItem.name &&
                 storageItem.category === 'Material List' &&
                 storageItem.unit === oldItem.unit
             )
@@ -870,8 +874,8 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
     },
     {
       title: 'Material',
-      dataIndex: 'materialname',
-      key: 'materialname',
+      dataIndex: 'name',
+      key: 'name',
       render: (text) => <span>{text}</span>,
       editable: true
     },
@@ -1063,7 +1067,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       const row = await expantableform.validateFields()
       const newData = [...data]
       const index = newData.findIndex((item) => key.id === item.key)
-      if (index != null && row.materialname === key.materialname && row.unit === key.unit) {
+      if (index != null && row.name === key.name && row.unit === key.unit) {
         message.open({ type: 'info', content: 'No changes made' })
         setEditingKeys([])
         setEditExpandTableKey([])
@@ -1155,18 +1159,34 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
   // delete
   const deleteProduct = async (data) => {
     // await deleteproduct(data.id);
+    try {
     const { id, ...newData } = data
-    let paydetails = await getSupplierPaymentsById(data.id)
+    let paydetails = await getSupplierPaymentsById(id)
     if (paydetails.length > 0) {
+      await Promise.all(
       paydetails.map(async (paydata) => {
         await updateSupplierPayment(id, paydata.id, { isDeleted: 1 })
       })
+    );
+    }
+    let materialdetails = await getMaterialsBySupplierId(id)
+    console.log(materialdetails,paydetails)
+    if (materialdetails.length > 0){
+      await Promise.all(
+      materialdetails.map(async (materialdata) =>{
+        await updateSupplierAndMaterial(materialdata.id, { isDeleted: 1 })
+      })
+      );
     }
     await updateSupplier(id, {
       isDeleted: 1
     })
     message.open({ type: 'success', content: 'Deleted Successfully' })
-    supplierUpdateMt()
+    await supplierUpdateMt()
+  }catch (error) {
+      console.error("Error deleting product:", error);
+      message.open({ type: 'error', content: 'Failed to delete product' });
+    }
   }
 
   // export
@@ -1237,7 +1257,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       const currentMaterials = form.getFieldValue('material') || []
       if (currentMaterials.length === 0) {
         form.setFieldsValue({
-          material: [{ materialname: '', unit: '' }]
+          material: [{ name: '', unit: '' }]
         })
       }
     }
@@ -1246,7 +1266,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       const currentMaterials = materialForm.getFieldValue('material') || []
       if (currentMaterials.length === 0) {
         materialForm.setFieldsValue({
-          material: [{ materialname: '', unit: '' }]
+          material: [{ name: '', unit: '' }]
         })
       }
     }
@@ -1560,7 +1580,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
           <Form
             onFinish={supplierPay}
             form={payForm}
-            initialValues={{ date: dayjs(), paymentmode: 'Cash' }}
+            initialValues={{ date: dayjs(), paymentMode: 'Cash' }}
             layout="vertical"
           >
             <Form.Item
@@ -1591,7 +1611,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
 
             <Form.Item
               className="mb-0"
-              name="paymentmode"
+              name="paymentMode"
               label="Payment Mode"
               rules={[{ required: true, message: false }]}
             >

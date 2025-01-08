@@ -111,8 +111,13 @@ export const getDeliveryDetailById = async (id) => {
       },
     });
 
-    console.log('Delivery details fetched successfully by delivery ID:', response.data);
-    return response.data;
+    if (response.data) {
+      console.log('Delivery details fetched successfully by delivery ID:', response.data);
+      return response.data;
+    } else {
+      console.warn('No delivery details found for the given delivery ID:', id);
+      return {};
+    }
   } catch (error) {
     if (error.response && error.response.status === 404) {
       console.warn(`No delivery details found for delivery ID: ${id}`);
@@ -187,7 +192,7 @@ export const updateDeliveryPayment = async (deliveryid , id , paymentData) => {
       },
     });
 
-    console.log('Payment updated fetched successfully:', response.data);
+    console.log('Payment updated fetched successfully', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching payments for delivery:', error.message);

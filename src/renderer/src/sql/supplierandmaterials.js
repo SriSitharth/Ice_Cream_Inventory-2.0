@@ -47,8 +47,13 @@ export const getMaterialsBySupplierId = async (id) => {
     console.log('Materials fetched by supplier id successfully:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error fetching materials by supplier id:', error.message);
-    throw error;
+    if (error.response?.status === 404) {
+      console.log('No materials found for this supplier id.');
+      return [];
+    } else {
+      console.error('Error fetching materials for supplier id:', error.message);
+      throw error;
+    }
   }
 };
 

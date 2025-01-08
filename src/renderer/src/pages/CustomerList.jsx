@@ -178,14 +178,14 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
   const customerPay = async (value) => {
     setIsCustomerPayLoading(true)
-    let { date, description, ...Datas } = value
+    let { date, decription, ...Datas } = value
     let formatedDate = dayjs(date).format('YYYY-MM-DD')
     const payData = {
       ...Datas,
       collectionType: 'customer',
       date: formatedDate,
       customerId: customerPayId,
-      decription: description || '',
+      decription: decription || '',
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString(),
       isDeleted: 0
@@ -231,18 +231,21 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
       // setPayDetailsData(sortedData)
       console.log('Comb', sortedData)
-      // const addFreezerboxNumber = await Promise.all(
-      //   combinedData.map(async data => {
-      //     const { freezerbox, status } = await getFreezerboxById(data.boxid);
-      //     return { ...data, boxNumber: freezerbox ? freezerbox.boxNumber : ''};
-      //   })
-      // );
+      const addFreezerboxNumber = await Promise.all(
+        combinedData.map(async data => {
+          let freezerbox = null;
+          if(data.boxId){
+          freezerbox = await getFreezerboxById(data.boxId);
+          }
+          return { ...data, boxNumber: freezerbox ? freezerbox.boxNumber : ''};
+        })
+      );
 
-      setPayDetailsData(sortedData)
+      setPayDetailsData(addFreezerboxNumber)
 
       const totalPurchase = combinedData.reduce((total, item) => {
         if (item.type === 'order') {
-          return total + (Number(item.billamount) || 0)
+          return total + (Number(item.billAmount) || 0)
         }
         return total
       }, 0)
@@ -250,7 +253,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
       const totalReturn = combinedData.reduce((total, item) => {
         if (item.type === 'return') {
-          return total + (Number(item.billamount) || 0)
+          return total + (Number(item.billAmount) || 0)
         }
         return total
       }, 0)
@@ -258,10 +261,10 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
 
       const totalPayment = combinedData.reduce((total, item) => {
         if (item.type === 'order') {
-          if (item.paymentstatus === 'Paid') {
-            return total + (Number(item.billamount) || 0)
-          } else if (item.paymentstatus === 'Partial') {
-            return total + (Number(item.partialamount) || 0)
+          if (item.paymentStatus === 'Paid') {
+            return total + (Number(item.billAmount) || 0)
+          } else if (item.paymentStatus === 'Partial') {
+            return total + (Number(item.partialAmount) || 0)
           }
         } else if (item.type === 'Payment') {
           return total + (Number(item.amount) || 0)
@@ -271,13 +274,13 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       setTotalPaymentAmount(totalPayment)
 
       const totalBalance = combinedData.reduce((total, item) => {
-        const billAmount = Number(item.billamount) || 0
-        const partialAmount = Number(item.partialamount) || 0
+        const billAmount = Number(item.billAmount) || 0
+        const partialAmount = Number(item.partialAmount) || 0
         const paymentAmount = Number(item.amount) || 0
         if (item.type === 'order') {
-          if (item.paymentstatus === 'Unpaid') {
+          if (item.paymentStatus === 'Unpaid') {
             return total + billAmount
-          } else if (item.paymentstatus === 'Partial') {
+          } else if (item.paymentStatus === 'Partial') {
             return total + (billAmount - partialAmount)
           }
         } else if (item.type === 'return') {
@@ -325,7 +328,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
             return formatToRupee(record.amount, true)
           }
         } else {
-          return formatToRupee(record.billamount, true)
+          return formatToRupee(record.billAmount, true)
         }
         return null
       },
@@ -361,19 +364,20 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
       dataIndex: 'type',
       key: 'type',
       render: (_, record) => {
+        console.log(record)
         return record.type === undefined ? (
           <Tag color="green">Pay</Tag>
         ) : record.type === 'order' ? (
           <span className="flex">
             <Tag color="green">Order</Tag>{' '}
-            <Tag className={`${record.boxNumber === '' ? 'hidden' : 'inline-block'}`}>
+            <Tag className={`${record.boxId === '' ? 'hidden' : 'inline-block'}`}>
               {record.boxNumber}
             </Tag>{' '}
           </span>
         ) : record.type === 'return' ? (
           <span className="flex">
             <Tag color="red">Return</Tag>
-            <Tag className={`${record.boxNumber === '' ? 'hidden' : 'inline-block'}`}>
+            <Tag className={`${record.boxId === '' ? 'hidden' : 'inline-block'}`}>
               {record.boxNumber}
             </Tag>
           </span>
@@ -385,10 +389,10 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     },
     {
       title: 'Payment Status',
-      dataIndex: 'paymentstatus',
-      key: 'paymentstatus',
+      dataIndex: 'paymentStatus',
+      key: 'paymentStatus',
       render: (_, record) => {
-        return record.paymentstatus === undefined ? (
+        return record.paymentStatus === undefined ? (
           <>
             {record.type === 'Balance' ? (
               <Tag color="orange">Book</Tag>
@@ -396,18 +400,18 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
               <Tag color="cyan">{record.paymentMode}</Tag>
             )}
           </>
-        ) : record.paymentstatus === 'Paid' ? (
+        ) : record.paymentStatus === 'Paid' ? (
           <span className="flex items-center">
             <Tag color="green">Paid</Tag>
             {record.paymentMode && <Tag color="cyan">{record.paymentMode}</Tag>}
           </span>
-        ) : record.paymentstatus === 'Unpaid' ? (
+        ) : record.paymentStatus === 'Unpaid' ? (
           <Tag color="red">UnPaid</Tag>
-        ) : record.paymentstatus === 'Partial' ? (
+        ) : record.paymentStatus === 'Partial' ? (
           <span className="flex  items-center">
             <Tag color="yellow">Partial</Tag>{' '}
             <Tag color="blue" className="text-[0.7rem]">
-              {formatToRupee(record.partialamount, true)}
+              {formatToRupee(record.partialAmount, true)}
             </Tag>
             {record.paymentMode && <Tag color="cyan">{record.paymentMode}</Tag>}
           </span>
@@ -419,10 +423,10 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
     },
     {
       title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
+      dataIndex: 'decription',
+      key: 'decription',
       render: (_, record) => {
-        return record.description ? record.description : ''
+        return record.decription ? record.decription : ''
       }
     }
   ]
@@ -1616,7 +1620,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
                 placeholder="Enter the Amount"
               />
             </Form.Item>
-            <Form.Item className="mb-1" name="description" label="Description">
+            <Form.Item className="mb-1" name="decription" label="Description">
               <TextArea rows={4} placeholder="Write the Description" />
             </Form.Item>
             <Form.Item
@@ -1678,13 +1682,13 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
           dataSource={payDetailsData.filter((item) => {
             const date = item.date ? item.date.toString() : ''
             const total = item.total ? item.total.toString() : ''
-            const billAmount = item.billamount ? item.billamount.toString() : item.amount.toString()
+            const billAmount = item.billAmount ? item.billAmount.toString() : item.amount.toString()
             const paymentMode = item.paymentMode ? item.paymentMode.toString() : ''
             const boxNumber = item.boxNumber ? item.boxNumber.toString() : ''
-            const paymentStatus = item.paymentstatus ? item.paymentstatus.toString() : ''
-            const partialAmount = item.partialamount ? item.partialamount.toString() : ''
+            const paymentStatus = item.paymentStatus ? item.paymentStatus.toString() : ''
+            const partialAmount = item.partialAmount ? item.partialAmount.toString() : ''
             const type = item.type ? item.type.toString() : ''
-            const description = item.description ? item.description.toString() : ''
+            const decription = item.decription ? item.decription.toString() : ''
             const searchValue = searchTextModal.toLowerCase()
             return (
               date.toLowerCase().includes(searchValue) ||
@@ -1694,7 +1698,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
               boxNumber.toLowerCase().includes(searchValue) ||
               paymentStatus.toLowerCase().includes(searchValue) ||
               partialAmount.toLowerCase().includes(searchValue) ||
-              description.toLowerCase().includes(searchValue) ||
+              decription.toLowerCase().includes(searchValue) ||
               type.toLowerCase().includes(searchValue)
             )
           })}

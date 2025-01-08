@@ -110,23 +110,33 @@ export const getSupplierPayments = async () => {
 export const getSupplierPaymentsById = async (supplierId) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/Payment/GetSupplierPaymentsById`, {
+      params: { id: supplierId },
       headers: {
         'Content-Type': 'application/json',
       },
-      params: { id: supplierId },
     });
 
-    console.log('Payments for supplier fetched successfully:', response.data);
-    return response.data;
+    if (response.data) {
+      console.log('Payments for supplier fetched successfully:', response.data);
+      return response.data;
+    } else {
+      console.warn('No supplier payments found for the given ID:', id);
+      return {};
+    }
   } catch (error) {
-    console.error('Error fetching payments for supplier:', error.message);
-    throw error;
+    if (error.response?.status === 404) {
+      console.log('No payments found for this supplier.');
+      return [];
+    } else {
+      console.error('Error fetching payments for supplier:', error.message);
+      throw error;
+    }
   }
 };
 
 export const updateSupplierPayment = async (supplierid , id , paymentData) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/Payment/UpdateSupplierPayment`, paymentData, {
+    const response = await axios.put(`${API_BASE_URL}/Payment/UpdateSupplierPayment`, paymentData, {
       params: { supplierid , id },
       headers: {
         'Content-Type': 'application/json',

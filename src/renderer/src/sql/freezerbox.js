@@ -61,8 +61,13 @@ export const getFreezerboxById = async (id) => {
       },
     });
 
-    console.log('Freezerbox by Id fetched successfully:', response.data);
-    return response.data;
+    if (response.data) {
+      console.log('Freezerbox by Id fetched successfully:', response.data);
+      return response.data;
+    } else {
+      console.warn('No freezerbox found for the given ID:', id);
+      return {};
+    }
   } catch (error) {
     if (error.response && error.response.status === 404) {
       console.warn(`No freezerbox found for ID: ${deliveryId}`);
@@ -77,14 +82,19 @@ export const getFreezerboxById = async (id) => {
 export const getFreezerboxByCustomerId = async (id) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/Freezerbox/GetFreezerboxByCustomerId`, {
-      params: { id },
+      params: { customerId: id },
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    console.log('Freezerbox by customer Id fetched successfully:', response.data);
-    return response.data;
+    if (response.data) {
+      console.log('Freezerbox by customer Id fetched successfully:', response.data);
+      return response.data;
+    } else {
+      console.warn('No freezerbox found for the given customer ID:', id);
+      return {};
+    }
   } catch (error) {
     console.error('Error fetching freezerbox by customer Id:', error.message);
     throw error;

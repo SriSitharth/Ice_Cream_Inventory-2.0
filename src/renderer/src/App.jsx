@@ -123,7 +123,7 @@ const App = () => {
       setDatas((pre) => ({ ...pre, suppliers: supplier }))
     }
     fetchData()
-  }, [datas.customerupdatestaus])
+  }, [datas.supplierupdatestaus])
 
   // get table datas 'customer list'
   useEffect(() => {

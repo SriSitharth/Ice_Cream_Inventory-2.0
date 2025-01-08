@@ -1011,17 +1011,15 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       )
 
       if (lastOrderDatas.length > 0) {
-        let latestOrderData = await latestFirstSort(lastOrderDatas)
-        latestOrderData = latestOrderData.length > 0 ? latestOrderData[0] : []
+        let latestOrderData = lastOrderDatas.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
 
-        console.log(latestOrderData.id)
         let items = await getDeliveryDetailById(latestOrderData.id)
 
         if (items.length > 0) {
-          let customerDetails = lastOrderDatas[0]
+          let customerDetails = latestOrderData
           let products = await Promise.all(
             items.map(async (item) => {
-              let product = await getProductById(item.id)
+              let product = datas.product.find((product) => product.id === item.productId);
               if (product) {
                 return {
                   ...item,
@@ -1251,8 +1249,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             type: returnDelivery.state === true ? 'return' : 'order',
             createdDate: new Date().toISOString(),
             modifiedDate: new Date().toISOString(),
-            boxId:
-              form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
+            boxId:  String(form2.getFieldsValue().boxNumber) || ''
           }
         : {
             customerId: customername,
@@ -1269,8 +1266,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             type: returnDelivery.state === true ? 'return' : 'order',
             createdDate: new Date().toISOString(),
             modifiedDate: new Date().toISOString(),
-            boxId:
-              form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
+            boxId: String(form2.getFieldsValue().boxNumber) || ''
+              // form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
           }
 
     // console.log(newDelivery);
@@ -1279,7 +1276,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       // const deliveryDocRef = await addDoc(deliveryCollectionRef, newDelivery)
       // const itemsCollectionRef = collection(deliveryDocRef, 'items')
       setOption((prev) => ({ ...prev, tempproduct: [] }))
-      // console.log(productItems)
+      console.log(newDelivery)
       let deliveryRef = await addDelivery(newDelivery)
 
       for (const item of productItems) {
@@ -2188,7 +2185,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     let itemsObject = lastOrderData.products
       .sort((a, b) => a.sno - b.sno)
       .map((data, i) => ({
-        createdDate: TimestampJs(),
+        createdDate: new Date().toISOString(),
+        modifiedDate:  new Date().toISOString(),
         customername: lastOrderData.customerdetails.customerId,
         date: form2.getFieldValue().date ? form2.getFieldValue().date.format('DD/MM/YYYY') : '',
         // flavour: data.flavour,
@@ -2198,7 +2196,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         numberOfPacks: data.numberOfPacks,
         price:
           data.numberOfPacks * data.price - (data.numberOfPacks * data.price * data.margin) / 100,
-        productname: data.productname,
+        productname: data.name,
         productprice: data.price,
         // quantity: data.quantity + ' ' + data.unit,
         returntype: data.returntype
@@ -2221,7 +2219,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     setOption((pre) => ({ ...pre, tempproduct: itemsObject }))
     setlastOrderBtnState(true)
     // setMarginValue({ amount: 0, discount: 0, percentage: 0, paymentstaus: 'Paid' })
-    // console.log(itemsObject);Fuse
+    // console.log(itemsObject);
   }
 
   // quick sale pay
