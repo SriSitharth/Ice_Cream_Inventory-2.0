@@ -526,11 +526,13 @@ export default function Home({ datas }) {
         datas.delivery
           .filter((product) => !product.isDeleted && isWithinRange(product.date))
           .map(async (item) => {
-            const result = await getCustomerById(item.customerId)
-            const customerName = result.name || item.customername
-            const mobileNumber = result.mobileNumber || item.mobileNumber
-            const gstNumber = result.gstin || item.gstin
-            const address = result.address || item.address
+
+            let result = item.customerId ? await getCustomerById(item.customerId) : null;
+
+            const customerName = result?.name || item.name
+            const mobileNumber = result?.mobileNumber || item.mobileNumber
+            const gstNumber = result?.gstin || item.gstin
+            const address = result?.address || item.address
             return {
               ...item,
               key: item.id,
@@ -681,7 +683,7 @@ export default function Home({ datas }) {
             customername: item.name,
             // total: item.amount,
             billAmount: item.amount,
-            type: item.description
+            type: item.decription
           }))
       )
       setFilteredSpending(newFilteredSpending)
@@ -707,7 +709,7 @@ export default function Home({ datas }) {
           )
           return {
             ...item,
-            productname: product ? product.productname : ''
+            productname: product ? product.name : ''
           }
         })
       }
@@ -717,7 +719,7 @@ export default function Home({ datas }) {
         itemsWithProductNames = await Promise.all(
           materialitem.map(async (item, i) => {
             let material = await getMaterialById(
-              item.materialid
+              item.materialId
             )
             return {
               sno: materialitem[i].sno, //add on sno(10/10/24, 5.52 pm)
@@ -736,7 +738,7 @@ export default function Home({ datas }) {
           )
           return {
             ...item,
-            productname: product ? product.productname : ''
+            productname: product ? product.name : ''
           }
         })
       }
@@ -756,7 +758,7 @@ export default function Home({ datas }) {
       if (material.paymentStatus === 'Paid') {
         return total + material.billAmount
       } else if (material.paymentStatus === 'Partial') {
-        return total + material.partialamount
+        return total + material.partialAmount
       }
       return total
     }, 0)
@@ -778,19 +780,17 @@ export default function Home({ datas }) {
 
   const totalProfit = totalSales - totalSpend - totalReturn - totalGeneralSpending
 
-  const totalBooking = deliveryData.filter((product) => {
-    return (
+  const totalBooking = deliveryData.filter((product) => 
       product.type === 'booking' &&
-      dayjs(product.deliverydate, 'DD/MM/YYYY').isSameOrAfter(dayjs(), 'day')
-    )
-  }).length
+      dayjs(product?.deliveryDate).isSameOrAfter(dayjs(), 'day')
+    ).length
 
   const totalPaid = filteredDelivery.reduce((total, product) => {
     if (product.paymentStatus === 'Paid' && product.type !== 'return') {
       return total + (Number(product.billAmount) || 0)
     }
     // else if (product.paymentStatus === 'Partial' && product.type === 'order') {
-    //   return total + (Number(product.partialamount) || 0)
+    //   return total + (Number(product.partialAmount) || 0)
     // }
     return total
   }, 0)
@@ -799,7 +799,7 @@ export default function Home({ datas }) {
     if (product.paymentStatus === 'Unpaid') {
       return total + (Number(product.billAmount) || 0)
     } else if (product.paymentStatus === 'Partial') {
-      return total + ((Number(product.billAmount) || 0) - (Number(product.partialamount) || 0))
+      return total + ((Number(product.billAmount) || 0) - (Number(product.partialAmount) || 0))
     }
     return total
   }, 0)
@@ -853,11 +853,11 @@ export default function Home({ datas }) {
           .filter((product) => {
             return (
               product.type === 'booking' &&
-              dayjs(product.deliverydate, 'DD/MM/YYYY').isSameOrAfter(dayjs(), 'day')
+              dayjs(product.deliveryDate, 'YYYY-MM-DD').isSameOrAfter(dayjs(), 'day')
             )
           })
           .map((product) => {
-            const dateTimeString = `${product.deliverydate} ${product.time}`
+            const dateTimeString = `${product.deliveryDate} ${product.deliveryTime}`
             //const productDateTime = dayjs(dateTimeString, 'DD/MM/YYYY HH:mm')
             return {
               ...product,
@@ -896,10 +896,10 @@ export default function Home({ datas }) {
       (product) =>
         product.type !== 'return' &&
         (product.paymentStatus === 'Paid' || product.paymentStatus === 'Partial') &&
-        product.paymentmode === paymentMode
+        product.paymentMode === paymentMode
     )
     const filterPayment = filteredPayments
-      .filter((pay) => pay.paymentmode === paymentMode && pay.collectiontype !== 'firstpartial')
+      .filter((pay) => pay.paymentMode === paymentMode && pay.collectiontype !== 'firstpartial')
       .map((pay) => ({
         ...pay,
         customername: pay.name,
@@ -948,7 +948,7 @@ export default function Home({ datas }) {
       //       matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
       //     numberOfPacks: matchingData.numberOfPacks,
       //     producttotalamount: matchingData.numberOfPacks * pr.price,
-      //     returntype: matchingData.returntype
+      //     returnType: matchingData.returnType
       //   }
       // })
       let prItems = prData.flatMap((pr, i) => {
@@ -967,7 +967,7 @@ export default function Home({ datas }) {
             matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
           numberOfPacks: matchingData.numberOfPacks,
           producttotalamount: matchingData.numberOfPacks * pr.price,
-          returntype: matchingData.returntype
+          returnType: matchingData.returnType
         }))
       })
       prItems.sort((a, b) => a.sno - b.sno)
@@ -1007,7 +1007,7 @@ export default function Home({ datas }) {
   //         matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
   //         numberOfPacks: matchingData.numberOfPacks,
   //         producttotalamount: matchingData.numberOfPacks * pr.price,
-  //         returntype: matchingData.returntype
+  //         returnType: matchingData.returnType
   //       }
   //     });
   //     console.log(record);
@@ -1056,7 +1056,7 @@ export default function Home({ datas }) {
             matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
           numberOfPacks: matchingData.numberOfPacks,
           producttotalamount: matchingData.numberOfPacks * pr.price,
-          returntype: matchingData.returntype
+          returnType: matchingData.returnType
         }))
       })
 
@@ -1096,7 +1096,7 @@ export default function Home({ datas }) {
       total: quotationft.mrpamount,
       billAmount: quotationft.totalamount,
       address: '',
-      partialamount: 0
+      partialAmount: 0
     }
     // product items
     let items = quotationft.tempproduct.map((data, i) => ({
@@ -1153,7 +1153,7 @@ export default function Home({ datas }) {
         total: quotationft.mrpamount,
         billAmount: quotationft.totalamount,
         address: '',
-        partialamount: 0
+        partialAmount: 0
       }
       // product items
       let items = quotationft.tempproduct.map((data, i) => ({
@@ -1383,7 +1383,7 @@ export default function Home({ datas }) {
       dataIndex: 'paymentStatus',
       key: 'paymentStatus',
       render: (text, record) => {
-        const { partialamount, bookingstatus } = record
+        const { partialAmount, bookingStatus } = record
         if (text === 'Paid') {
           return (
             <>
@@ -1393,12 +1393,12 @@ export default function Home({ datas }) {
               >
                 {record.type}
               </Tag>
-              {bookingstatus && (
+              {bookingStatus && (
                 <Tag
-                  className={`${record.bookingstatus === undefined || record.bookingstatus === '' ? 'hidden' : 'inline-block'}`}
+                  className={`${record.bookingStatus === undefined || record.bookingStatus === '' ? 'hidden' : 'inline-block'}`}
                   color="geekblue"
                 >
-                  {bookingstatus}
+                  {bookingStatus}
                 </Tag>
               )}
               <Tag
@@ -1408,10 +1408,10 @@ export default function Home({ datas }) {
                 {text}
               </Tag>
               <Tag
-                className={`${record.paymentmode === undefined || record.paymentmode === '' || record.paymentmode === null ? 'hidden' : 'inline-block'}`}
+                className={`${record.paymentMode === undefined || record.paymentMode === '' || record.paymentMode === null ? 'hidden' : 'inline-block'}`}
                 color="cyan"
               >
-                {record.paymentmode}
+                {record.paymentMode}
               </Tag>
             </>
           )
@@ -1424,18 +1424,18 @@ export default function Home({ datas }) {
               >
                 {record.type}
               </Tag>
-              {bookingstatus && (
+              {bookingStatus && (
                 <Tag
-                  className={`${record.bookingstatus === undefined || record.bookingstatus === '' ? 'hidden' : 'inline-block'}`}
+                  className={`${record.bookingStatus === undefined || record.bookingStatus === '' ? 'hidden' : 'inline-block'}`}
                   color="geekblue"
                 >
-                  {bookingstatus}
+                  {bookingStatus}
                 </Tag>
               )}
               <Tag color="yellow">
-                {text} - {partialamount}
+                {text} - {partialAmount}
               </Tag>
-              <Tag color="cyan">{record.paymentmode}</Tag>
+              <Tag color="cyan">{record.paymentMode}</Tag>
             </>
           )
         } else if (text === 'Return') {
@@ -1459,19 +1459,19 @@ export default function Home({ datas }) {
               >
                 {record.type}
               </Tag>
-              {bookingstatus && (
+              {bookingStatus && (
                 <Tag
-                  className={`${record.bookingstatus === undefined || record.bookingstatus === '' ? 'hidden' : 'inline-block'}`}
+                  className={`${record.bookingStatus === undefined || record.bookingStatus === '' ? 'hidden' : 'inline-block'}`}
                   color="geekblue"
                 >
-                  {bookingstatus}
+                  {bookingStatus}
                 </Tag>
               )}
               <Tag className={`${text === undefined || text === '' ? 'hidden' : ''}`} color="red">
                 {text}
               </Tag>
-              <Tag className={record.paymentmode ? '' : 'hidden'} color="cyan">
-                {record.paymentmode}
+              <Tag className={record.paymentMode ? '' : 'hidden'} color="cyan">
+                {record.paymentMode}
               </Tag>
             </>
           )
@@ -1972,22 +1972,22 @@ export default function Home({ datas }) {
 
   const calculateCombinedAmount = (paymentMode) => {
     const paymentAmount = filteredPayments
-      .filter((payment) => payment.paymentmode === paymentMode)
+      .filter((payment) => payment.paymentMode === paymentMode)
       .reduce((total, payment) => total + (Number(payment.amount) || 0), 0)
     const deliveryAmount = filteredDelivery.reduce((total, product) => {
       if (
         product.paymentStatus === 'Paid' &&
         product.type !== 'return' &&
-        product.paymentmode === paymentMode
+        product.paymentMode === paymentMode
       ) {
         return total + (Number(product.billAmount) || 0)
       }
       // else if (
       //   product.paymentStatus === 'Partial' &&
       //   product.type === 'order' &&
-      //   product.paymentmode === paymentMode
+      //   product.paymentMode === paymentMode
       // ) {
-      //   return total + (Number(product.partialamount) || 0)
+      //   return total + (Number(product.partialAmount) || 0)
       // }
       return total
     }, 0)
@@ -2251,8 +2251,8 @@ export default function Home({ datas }) {
                         >
                           {item.productname}{' '}
                           {invoiceDatas.customerdetails.type === 'return' &&
-                          (item.returntype !== undefined || item.returntype !== null)
-                            ? `(${item.returntype})`
+                          (item.returnType !== undefined || item.returnType !== null)
+                            ? `(${item.returnType})`
                             : ''}
                         </td>
                         {/* <td
@@ -2320,19 +2320,19 @@ export default function Home({ datas }) {
                 }}
               >
                 <p
-                  className={`${hasPdf === true ? pdfBillStyle.para : printBillStyle.para} ${invoiceDatas.customerdetails.partialamount !== 0 ? 'block text-end' : 'hidden'}`}
+                  className={`${hasPdf === true ? pdfBillStyle.para : printBillStyle.para} ${invoiceDatas.customerdetails.partialAmount !== 0 ? 'block text-end' : 'hidden'}`}
                 >
                   Balance:{' '}
                   <span className=" font-bold">
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
                       ? formatToRupee(
                           invoiceDatas.customerdetails.billAmount -
-                            invoiceDatas.customerdetails.partialamount
+                            invoiceDatas.customerdetails.partialAmount
                         )
                       : null}
-                    {/* {(Object.keys(invoiceDatas.customerdetails).length !== 0) && (invoiceDatas.customerdetails.partialamount !== 0 )
-                  ? formatToRupee( invoiceDatas.customerdetails.billAmount - invoiceDatas.customerdetails.partialamount)
-                   : (Object.keys(invoiceDatas.customerdetails).length !== 0) && (invoiceDatas.customerdetails.partialamount === 0 && invoiceDatas.customerdetails.paymentStatus === 'Unpaid') ? formatToRupee(invoiceDatas.customerdetails.billAmount) :0} */}
+                    {/* {(Object.keys(invoiceDatas.customerdetails).length !== 0) && (invoiceDatas.customerdetails.partialAmount !== 0 )
+                  ? formatToRupee( invoiceDatas.customerdetails.billAmount - invoiceDatas.customerdetails.partialAmount)
+                   : (Object.keys(invoiceDatas.customerdetails).length !== 0) && (invoiceDatas.customerdetails.partialAmount === 0 && invoiceDatas.customerdetails.paymentStatus === 'Unpaid') ? formatToRupee(invoiceDatas.customerdetails.billAmount) :0} */}
                   </span>
                 </p>
               </span>
@@ -2370,14 +2370,14 @@ export default function Home({ datas }) {
                 </p>
                 <p
                   className={`${invoiceDatas.customerdetails.type === 'return' ? 'hidden' : 'block'}`}
-                  // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} ${invoiceDatas.customerdetails.partialamount !== 0 || invoiceDatas.customerdetails.paymentStatus === 'Paid' ? 'block text-end' : 'hidden'}`}
+                  // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} ${invoiceDatas.customerdetails.partialAmount !== 0 || invoiceDatas.customerdetails.paymentStatus === 'Paid' ? 'block text-end' : 'hidden'}`}
                 >
                   Paid Amount:{' '}
                   <span className=" font-bold">
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
                       ? invoiceDatas.customerdetails.paymentStatus === 'Paid'
                         ? formatToRupee(invoiceDatas.customerdetails.billAmount)
-                        : formatToRupee(invoiceDatas.customerdetails.partialamount)
+                        : formatToRupee(invoiceDatas.customerdetails.partialAmount)
                       : null}
                   </span>
                 </p>
@@ -2712,8 +2712,8 @@ export default function Home({ datas }) {
                           >
                             {item.productname}{' '}
                             {invoiceDatas.customerdetails.type === 'return' &&
-                            (item.returntype !== undefined || item.returntype !== null)
-                              ? `(${item.returntype})`
+                            (item.returnType !== undefined || item.returnType !== null)
+                              ? `(${item.returnType})`
                               : ''}
                           </td>
                           <td

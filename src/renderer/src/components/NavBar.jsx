@@ -66,11 +66,11 @@ export default function NavBar({
     total: 0,
     date: dayjs().format('DD/MM/YYYY'),
     margin: 0,
-    billamount: 0,
+    billAmount: 0,
     type: 'quick',
     marginstate: false,
-    paymentmode: '',
-    paymentstatus: 'Paid',
+    paymentMode: '',
+    paymentStatus: 'Paid',
     customeroption: [],
     editingKeys: [],
     temtableedit: {
@@ -199,10 +199,10 @@ export default function NavBar({
     const productData = datas.product
       .filter(
         (item, i, s) =>
-          item.isDeleted === false 
+          item.isDeleted === 0 
         // &&  s.findIndex((item2) => item2.productname === item.productname) === i
       )
-      .map((data) => ({ lable: data.productname, value: data.productname }))
+      .map((data) => ({ lable: data.name, value: data.name }))
 
     const customersData = datas.customers
       .filter((item) => item.isDeleted === false)
@@ -215,8 +215,8 @@ export default function NavBar({
     // const flavourData = await Array.from( new Set( datas.product
     //       .filter((item) => item.isDeleted === false && item.productname === value)
     //       .map((data) => data.flavour))).map((flavour) => ({ label: flavour, value: flavour }));
-    let productid = datas.product.find(data => (data.productname === value) && (data.isDeleted === false)).id;
-    let numberofpackCount = datas.storage.find(data => (data.productid === productid) && data.isDeleted === false ).numberOfPacks;
+    let productid = datas.product.find(data => (data.name === value) && (data.isDeleted === 0)).id;
+    let numberofpackCount = datas.storage.find(data => (data.productId === String(productid)) && data.isDeleted === 0 ).numberOfPacks;
     setProductCount(numberofpackCount);
     setIsQuickSale((pre) => ({
       ...pre,
@@ -261,7 +261,7 @@ export default function NavBar({
     }
 
     setIsQuickSale((pre) => ({ ...pre, count: isQuickSale.count + 1 }))
-    const formattedDate = values.date ? values.date.format('DD/MM/YYYY') : ''
+    const formattedDate = values.date ? values.date.format('YYYY-MM-DD') : ''
     const inputDatas = {
       ...values,
       date: formattedDate,
@@ -274,8 +274,8 @@ export default function NavBar({
 
     const temdata = datas.product.filter(
         (pr) =>
-          pr.productname === inputDatas.productname &&
-          pr.isDeleted === false 
+          pr.name === inputDatas.productname &&
+          pr.isDeleted === 0 
           // && pr.flavour === inputDatas.flavour &&
           // pr.quantity === inputDatas.quantity &&
           // pr.unit === inputDatas.unit
@@ -287,6 +287,7 @@ export default function NavBar({
         mrp: values.numberOfPacks * data.price,
         margin: 0,
         productprice: data.price,
+        productname: data.name,
         price: values.numberOfPacks * data.price,
         key: isQuickSale.count}));
 
@@ -300,7 +301,7 @@ export default function NavBar({
     setIsQuickSale((pre) => ({
       ...pre,
       total: totalMultiprTotalPr,
-      billamount:billamt,
+      billAmount:billamt,
       marginstate: true,
       temdata: [...pre.temdata, ...temdata]
     }))
@@ -319,10 +320,10 @@ export default function NavBar({
       ...pre,
       temdata: deletedData,
       total: totalMultiprTotalPr,
-      billamount:billamt,
+      billAmount:billamt,
       marginstate: true,
-      paymentstatus: pre.paymentstatus,
-      paymentmode:'Cash',
+      paymentStatus: pre.paymentStatus,
+      paymentMode:'Cash',
     }));
 
     quickSaleForm2.resetFields()
@@ -346,7 +347,7 @@ export default function NavBar({
       // temdata: [],
       // count: 0,
       // total: 0,
-      date: value === null ? '' : value.format('DD/MM/YYYY'),
+      date: value === null ? '' : value.format('YYYY-MM-DD'),
       type: isFutureDate ? 'booking' : 'quick'
     }))
   }
@@ -357,7 +358,7 @@ export default function NavBar({
     // }
     // setIsQuickSale((pre) => ({ ...pre, model: false }))
     
-    if(dayjs(quickSaleForm.getFieldsValue().date).format('DD/MM/YYYY') === 'Invalid Date'){
+    if(dayjs(quickSaleForm.getFieldsValue().date).format('YYYY-MM-DD') === 'Invalid Date'){
       return message.open({type:'info',content:"Please choose the correct date"})
     }
     
@@ -367,13 +368,13 @@ export default function NavBar({
       (qickSaleForm3Value.customername === '' ||
         qickSaleForm3Value.customername === undefined ||
         qickSaleForm3Value.customername === null ||
-        (isQuickSale.paymentstatus === 'Partial' &&
-          qickSaleForm3Value.partialamount === undefined) ||
-        (isQuickSale.paymentstatus === 'Partial' && qickSaleForm3Value.partialamount === null) ||
-        (isQuickSale.paymentstatus === 'Partial' && qickSaleForm3Value.partialamount === '') ||
-        qickSaleForm3Value.mobilenumber === undefined ||
-        qickSaleForm3Value.mobilenumber === null ||
-        qickSaleForm3Value.mobilenumber === '' ||
+        (isQuickSale.paymentStatus === 'Partial' &&
+          qickSaleForm3Value.partialAmount === undefined) ||
+        (isQuickSale.paymentStatus === 'Partial' && qickSaleForm3Value.partialAmount === null) ||
+        (isQuickSale.paymentStatus === 'Partial' && qickSaleForm3Value.partialAmount === '') ||
+        qickSaleForm3Value.mobileNumber === undefined ||
+        qickSaleForm3Value.mobileNumber === null ||
+        qickSaleForm3Value.mobileNumber === '' ||
         qickSaleForm3Value.time === undefined ||
         qickSaleForm3Value.time === null ||
         qickSaleForm3Value.time === '')
@@ -383,17 +384,17 @@ export default function NavBar({
       return
     } else if (
       isQuickSale.type === 'quick' &&
-      isQuickSale.paymentstatus !== 'Paid' &&
+      isQuickSale.paymentStatus !== 'Paid' &&
       (qickSaleForm3Value.customername === '' ||
         qickSaleForm3Value.customername === undefined ||
         qickSaleForm3Value.customername === null ||
-        qickSaleForm3Value.mobilenumber === undefined ||
-        qickSaleForm3Value.mobilenumber === null ||
-        qickSaleForm3Value.mobilenumber === '' ||
-        (isQuickSale.paymentstatus === 'Partial' &&
-          qickSaleForm3Value.partialamount === undefined) ||
-        (isQuickSale.paymentstatus === 'Partial' && qickSaleForm3Value.partialamount === null) ||
-        (isQuickSale.paymentstatus === 'Partial' && qickSaleForm3Value.partialamount === ''))
+        qickSaleForm3Value.mobileNumber === undefined ||
+        qickSaleForm3Value.mobileNumber === null ||
+        qickSaleForm3Value.mobileNumber === '' ||
+        (isQuickSale.paymentStatus === 'Partial' &&
+          qickSaleForm3Value.partialAmount === undefined) ||
+        (isQuickSale.paymentStatus === 'Partial' && qickSaleForm3Value.partialAmount === null) ||
+        (isQuickSale.paymentStatus === 'Partial' && qickSaleForm3Value.partialAmount === ''))
     ) {
       message.open({ type: 'warning', content: 'Please fill the required fields' })
       quickSaleForm3.submit()
@@ -402,20 +403,24 @@ export default function NavBar({
       setIsSpinners(true)
       // setIsQuickSale(pre => ({...pre}))
       const productItems = isQuickSale.temdata.map((data, index) => ({
-        id: data.id,
+        productId: data.id,
         numberOfPacks: data.numberOfPacks,
         margin: data.margin,
-        productprice: data.productprice,
+        price: data.productprice,
         sno: index + 1,
+        date: dayjs().format('YYYY-MM-DD'),
+        createdDate: new Date().toISOString(),
+        modifiedDate: new Date().toISOString(),
+        isDeleted: 0
       }));
-      // console.log(productItems);
+      console.log(productItems);
       
       if (isQuickSale.type === 'quick') {
        
         productItems.map(async (data) => {
           const existingProduct = datas.storage.find(
             (storageItem) =>
-              storageItem.productid === data.id && storageItem.category === 'Product List'
+              storageItem.productId === String(data.id) && storageItem.category === 'Product List'
           )
           // console.log(existingProduct.id,{numberOfPacks: existingProduct.numberOfPacks - data.numberOfPacks,updateddate:TimestampJs()});
           await updateStorage(existingProduct.id, {
@@ -427,40 +432,42 @@ export default function NavBar({
       }
 
       const newDelivery = {
-        customername: qickSaleForm3Value.customername || 'Quick Sale',
-        mobilenumber: qickSaleForm3Value.mobilenumber || '',
-        billamount: isQuickSale.billamount,
-        time: qickSaleForm3Value.time ? qickSaleForm3Value.time.format('HH:mm') : '',
-        partialamount:
-          qickSaleForm3Value.partialamount === undefined ||
-          qickSaleForm3Value.partialamount === null
+        name: qickSaleForm3Value.customername || 'Quick Sale',
+        mobileNumber: qickSaleForm3Value.mobileNumber || '',
+        billAmount: isQuickSale.billAmount,
+        deliveryTime: qickSaleForm3Value.time ? qickSaleForm3Value.time.format('HH:mm:ss') : '',
+        partialAmount:
+          qickSaleForm3Value.partialAmount === undefined ||
+          qickSaleForm3Value.partialAmount === null
             ? 0
-            : qickSaleForm3Value.partialamount,
-        paymentstatus: qickSaleForm3Value.paymentstatus,
+            : qickSaleForm3Value.partialAmount,
+        paymentStatus: qickSaleForm3Value.paymentStatus,
         total: isQuickSale.total,
         type: isQuickSale.type,
-        bookingstatus: isQuickSale.type === "booking" ? "" : null,
-        isDeleted: false,
-        paymentmode: qickSaleForm3Value.paymentstatus === 'Unpaid' ? '' : isQuickSale.paymentmode,
-        createddate: TimestampJs(),
-        date: dayjs().format('DD/MM/YYYY'),
-        deliverydate: dayjs(quickSaleForm.getFieldsValue().date).format('DD/MM/YYYY'),
-        location: qickSaleForm3Value.location || ''
+        bookingStatus: isQuickSale.type === "booking" ? "Booking" : null,
+        isDeleted: 0,
+        paymentMode: qickSaleForm3Value.paymentStatus === 'Unpaid' ? '' : isQuickSale.paymentMode,
+        createdDate: new Date().toISOString(),
+        modifiedDate: new Date().toISOString(),
+        date: dayjs().format('YYYY-MM-DD'),
+        deliveryDate: dayjs(quickSaleForm.getFieldsValue().date).format('YYYY-MM-DD'),
+        address: qickSaleForm3Value.location || ''
       }
       
       const paydetailsHistory = {
-        amount:qickSaleForm3Value.partialamount === undefined ||
-        qickSaleForm3Value.partialamount === null
+        amount:qickSaleForm3Value.partialAmount === undefined ||
+        qickSaleForm3Value.partialAmount === null
           ? 0
-          : qickSaleForm3Value.partialamount,
-        createddate:TimestampJs(),
-        date:dayjs().format('DD/MM/YYYY'),
-        description:'',
-        paymentmode:qickSaleForm3Value.paymentstatus === 'Unpaid' ? '' : isQuickSale.paymentmode,
-        // collectiontype:'delivery',
-        collectiontype:'firstpartial',
+          : qickSaleForm3Value.partialAmount,
+        createdDate: new Date().toISOString(),
+        modifiedDate: new Date().toISOString(),
+        date:dayjs().format('YYYY-MM-DD'),
+        decription:'',
+        paymentMode:qickSaleForm3Value.paymentStatus === 'Unpaid' ? '' : isQuickSale.paymentMode,
+        // collectionType:'delivery',
+        collectionType:'firstpartial',
         type:'firstpartial',
-        isDeleted:false
+        isDeleted: 0
       }
 
       try {
@@ -468,10 +475,10 @@ export default function NavBar({
         // const deliveryDocRef = await addDoc(deliveryCollectionRef, newDelivery)
         // const itemsCollectionRef = collection(deliveryDocRef, 'items');
         // const paydetailsHistoryRef = collection(deliveryDocRef, 'paydetails');
-
+        console.log(newDelivery)
         const deliveryRef = await addDelivery(newDelivery)
 
-        if((isQuickSale.type === 'booking' || isQuickSale.type === 'quick') && isQuickSale.paymentstatus === 'Partial'){
+        if((isQuickSale.type === 'booking' || isQuickSale.type === 'quick') && isQuickSale.paymentStatus === 'Partial'){
           // await addDoc(paydetailsHistoryRef, paydetailsHistory)
           await addDeliveryPayment({...paydetailsHistory,deliveryId: deliveryRef.id})
         }
@@ -490,8 +497,8 @@ export default function NavBar({
           total: 0,
           date: dayjs().format('DD/MM/YYYY'),
           margin: 0,
-          billamount: 0,
-          paymentmode: 'Cash',
+          billAmount: 0,
+          paymentMode: 'Cash',
           type: 'quick'
         }))
         quickSaleForm.resetFields()
@@ -517,11 +524,11 @@ export default function NavBar({
     setIsQuickSale((pre) => ({
           ...pre,
           margin: value.marginvalue,
-          billamount: totalAmounts,
+          billAmount: totalAmounts,
           marginstate: true,
           temdata: newData,
           total:mrpAmount,
-          paymentstatus:'Paid'
+          paymentStatus:'Paid'
         }));
     
 
@@ -553,8 +560,8 @@ export default function NavBar({
 
   useEffect(() => {
     let employeeOtSet = datas.customers
-      .filter((data) => data.isDeleted === false)
-      .map((data) => ({ label: data.customername, value: data.id }))
+      .filter((data) => data.isDeleted === 0)
+      .map((data) => ({ label: data.name, value: data.id }))
     setIsSpendingModalOpen((pre) => ({ ...pre, employeeoption: employeeOtSet }))
   }, [!isSpendingModalOpen.model])
 
@@ -563,30 +570,32 @@ export default function NavBar({
     const { empid, ...spendDatas } = values
     const customerSpendingData = {
       ...spendDatas,
-      createddate: TimestampJs(),
-      isDeleted: false,
-      collectiontype: "customer",
-      customerid: empid || null,
+      createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
+      isDeleted: 0,
+      collectionType: "customer",
+      customerId: empid || null,
       type: "Spend",
-      description:
-        spendDatas.description === '' ||
-        spendDatas.description === undefined ||
-        spendDatas.description === null
+      decription:
+        spendDatas.decription === '' ||
+        spendDatas.decription === undefined ||
+        spendDatas.decription === null
           ? ''
-          : spendDatas.description,
-      date: dayjs(spendDatas.date).format('DD/MM/YYYY'),
+          : spendDatas.decription,
+      date: dayjs(spendDatas.date).format('YYYY-MM-DD'),
     }
     const generalSpendingData = {
       ...spendDatas,
-      createddate: TimestampJs(),
-      isDeleted: false,
-      description:
-        spendDatas.description === '' ||
-        spendDatas.description === undefined ||
-        spendDatas.description === null
+      createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
+      isDeleted: 0,
+      decription:
+        spendDatas.decription === '' ||
+        spendDatas.decription === undefined ||
+        spendDatas.decription === null
           ? ''
-          : spendDatas.description,
-      date: dayjs(spendDatas.date).format('DD/MM/YYYY'),
+          : spendDatas.decription,
+      date: dayjs(spendDatas.date).format('YYYY-MM-DD'),
     }
     try {
       setSpendSpin(true)
@@ -598,7 +607,7 @@ export default function NavBar({
       await addCustomerPayment(customerSpendingData)
       
       }else{
-        // console.log(spendDatas.spendingtype,spendDatas.name)
+        console.log(generalSpendingData)
         // await createSpending(generalSpendingData)
         await addSpending(generalSpendingData)
         await spendingUpdateMt()
@@ -795,7 +804,7 @@ export default function NavBar({
         });
         const totalAmounts = await updatedTempproduct.map(data => data.price).reduce((a,b)=> a + b ,0)
         const mrpAmount = updatedTempproduct.map(data => data.mrp).reduce((a, b) => a + b, 0)
-        setIsQuickSale(pre=>({...pre,temdata:updatedTempproduct,editingKeys: [],billamount: totalAmounts, total: mrpAmount,marginstate: true,}));
+        setIsQuickSale(pre=>({...pre,temdata:updatedTempproduct,editingKeys: [],billAmount: totalAmounts, total: mrpAmount,marginstate: true,}));
         setQucikSaleTableEdiable({ pieceprice:true, packs:true,  margin:true, price:true });
         setFirstValue(null);
         message.open({content:'Updated successfully', type:'success'});
@@ -819,7 +828,7 @@ export default function NavBar({
         });
         const totalAmounts = await updatedTempproduct.map(data => data.price).reduce((a,b)=> a + b ,0)
         const mrpAmount = updatedTempproduct.map(data => data.mrp).reduce((a, b) => a + b, 0);
-        setIsQuickSale(pre=>({...pre,temdata:updatedTempproduct,editingKeys: [],billamount: totalAmounts, total: mrpAmount,marginstate: true,}));
+        setIsQuickSale(pre=>({...pre,temdata:updatedTempproduct,editingKeys: [],billAmount: totalAmounts, total: mrpAmount,marginstate: true,}));
         setQucikSaleTableEdiable({ pieceprice:true, packs:true,  margin:true, price:true });
         setFirstValue(null);
         message.open({content:'Updated successfully', type:'success'});
@@ -843,7 +852,7 @@ export default function NavBar({
         });
         const totalAmounts = await updatedTempproduct.map(data => data.price).reduce((a,b)=> a + b ,0)
         const mrpAmount = updatedTempproduct.map(data => data.mrp).reduce((a, b) => a + b, 0);
-        setIsQuickSale(pre=>({...pre,temdata:updatedTempproduct,editingKeys: [],billamount: totalAmounts, total: mrpAmount,marginstate: true,}));
+        setIsQuickSale(pre=>({...pre,temdata:updatedTempproduct,editingKeys: [],billAmount: totalAmounts, total: mrpAmount,marginstate: true,}));
         setQucikSaleTableEdiable({ pieceprice:true, packs:true,  margin:true, price:true });
         setFirstValue(null);
         message.open({content:'Updated successfully', type:'success'});
@@ -894,7 +903,7 @@ export default function NavBar({
 
         const totalAmounts = await updatedTempproduct.map(data => data.price).reduce((a,b)=> a + b ,0)
         const mrpAmount = updatedTempproduct.map(data => data.mrp).reduce((a, b) => a + b, 0);
-        setIsQuickSale(pre=>({...pre,temdata:updatedTempproduct,editingKeys: [],billamount: totalAmounts, total: mrpAmount,marginstate: true,}));
+        setIsQuickSale(pre=>({...pre,temdata:updatedTempproduct,editingKeys: [],billAmount: totalAmounts, total: mrpAmount,marginstate: true,}));
         setQucikSaleTableEdiable({ pieceprice:true, packs:true,  margin:true, price:true });
         setFirstValue(null);
         message.open({content:'Updated successfully', type:'success'});
@@ -941,7 +950,7 @@ export default function NavBar({
       //   }, 0)
       //   setIsQuickSale((pre) => ({
       //     ...pre,
-      //     billamount: totalAmounts,
+      //     billAmount: totalAmounts,
       //     total: mrpAmount,
       //     editingKeys: [],
       //     temdata: updatedTempproduct,
@@ -972,10 +981,10 @@ export default function NavBar({
       total: 0,
       date: dayjs().format('DD/MM/YYYY'),
       margin: 0,
-      billamount: 0,
+      billAmount: 0,
       type: 'quick',
-      paymentmode: 'Cash',
-      paymentstatus: 'Paid',
+      paymentMode: 'Cash',
+      paymentStatus: 'Paid',
       editingKeys: []
     }))
     quickSaleForm.resetFields()
@@ -1052,10 +1061,10 @@ export default function NavBar({
             total: 0,
             date: dayjs().format('DD/MM/YYYY'),
             margin: 0,
-            billamount: 0,
+            billAmount: 0,
             marginstate: false,
-            paymentmode: 'Cash',
-            paymentstatus: 'Paid'
+            paymentMode: 'Cash',
+            paymentStatus: 'Paid'
           }))
           quickSaleForm.resetFields()
           quickSaleForm2.resetFields()
@@ -1087,22 +1096,22 @@ export default function NavBar({
             <Form
               form={quickSaleForm3}
               layout="vertical"
-              initialValues={{ paymentstatus: 'Paid', paymentmode: 'Cash' }}
+              initialValues={{ paymentStatus: 'Paid', paymentMode: 'Cash' }}
               className="flex gap-x-5 justify-center items-center"
             >
-              <Form.Item name="paymentstatus" className="mb-0">
+              <Form.Item name="paymentStatus" className="mb-0">
                 <Radio.Group
                   disabled={!isSpinners && isQuickSale.temdata.length > 0 ?false : true}
                   buttonStyle="solid"
                   onChange={(e) => {
-                    setIsQuickSale((pre) => ({ ...pre, paymentstatus: e.target.value,}))
+                    setIsQuickSale((pre) => ({ ...pre, paymentStatus: e.target.value,}))
                     if (e.target.value === 'Paid') {
                       quickSaleForm3.resetFields()
                     }
                     if (e.target.value === 'Unpaid') {
-                      quickSaleForm3.resetFields(['partialamount'])
+                      quickSaleForm3.resetFields(['partialAmount'])
                     }
-                    // quickSaleForm3.resetFields(['partialamount'])
+                    // quickSaleForm3.resetFields(['partialAmount'])
                     //  isQuickSale.type === 'booking' ? '' : quickSaleForm3.resetFields(['customername'])
                   }}
                 >
@@ -1112,15 +1121,15 @@ export default function NavBar({
                 </Radio.Group>
               </Form.Item>
 
-              {(isQuickSale.paymentstatus === 'Paid' || isQuickSale.paymentstatus === 'Partial') && (
+              {(isQuickSale.paymentStatus === 'Paid' || isQuickSale.paymentStatus === 'Partial') && (
               <Form.Item
                 className="mb-0 absolute top-[2rem] left-80"
-                name="paymentmode"
+                name="paymentMode"
                 rules={[{ required: true, message: 'Please select a payment method' }]}
               >
                 <Radio.Group
                   onChange={(e) => {
-                    setIsQuickSale((pre) => ({ ...pre, paymentmode:  isQuickSale.paymentstatus === 'Unpaid' ? '' :   e.target.value }))
+                    setIsQuickSale((pre) => ({ ...pre, paymentMode:  isQuickSale.paymentStatus === 'Unpaid' ? '' :   e.target.value }))
                   }}
                   disabled={isQuickSale.marginstate ? false : true}
                 >
@@ -1134,18 +1143,18 @@ export default function NavBar({
               <Form.Item
                 rules={[
                   {
-                    required: isQuickSale.paymentstatus === 'Partial' ? true : false,
+                    required: isQuickSale.paymentStatus === 'Partial' ? true : false,
                     message: false
                   }
                 ]}
                 className="mb-0"
-                name="partialamount"
+                name="partialAmount"
               >
                 <InputNumber
                   type="number"
                   placeholder="Amount"
                   min={0}
-                  disabled={isQuickSale.paymentstatus === 'Partial' ? false : true}
+                  disabled={isQuickSale.paymentStatus === 'Partial' ? false : true}
                 />
               </Form.Item>
               <Form.Item
@@ -1155,7 +1164,7 @@ export default function NavBar({
                   {
                     required:
                       isQuickSale.type === 'booking' ||
-                      (isQuickSale.type === 'quick' && isQuickSale.paymentstatus !== 'Paid')
+                      (isQuickSale.type === 'quick' && isQuickSale.paymentStatus !== 'Paid')
                         ? true
                         : false,
                     message: false
@@ -1165,9 +1174,9 @@ export default function NavBar({
                 <Input
                   placeholder="Customer name"
                   disabled={
-                    isQuickSale.paymentstatus === 'Partial' ||
+                    isQuickSale.paymentStatus === 'Partial' ||
                     isQuickSale.type === 'booking' ||
-                    (isQuickSale.paymentstatus === 'Unpaid' && isQuickSale.type === 'quick')
+                    (isQuickSale.paymentStatus === 'Unpaid' && isQuickSale.type === 'quick')
                       ? false
                       : true
                   }
@@ -1175,7 +1184,7 @@ export default function NavBar({
               </Form.Item>
               <Form.Item
                 className="mb-0"
-                name="mobilenumber"
+                name="mobileNumber"
                 rules={[
                   {
                     required:
@@ -1193,7 +1202,7 @@ export default function NavBar({
                   placeholder="Mobile Number"
                   disabled={
                     isQuickSale.type === 'booking' ||
-                    (isQuickSale.type === 'quick' && isQuickSale.paymentstatus !== 'Paid')
+                    (isQuickSale.type === 'quick' && isQuickSale.paymentStatus !== 'Paid')
                       ? false
                       : true
                   }
@@ -1219,7 +1228,7 @@ export default function NavBar({
                   placeholder="Address"
                   disabled={
                     isQuickSale.type === 'booking' ||
-                    (isQuickSale.type === 'quick' && isQuickSale.paymentstatus !== 'Paid')
+                    (isQuickSale.type === 'quick' && isQuickSale.paymentStatus !== 'Paid')
                       ? false
                       : true
                   }
@@ -1273,10 +1282,10 @@ export default function NavBar({
               total: 0,
               date: dayjs().format('DD/MM/YYYY'),
               margin: 0,
-              billamount: 0,
+              billAmount: 0,
               type: 'quick',
-              paymentmode: 'Cash',
-              paymentstatus: 'Paid',
+              paymentMode: 'Cash',
+              paymentStatus: 'Paid',
               editingKeys: []
             }))
             quickSaleForm.resetFields()
@@ -1315,7 +1324,7 @@ export default function NavBar({
                       setIsQuickSale((pre) => ({
                         ...pre,
                         type: e.target.value,
-                        paymentstatus: 'Paid'
+                        paymentStatus: 'Paid'
                       }))
                     }}
                   >
@@ -1442,7 +1451,7 @@ export default function NavBar({
               </Tag>
               {/* <Tag color='orange'>Margin: <span className='text-sm'>{isQuickSale.margin}</span>%</Tag> */}
               <Tag color="green">
-                Net Amount: <span className="text-sm">{formatToRupee(isQuickSale.billamount)}</span>
+                Net Amount: <span className="text-sm">{formatToRupee(isQuickSale.billAmount)}</span>
               </Tag>
             </span>
           </div>
@@ -1485,7 +1494,7 @@ export default function NavBar({
             form={spendingForm}
             layout="vertical"
             onFinish={handleSpendingFinish}
-            initialValues={{ date: dayjs(), paymentmode: 'Cash', spendingtype: 'General' }}
+            initialValues={{ date: dayjs(), paymentMode: 'Cash', spendingtype: 'General' }}
           >
             <Form.Item
               className="absolute top-[-3rem]"
@@ -1582,13 +1591,13 @@ export default function NavBar({
               />
             </Form.Item>
 
-            <Form.Item name="description" label="Description" className="mb-1">
+            <Form.Item name="decription" label="Description" className="mb-1">
               <TextArea rows={4} placeholder="Write the Description" />
             </Form.Item>
 
             <Form.Item
                 className="mb-0"
-                name="paymentmode"
+                name="paymentMode"
                 label="Payment Mode"
                 rules={[{ required: true, message: false }]}
               >

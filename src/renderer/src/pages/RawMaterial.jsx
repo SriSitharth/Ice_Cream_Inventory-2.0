@@ -34,7 +34,7 @@ import { FaClipboardList } from 'react-icons/fa'
 import TableHeight from '../components/TableHeight'
 import './css/RawMaterial.css'
 // APIs
-import { addRawMaterial, updateRawMaterial, addRawMaterialDetail, getRawMaterialDetailsByRawMaterialId } from '../sql/rawmaterial'
+import { addRawMaterial, updateRawMaterial, addRawMaterialDetail, getRawMaterialDetailsByRawMaterialId, updateRawMaterialDetail } from '../sql/rawmaterial'
 import { getStorages, updateStorage } from '../sql/storage'
 import { getSupplierById } from '../sql/supplier'
 import { getSupplierAndMaterials, getMaterialsBySupplierId , getMaterialById } from '../sql/supplierandmaterials'
@@ -766,6 +766,14 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
   const deleteProduct = async (data) => {
     const { id, ...newData } = data
     await updateRawMaterial(id, { isDeleted: 1 })
+    let materialdetails = await getRawMaterialDetailsByRawMaterialId(id)
+    if(materialdetails.length > 0){
+    await Promise.all(
+      materialdetails.map(async (data) => {
+        await updateRawMaterialDetail(data.id, { isDeleted: 1 })
+      })
+    )
+  }
     rawmaterialUpdateMt()
     message.open({ type: 'success', content: 'Deleted Successfully' })
   }
@@ -1506,7 +1514,6 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
                 usedmaterialform.resetFields()
                 setUsedMaterialModal(true)
                 setProductCount(0)
-                console.log(usedmaterialform.getFieldValue().type)
               }}
               type="primary"
               disabled={editingKey !== ''}

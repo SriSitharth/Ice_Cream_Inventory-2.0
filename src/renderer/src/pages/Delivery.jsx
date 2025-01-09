@@ -98,7 +98,9 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           .filter((data) => isWithinRange(data.date))
           .slice(offset, offset + chunkSize)
           .map(async (item, index) => {
-            const result = await getCustomerById(item.customerId)
+
+            const result = item.customerId === null ? '' : await getCustomerById(item.customerId)
+            
             console.log(result)
             const freezerboxResult =
               item.boxId === '' ? item.boxId : await getFreezerboxById(item.boxId)
@@ -738,8 +740,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     },
     {
       title: <span className="text-[0.7rem]">Return Type</span>,
-      dataIndex: 'returntype',
-      key: 'returntype',
+      dataIndex: 'returnType',
+      key: 'returnType',
       editable: true,
       width: 90,
       render: (text) => {
@@ -801,7 +803,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   //Save
   const tempSingleMargin = async (data) => {
     const row = await temform.validateFields()
-    let initialtype = row.returntype === undefined ? 'normal' : row.returntype
+    let initialtype = row.returnType === undefined ? 'normal' : row.returnType
     const oldtemDatas = option.tempproduct
     let updatedTempproduct
 
@@ -817,7 +819,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                 margin: row.margin,
                 price: customRound(mrp - (mrp * row.margin) / 100),
                 mrp: mrp,
-                returntype: row.returntype === undefined ? 'normal' : row.returntype
+                returnType: row.returnType === undefined ? 'normal' : row.returnType
               }
             : product
         )
@@ -848,7 +850,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               margin: marginvalue,
               price: customRound(price),
               mrp: mrpNormal,
-              returntype: row.returntype === undefined ? 'normal' : row.returntype
+              returnType: row.returnType === undefined ? 'normal' : row.returnType
             }
           }
           return product
@@ -877,7 +879,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               margin: data.margin,
               price: customRound(price),
               mrp: mrpData,
-              returntype: row.returntype === undefined ? 'normal' : row.returntype
+              returnType: row.returnType === undefined ? 'normal' : row.returnType
             }
           }
           return product
@@ -906,7 +908,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               margin: ((mrpData - row.price) / mrpData) * 100,
               price: customRound(price),
               mrp: mrpData,
-              returntype: row.returntype === undefined ? 'normal' : row.returntype
+              returnType: row.returnType === undefined ? 'normal' : row.returnType
             }
           }
           return product
@@ -927,7 +929,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       else if (
         row.margin === data.margin ||
         row.numberOfPacks === data.numberOfPacks ||
-        initialtype === data.returntype ||
+        initialtype === data.returnType ||
         row.productprice === data.productprice ||
         row.price === data.price
       ) {
@@ -1143,7 +1145,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         item.quantity === newProduct.quantity &&
         // item.numberOfPacks === newProduct.numberOfPacks &&
         // item.date === newProduct.date &&
-        item.returntype === newProduct.returntype
+        item.returnType === newProduct.returnType
     )
 
     if (checkExsit) {
@@ -1220,7 +1222,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           numberOfPacks: temp.numberOfPacks,
           productId: pr.id,
           price: pr.price,
-          returnType: temp.returntype,
+          returnType: temp.returnType,
           margin: temp.margin === '' ? 0 : temp.margin,
           sno: tempIndex + 1,
           date: dayjs().format('YYYY-MM-DD'),
@@ -1249,7 +1251,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             type: returnDelivery.state === true ? 'return' : 'order',
             createdDate: new Date().toISOString(),
             modifiedDate: new Date().toISOString(),
-            boxId:  String(form2.getFieldsValue().boxNumber) || ''
+            boxId: form2.getFieldsValue().boxNumber === undefined ? '' : String(form2.getFieldsValue().boxNumber)
           }
         : {
             customerId: customername,
@@ -1266,8 +1268,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             type: returnDelivery.state === true ? 'return' : 'order',
             createdDate: new Date().toISOString(),
             modifiedDate: new Date().toISOString(),
-            boxId: String(form2.getFieldsValue().boxNumber) || ''
-              // form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
+            boxId: form2.getFieldsValue().boxNumber === undefined ? '' : String(form2.getFieldsValue().boxNumber)
+            // form2.getFieldsValue().boxNumber === undefined ? '' : form2.getFieldsValue().boxNumber
           }
 
     // console.log(newDelivery);
@@ -1294,11 +1296,11 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               storageItem.productId === product.id && storageItem.category === 'Product List'
           )
 
-          if (returnDelivery.state === true && item.returntype === 'normal') {
+          if (returnDelivery.state === true && item.returnType === 'normal') {
             await updateStorage(existingProduct.id, {
               numberOfPacks: existingProduct.numberOfPacks + item.numberOfPacks
             })
-          } else if (returnDelivery.state === true && item.returntype === 'damage') {
+          } else if (returnDelivery.state === true && item.returnType === 'damage') {
             // console.log('damage')
           } else {
             await updateStorage(existingProduct.id, {
@@ -1434,7 +1436,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
             numberOfPacks: matchingData.numberOfPacks,
             producttotalamount: matchingData.numberOfPacks * pr.price,
-            returntype: matchingData.returntype
+            returnType: matchingData.returnType
           }))
         })
         prItems.sort((a, b) => a.sno - b.sno)
@@ -1535,7 +1537,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     const optionsuppliers = datas.suppliers
       .filter(
         (item, i, self) =>
-          item.isDeleted === false &&
+          item.isDeleted === 0 &&
           i === self.findIndex((d) => d.materialname === item.materialname)
       )
       .map((item) => ({ label: item.materialname, value: item.materialname }))
@@ -1658,8 +1660,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     },
     {
       title: 'Product',
-      key: 'productname',
-      dataIndex: 'productname'
+      key: 'name',
+      dataIndex: 'name'
     },
     // {
     //   title: 'Flavour',
@@ -1694,9 +1696,10 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     },
     {
       title: deliveryBill.returnmodeltable === false ? 'Margin' : 'Margin',
-      key: deliveryBill.returnmodeltable === false ? 'margin' : 'returntype',
-      dataIndex: deliveryBill.returnmodeltable === false ? 'margin' : 'returntype',
+      key: deliveryBill.returnmodeltable === false ? 'margin' : 'returnType',
+      dataIndex: deliveryBill.returnmodeltable === false ? 'margin' : 'returnType',
       render: (text, record) => {
+        console.log('Record',record)
         if (deliveryBill.returnmodeltable === false) {
           return text === undefined ? `0%` : <span>{toDigit(text)}%</span>
         } else {
@@ -1705,12 +1708,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
               {' '}
               <span>{toDigit(record.margin)}%</span>{' '}
               <Tag color="red" className="text-[0.7rem]">
-                Damage
+              {record.returnType}
               </Tag>
             </span>
           ) : (
             <span className="flex justify-center items-center gap-x-1">
-              {toDigit(record.margin)}% <Tag color="blue">Normal</Tag>
+              {toDigit(record.margin)}% <Tag color="blue">{record.returnType}</Tag>
             </span>
           )
         }
@@ -1739,12 +1742,12 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         if (items.length > 0) {
           let prItems = datas.product.flatMap((item) =>
             items
-              .filter((item2) => item.id === item2.id)
+              .filter((item2) => item.id === item2.productId)
               .map((item2, i) => {
                 return {
                   sno: item2.sno,
                   ...item,
-                  returntype: item2.returntype,
+                  returnType: item2.returnType,
                   pieceamount: item.price,
                   quantity: `${item.quantity} ${item.unit}`,
                   margin: item2.margin,
@@ -1823,9 +1826,9 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     return (
       <td {...restProps}>
         {editing ? (
-          dataIndex === 'returntype' ? (
+          dataIndex === 'returnType' ? (
             <Form.Item
-              name="returntype"
+              name="returnType"
               style={{ margin: 0 }}
               rules={[{ required: true, message: false }]}
             >
@@ -2097,7 +2100,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       //       matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
       //     numberOfPacks: matchingData.numberOfPacks,
       //     producttotalamount: matchingData.numberOfPacks * pr.price,
-      //     returntype: matchingData.returntype
+      //     returnType: matchingData.returnType
       //   }
       // });
 
@@ -2117,7 +2120,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             matchingData.numberOfPacks * pr.price * (matchingData.margin / 100),
           numberOfPacks: matchingData.numberOfPacks,
           producttotalamount: matchingData.numberOfPacks * pr.price,
-          returntype: matchingData.returntype
+          returnType: matchingData.returnType
         }))
       })
 
@@ -2199,7 +2202,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         productname: data.name,
         productprice: data.price,
         // quantity: data.quantity + ' ' + data.unit,
-        returntype: data.returntype
+        returnType: data.returnType
       }))
 
     console.log(lastOrderData.products)
@@ -2607,8 +2610,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                       <td className=" border-b  pb-2">
                         {item.productname}{' '}
                         {invoiceDatas.customerdetails.type === 'return' &&
-                        (item.returntype !== undefined || item.returntype !== null)
-                          ? `(${item.returntype})`
+                        (item.returnType !== undefined || item.returnType !== null)
+                          ? `(${item.returnType})`
                           : ''}
                       </td>
                       {/* <td className=" border-b  pb-2">{item.flavour}</td> */}
@@ -2906,7 +2909,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                 onFinish={createTemDeliveryMt}
                 form={form2}
                 layout="vertical"
-                initialValues={{ date: dayjs(), returntype: 'normal' }}
+                initialValues={{ date: dayjs(), returnType: 'normal' }}
               >
                 <Form.Item
                   className="mb-3 absolute top-[-2.7rem]"
@@ -3063,7 +3066,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
                 <Form.Item
                   className={`mb-1 w-full text-[0.7rem] ${returnDelivery.state === true ? 'block' : 'hidden'}`}
-                  name="returntype"
+                  name="returnType"
                   label="Return Type"
                   rules={[
                     { required: returnDelivery.state === true ? true : false, message: false }
@@ -3672,8 +3675,8 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                           <td className={` border-b px-1 text-[16px]`}>
                             {item.productname}{' '}
                             {invoiceDatas.customerdetails.type === 'return' &&
-                            (item.returntype !== undefined || item.returntype !== null)
-                              ? `(${item.returntype})`
+                            (item.returnType !== undefined || item.returnType !== null)
+                              ? `(${item.returnType})`
                               : ''}
                           </td>
                           <td className={` border-b text-center text-[16px]`}>
