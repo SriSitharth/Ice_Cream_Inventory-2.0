@@ -95,7 +95,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
         console.log({
           ...values,
           name: formatName(values.productname),
-          productPerPack: values.productperpack,
+          productPerPack: values.productPerPack,
           price: values.price,
           createdDate: TimestampJs(),
           modifiedDate: TimestampJs(),
@@ -105,7 +105,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
         setIsProductLoading(true)
         const productRef = await addProduct({
           name: formatName(values.productname),
-          productPerPack: values.productperpack,
+          productPerPack: values.productPerPack,
           price: values.price,
           createdDate: new Date().toISOString(),
           modifiedDate: new Date().toISOString(),
@@ -149,11 +149,11 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
       filteredValue: [searchText],
       onFilter: (value, record) => {
         return (
-          String(record.productname).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.name).toLowerCase().includes(value.toLowerCase()) ||
           // String(record.quantity).toLowerCase().includes(value.toLowerCase()) ||
           // String(record.flavour).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.productperpack).toLowerCase().includes(value.toLowerCase()) ||
-          String(record.price * record.productperpack)
+          String(record.productPerPack).toLowerCase().includes(value.toLowerCase()) ||
+          String(record.price * record.productPerPack)
             .toLowerCase()
             .includes(value.toLowerCase()) ||
           String(record.quantity + ' ' + record.unit)
@@ -346,7 +346,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
         record,
         inputType:
           col.dataIndex === 'quantity' ||
-          col.dataIndex === 'productperpack' ||
+          col.dataIndex === 'productPerPack' ||
           col.dataIndex === 'price'
             ? 'number'
             : 'text',
@@ -469,13 +469,11 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
   const exportExcel = async () => {
     const exportDatas = data.filter((item) => selectedRowKeys.includes(item.key))
     const excelDatas = exportDatas.map((pr, i) => ({
-      sno: i + 1,
-      product: pr.productname,
-      // flavour: pr.flavour,
-      // size: pr.quantity + ' ' + pr.unit,
-      rate: pr.price,
-      qty: pr.productperpack,
-      packprice: pr.productperpack * pr.price
+      Sno: i + 1,
+      Product: pr.name,
+      Rate: pr.price,
+      PPP: pr.productPerPack,
+      PackPrice: pr.productPerPack * pr.price
     }))
 
     jsonToExcel(excelDatas, `Product-List-${TimestampJs()}`)
@@ -601,12 +599,12 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
                 ? pdf.data.map((item, i) => (
                     <tr key={i}>
                       <td className="p-1 border-b">{i + 1}</td>
-                      <td className="p-1 border-b">{item.productname}</td>
+                      <td className="p-1 border-b">{item.name}</td>
                       {/* <td className="p-1 border-b">{item.flavour}</td>
                       <td className="p-1 border-b">{item.quantity + item.unit}</td> */}
                       <td className="p-1 border-b">{item.price}</td>
-                      {/* <td className="p-1 border-b">{item.productperpack}</td>
-                      <td className="p-4 border-b">{item.productperpack * item.price}</td> */}
+                      {/* <td className="p-1 border-b">{item.productPerPack}</td>
+                      <td className="p-4 border-b">{item.productPerPack * item.price}</td> */}
                     </tr>
                   ))
                 : 'No Data'}
@@ -808,7 +806,7 @@ export default function Product({ datas, productUpdateMt, storageUpdateMt }) {
 
             <Form.Item
               className="mb-5"
-              name="productperpack"
+              name="productPerPack"
               label="Product Per Pack"
               rules={[
                 { required: true, message: false },

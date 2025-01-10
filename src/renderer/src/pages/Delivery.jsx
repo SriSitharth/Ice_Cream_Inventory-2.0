@@ -1419,15 +1419,16 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     console.log(allInvoiceData)
     for (let record of exportDatas) {
       const items = await getDeliveryDetailById(record.id)
-      const freezerbox = await getFreezerboxById(record.boxId)
+      const freezerbox = record.boxId ? await getFreezerboxById(record.boxId) : null
       let boxNumber = freezerbox?.boxNumber || '';
       if (items.length > 0) {
-        let prData = datas.product.filter((item) => items.find((item2) => item.id === item2.id))
+        let prData = datas.product.filter((item) => items.find((item2) => item.id === item2.productId))
         let prItems = prData.flatMap((pr) => {
-          let matchingItems = items.filter((item) => item.id === pr.id)
+          let matchingItems = items.filter((item) => item.productId === pr.id)
           return matchingItems.map((matchingData) => ({
             sno: matchingData.sno,
             ...pr,
+            productname: pr.name,
             pieceamount: pr.price,
             quantity: `${pr.quantity} ${pr.unit}`,
             margin: matchingData.margin,
@@ -2238,19 +2239,20 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
   const quickSalePayMt = async () => {
     // setQuickSalePay((pre) => ({ ...pre, loading: true }));
-    let { date, description, ...paydetails } = quicksalepayForm.getFieldValue()
-    let formateDate = dayjs(date).format('DD/MM/YYYY')
+    let { date, decription, ...paydetails } = quicksalepayForm.getFieldValue()
+    let formateDate = dayjs(date).format('YYYY-MM-DD')
     let billId = deliveryBill.prdata.id
 
     let newData = {
       ...paydetails,
-      collectiontype: 'delivery',
-      deliveryid: billId,
+      collectionType: 'delivery',
+      deliveryId: billId,
       date: formateDate,
       type: 'Payment',
-      createdDate: TimestampJs(),
-      description: description === undefined || description === null ? '' : description,
-      isDeleted: false
+      createdDate: new Date().toISOString(),
+      modifiedDate: new Date().toISOString(),
+      decription: decription === undefined || decription === null ? '' : decription,
+      isDeleted: 0
     }
 
     let balanceAmount = deliveryBill.data.billAmount - deliveryBill.data.partialAmount
@@ -2284,8 +2286,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
             paymentStatus:
               deliveryBill.data.paymentStatus === 'Unpaid'
                 ? 'Partial'
-                : deliveryBill.data.paymentStatus,
-            updateddate: TimestampJs()
+                : deliveryBill.data.paymentStatus
           }
           await updateDelivery(deliveryBill.data.id, partialAmount)
           // const DeliveryDocRef = doc(db, 'delivery', billId)
@@ -2370,7 +2371,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                 <Tag className="m-0" color="green">
                   {formatToRupee(data.amount)}
                 </Tag>{' '}
-                <Tag className="m-0">{data.paymentMode}</Tag> {data.description}
+                <Tag className="m-0">{data.paymentMode}</Tag> {data.decription}
                 {/* <MdOutlineModeEditOutline 
       onClick={()=>{
         // click to get the data 
@@ -2378,7 +2379,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         // modal open
         setPopupModal(pre=>({...pre,quicksaleform:true})); 
         // update the old data in the form
-        quicksalepayForm.setFieldsValue({amount:data.amount,date:dayjs(data.date, 'DD/MM/YYYY') ,description:data.description}); 
+        quicksalepayForm.setFieldsValue({amount:data.amount,date:dayjs(data.date, 'DD/MM/YYYY') ,decription:data.decription}); 
         }} 
         size={17} className='text-blue-500 cursor-pointer'/>  */}
               </span>
@@ -2396,6 +2397,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           {
             dot: <MdOutlineDoneOutline className="timeline-clock-icon text-green-500 pb-0" />,
             label: 'Paid',
+            key: -1,
             children: (
               <span className="pb-0 mb-0">{`${deliveryBill.data.billAmount === undefined ? 0 : formatToRupee(deliveryBill.data.billAmount)}`}</span>
             )
@@ -2412,6 +2414,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           {
             dot: <GiCancel className="timeline-clock-icon text-red-500" />,
             label: 'Unpaid',
+            key: -1,
             children: ` ${deliveryBill.data.billAmount === undefined ? 0 : formatToRupee(deliveryBill.data.billAmount)}`
           }
         ]
@@ -2424,6 +2427,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           ? undefined
           : {
               label: 'Partial',
+              key: -1,
               children: ` ${deliveryBill.data.partialAmount === 0 ? '' : formatToRupee(deliveryBill.data.partialAmount)}`
             }
       setHistoryBtn((pre) => ({ ...pre, data: [...paydetails, isPartial] }))
@@ -2433,14 +2437,14 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   }
 
   const updateQuickSalePayMt = async () => {
-    let { date, amount, description } = quicksalepayForm.getFieldValue()
+    let { date, amount, decription } = quicksalepayForm.getFieldValue()
     let oldAmount = payModalState.data.amount
     let partialAmount = deliveryBill.data.partialAmount
     let billingAmount = deliveryBill.data.billAmount
     if (
       payModalState.data.date === dayjs(date).format('DD/MM/YYYY') &&
       payModalState.data.amount === amount &&
-      payModalState.data.description === description.trim()
+      payModalState.data.decription === decription.trim()
     ) {
       message.open({ type: 'info', content: 'No changes made' })
     } else {
@@ -2450,7 +2454,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       let updatePayData = {
         date: dayjs(date).format('DD/MM/YYYY'),
         amount: amount,
-        description: description,
+        decription: decription,
         updateddate: TimestampJs()
       }
       let payIdChild = payModalState.data.id
@@ -3417,7 +3421,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
                 <Popconfirm
                   title="Are you sure?"
-                  //description={<>because the 'PAYMENT HISTORY' can't be edited?</>}
+                  //decription={<>because the 'PAYMENT HISTORY' can't be edited?</>}
                   onConfirm={() => quicksalepayForm.submit()}
                 >
                   <Button disabled={payModalState.btndisable} type="primary">
@@ -3458,7 +3462,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
                     placeholder="Enter the Amount"
                   />
                 </Form.Item>
-                <Form.Item className="mb-1" name="description" label="Description">
+                <Form.Item className="mb-1" name="decription" label="Description">
                   <TextArea rows={4} placeholder="Write the Description" />
                 </Form.Item>
                 <Form.Item

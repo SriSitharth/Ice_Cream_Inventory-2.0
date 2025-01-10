@@ -119,9 +119,9 @@ export default function BalanceSheet({ datas }) {
             : customerDeliveries
 
           const billUnpaid = filteredDeliveries.reduce((acc, item) => {
-            if (item.paymentstatus === 'Unpaid' && item.type === 'order') {
+            if (item.paymentStatus === 'Unpaid' && item.type === 'order') {
               return acc + (Number(item.billAmount) || 0)
-            } else if (item.paymentstatus === 'Partial' && item.type === 'order') {
+            } else if (item.paymentStatus === 'Partial' && item.type === 'order') {
               return acc + (Number(item.billAmount) - Number(item.partialAmount) || 0)
             } else if (item.type === 'return') {
               return acc - (Number(item.billAmount) || 0)
@@ -164,9 +164,9 @@ export default function BalanceSheet({ datas }) {
         datas.delivery
           .filter((data) => !data.isDeleted)
           .map(async (item, index) => {
-            const result = await getCustomerById(item.customerId)
-            const customerName = result.name || item.name
-            const mobileNumber = result.mobileNumber || item.mobileNumber
+            const result = item.customerId ? await getCustomerById(item.customerId) : null
+            const customerName = result?.name || item.name
+            const mobileNumber = result?.mobileNumber || item.mobileNumber
             return {
               ...item,
               sno: index + 1,
@@ -512,10 +512,10 @@ export default function BalanceSheet({ datas }) {
               return matchesCustomer && !delivery.isDeleted && matchesBox
             })
             .map(async (delivery) => {
-              const freezerbox = await getFreezerboxById(delivery.boxId)
+              const freezerbox = delivery.boxId ? await getFreezerboxById(delivery.boxId) : null
               return {
                 ...delivery,
-                boxNumber: freezerbox === undefined ? '' : freezerbox.boxNumber
+                boxNumber: freezerbox?.boxNumber || ''
               }
             })
         )
@@ -912,10 +912,10 @@ export default function BalanceSheet({ datas }) {
             return isMatchingCustomer && isMatchingBox
           })
           .map(async (delivery) => {
-            const freezerbox = await getFreezerboxById(delivery.boxId)
+            const freezerbox = delivery.boxId ? await getFreezerboxById(delivery.boxId) : null
             return {
               ...delivery,
-              boxNumber: freezerbox === undefined ? '' : freezerbox.boxNumber
+              boxNumber: freezerbox?.boxNumber || ''
             }
           })
       )
@@ -998,18 +998,18 @@ export default function BalanceSheet({ datas }) {
   }, 0)
 
   const billPaid = deliveryList.reduce((acc, item) => {
-    if (item.paymentstatus === 'Paid' && item.type === 'order') {
+    if (item.paymentStatus === 'Paid' && item.type === 'order') {
       return acc + (Number(item.billAmount) || 0)
-    } else if (item.paymentstatus === 'Partial' && item.type === 'order') {
+    } else if (item.paymentStatus === 'Partial' && item.type === 'order') {
       return acc + (Number(item.partialAmount) || 0)
     }
     return acc
   }, 0)
 
   const billUnpaid = deliveryList.reduce((acc, item) => {
-    if (item.paymentstatus === 'Unpaid' && item.type === 'order') {
+    if (item.paymentStatus === 'Unpaid' && item.type === 'order') {
       return acc + (Number(item.billAmount) || 0)
-    } else if (item.paymentstatus === 'Partial' && item.type === 'order') {
+    } else if (item.paymentStatus === 'Partial' && item.type === 'order') {
       return acc + (Number(item.billAmount) - Number(item.partialAmount) || 0)
     } else if (item.type === 'return') {
       return acc - (Number(item.billAmount) || 0)
@@ -1200,12 +1200,12 @@ export default function BalanceSheet({ datas }) {
                     Bill: <Tag color="green">{item.billAmount}</Tag>
                   </div>
                   <div>
-                    {item.paymentstatus === 'Partial' ? (
+                    {item.paymentStatus === 'Partial' ? (
                       <span>
-                        {item.paymentstatus}: <Tag color="orange">{item.partialAmount}</Tag>
+                        {item.paymentStatus}: <Tag color="orange">{item.partialAmount}</Tag>
                       </span>
                     ) : (
-                      <span>{item.paymentstatus}</span>
+                      <span>{item.paymentStatus}</span>
                     )}
                   </div>
                   <div>

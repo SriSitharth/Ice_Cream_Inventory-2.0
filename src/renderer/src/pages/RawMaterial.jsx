@@ -66,7 +66,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
 
       let rawTableDtas = await Promise.all(
         datas.rawmaterials.map(async (data) => {
-          const supplierData = await getSupplierById(data.supplierId);
+          const supplierData = data.supplierId ? await getSupplierById(data.supplierId) : null;
           return {
           ...data,
           name: supplierData?.name || '-',
@@ -1426,18 +1426,22 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
 
   const exportExcel = async () => {
     const exportDatas = data.filter((item) => selectedRowKeys.includes(item.key))
-    const specificData = exportDatas.map((item, index) => ({
+    const specificData = await Promise.all (exportDatas.map(async(item, index) => {
+      
+      let supplierDetails = item.supplierId ? await getSupplierById(item.supplierId) : null;
+       
+      return {
       No: index + 1,
       Date: item.date,
-      Name: item.supplier?.suppliername || '',
-      Mobile: item.supplier?.mobilenumber || '',
-      Location: item.supplier?.location || '',
-      Gender: item.supplier?.gender || '',
+      Name: item?.name || '',
+      Mobile: supplierDetails?.mobileNumber || '',
+      Location: supplierDetails?.address || '',
       Type: item.type,
       Billed: item.billAmount,
       Partial: item.partialAmount,
       Status: item.paymentStatus,
       Mode: item.paymentMode
+      }
     }))
     jsonToExcel(specificData, `RawMaterials-List-${TimestampJs()}`)
     setSelectedRowKeys([])

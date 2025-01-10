@@ -430,13 +430,14 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       render: (_, __, index) => index + 1,
       filteredValue: [searchText],
       onFilter: (value, record) => {
+        console.log(record)
         return (
           String(record.name).toLowerCase().includes(value.toLowerCase()) ||
           // String(record.materialname).toLowerCase().includes(value.toLowerCase()) ||
           String(record.address).toLowerCase().includes(value.toLowerCase()) ||
           String(record.mobileNumber).toLowerCase().includes(value.toLowerCase()) ||
           // String(record.gender).toLowerCase().includes(value.toLowerCase()) ||
-          record.item.some((data) =>
+          record.supplierandmaterials.some((data) =>
             String(data.name).toLowerCase().includes(value.toLowerCase())
           )
         )
@@ -1052,7 +1053,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
               }}
               pagination={false}
               columns={mergedColumnsExpandTable}
-              dataSource={record.item.filter((data) => data.isDeleted === false)}
+              dataSource={record.item.filter((data) => data.isDeleted === 0)}
               rowClassName="editable-row"
               scroll={{ x: 200, y: 200 }}
             />
@@ -1197,7 +1198,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
       Supplier: pr.name,
       // Gender: pr.gender,
       Mobile: pr.mobileNumber,
-      address: pr.address
+      Address: pr.address
     }))
     jsonToExcel(excelDatas, `Supplier-List-${TimestampJs()}`)
     setSelectedRowKeys([])

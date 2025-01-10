@@ -487,11 +487,11 @@ export default function Home({ datas }) {
         datas.delivery
           .filter((data) => !data.isDeleted)
           .map(async (item, index) => {
-            const result = await getCustomerById(item.customerId)
-            const customerName = result.name || item.customername
-            const mobileNumber = result.mobileNumber || item.mobileNumber
-            const gstNumber = result.gstin || item.gstin
-            const address = result.address || item.address
+            const result = item.customerId ? await getCustomerById(item.customerId) : null
+            const customerName = result?.name || item.name
+            const mobileNumber = result?.mobileNumber || item.mobileNumber
+            const gstNumber = result?.gstin || item.gstin
+            const address = result?.address || item.address
             return {
               ...item,
               sno: index + 1,
@@ -928,13 +928,13 @@ export default function Home({ datas }) {
 
   const handleDownloadPdf = async (record) => {
     const items = await getDeliveryDetailById(record.id)
-    const result = await getCustomerById(record.customerId)
-    const freezerbox = await getFreezerboxById(record.boxid)
-    let boxnumber = freezerbox?.boxnumber || ''
-    const gstin = result.gstin || ''
-    const address = result.address || ''
+    const result = record.customerId ? await getCustomerById(record.customerId) : null
+    const freezerbox = record.boxId ? await getFreezerboxById(record.boxId) : null
+    let boxNumber = freezerbox?.boxNumber || ''
+    const gstin = result?.gstin || ''
+    const address = result?.address || ''
     if (items.length > 0) {
-      let prData = datas.product.filter((item, i) => items.find((item2) => item.id === item2.id))
+      let prData = datas.product.filter((item, i) => items.find((item2) => item.id === item2.productId))
       // let prItems = await prData.map((pr, i) => {
       //   let matchingData = items.find((item, i) => item.id === pr.id)
       //   return {
@@ -953,12 +953,13 @@ export default function Home({ datas }) {
       // })
       let prItems = prData.flatMap((pr, i) => {
         // Get all matching items with the same id
-        let matchingItems = items.filter((item) => item.id === pr.id)
+        let matchingItems = items.filter((item) => item.productId === pr.id)
 
         // If there are matching items, map over them to return multiple results
         return matchingItems.map((matchingData) => ({
           sno: matchingData.sno,
           ...pr,
+          productname: pr.name,
           pieceamount: pr.price,
           quantity: `${pr.quantity} ${pr.unit}`,
           margin: matchingData.margin,
@@ -979,7 +980,7 @@ export default function Home({ datas }) {
           ...record,
           gstin: gstin,
           address: address,
-          boxnumber: boxnumber
+          boxNumber: boxNumber
         }
       }))
       setLoadingGstin(false)
@@ -1025,29 +1026,31 @@ export default function Home({ datas }) {
   // }
 
   const handlePrint = async (record) => {
-    console.log(record)
+    
     try {
       const items = await getDeliveryDetailById(record.id)
+      
       if (items.length === 0) {
         throw new Error(`Failed to fetch items`)
       }
-      const freezerbox = await getFreezerboxById(record.boxid)
-      let boxnumber = freezerbox?.boxnumber || ''
-      const result = await getCustomerById(record.customerId)
-      const gstin = result.customer?.gstin || ''
-      const address = result.customer?.address || ''
-
-      let prData = datas.product.filter((item) => items.find((item2) => item.id === item2.id))
+      const freezerbox = record.boxId ? await getFreezerboxById(record.boxId) : null
+      let boxNumber = freezerbox?.boxNumber || ''
+      const result = record.customerId ? await getCustomerById(record.customerId) : null
+      const gstin = result?.gstin || ''
+      const address = result?.address || ''
+      
+      let prData = datas.product.filter((product) => items.find((item2) => product.id === item2.productId))
       // let prData = datas.product.filter((item) => item.isDeleted === false)
-
+      console.log(record,items,result,prData)
       let prItems = prData.flatMap((pr, i) => {
         // Get all matching items with the same id
-        let matchingItems = items.filter((item) => item.id === pr.id)
-
+        let matchingItems = items.filter((item) => item.productId === pr.id)
+        console.log(matchingItems,pr.id)
         // If there are matching items, map over them to return multiple results
         return matchingItems.map((matchingData) => ({
           sno: matchingData.sno,
           ...pr,
+          productname: pr.name,
           pieceamount: pr.price,
           quantity: `${pr.quantity} ${pr.unit}`,
           margin: matchingData.margin,
@@ -1069,7 +1072,7 @@ export default function Home({ datas }) {
           ...record,
           gstin,
           address,
-          boxnumber
+          boxNumber
         }
       }))
     } catch (error) {
@@ -1770,10 +1773,10 @@ export default function Home({ datas }) {
     const productOp = datas.product
       .filter(
         (item, i, s) =>
-          item.isDeleted === false &&
-          s.findIndex((item2) => item2.productname === item.productname) === i
+          item.isDeleted === 0 
+        // && s.findIndex((item2) => item2.productname === item.productname) === i
       )
-      .map((data) => ({ label: data.productname, value: data.productname }))
+      .map((data) => ({ label: data.name, value: data.name }))
     setOption((pre) => ({ ...pre, product: productOp }))
   }, [datas])
 
@@ -1821,7 +1824,7 @@ export default function Home({ datas }) {
 
     // let [quantityvalue, units] = values.quantity.split(' ')
     const findPrice = await datas.product.find(
-      (item) => item.isDeleted === false && item.productname === values.productname
+      (item) => item.isDeleted === 0 && item.name === values.productname
       // && item.flavour === values.flavour &&
       // item.quantity === Number(quantityvalue) &&
       // item.unit === units
@@ -1831,7 +1834,7 @@ export default function Home({ datas }) {
       ...values,
       key: quotationft.count,
       date: formattedDate,
-      createddate: TimestampJs(),
+      createdDate: TimestampJs(),
       mrp: findPrice * values.numberOfPacks,
       productprice: findPrice,
       margin: 0,
@@ -2118,9 +2121,9 @@ export default function Home({ datas }) {
                   </span>
                 </div>
 
-                <div className={` ${invoiceDatas.customerdetails.boxnumber ? 'block' : 'hidden'}`}>
+                <div className={` ${invoiceDatas.customerdetails.boxNumber ? 'block' : 'hidden'}`}>
                   <span className="font-bold">Box Number :</span>{' '}
-                  <span>{invoiceDatas.customerdetails.boxnumber || 'N/A'}</span>
+                  <span>{invoiceDatas.customerdetails.boxNumber || 'N/A'}</span>
                 </div>
 
                 <div
@@ -2423,7 +2426,7 @@ export default function Home({ datas }) {
                   </span>{' '}
                   <span>
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
-                      ? invoiceDatas.customerdetails.createddate
+                      ? invoiceDatas.customerdetails.createdDate
                       : null}
                   </span>
                 </span>
