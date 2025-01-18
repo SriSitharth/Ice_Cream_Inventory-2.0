@@ -1225,7 +1225,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           returnType: temp.returnType,
           margin: temp.margin === '' ? 0 : temp.margin,
           sno: tempIndex + 1,
-          date: dayjs().format('YYYY-MM-DD'),
+          date: (dayjs(form2.getFieldValue().date).format('YYYY-MM-DD')) || (dayjs().format('YYYY-MM-DD')),
           createdDate: new Date().toISOString(),
           modifiedDate: new Date().toISOString(),
         }))
@@ -1239,7 +1239,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
       returnDelivery.state === true
         ? {
             customerId: customername,
-            date: dayjs(form2.getFieldValue().date).format('YYYY-MM-DD'),
+            date: dayjs(form2.getFieldValue().date).format('YYYY-MM-DD') || (dayjs().format('YYYY-MM-DD')),
             //date: new Date().toISOString(),
             total: totalamount,
             billAmount: option.tempproduct.map((data) => data.price).reduce((a, b) => a + b, 0),
@@ -1255,7 +1255,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
           }
         : {
             customerId: customername,
-            date: dayjs(form2.getFieldValue().date).format('YYYY-MM-DD'),
+            date: dayjs(form2.getFieldValue().date).format('YYYY-MM-DD') || (dayjs().format('YYYY-MM-DD')),
             //date: new Date().toISOString(),
             total: totalamount,
             billAmount: marginValue.amount,
@@ -1287,15 +1287,15 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
       await addDeliveryDetail({...item,deliveryId: deliveryRef.id})
         // await addDoc(itemsCollectionRef, item)
-
+        
         const product = await getProductById(item.productId)
-
-        if (product.length > 0) {
+        console.log(product,product.length)
+        if (product) {
           const existingProduct = datas.storage.find(
             (storageItem) =>
-              storageItem.productId === product.id && storageItem.category === 'Product List'
+              storageItem.productId === String(product.id) && storageItem.category === 'Product List'
           )
-
+          console.log(product,existingProduct,returnDelivery.state,item.returnType)
           if (returnDelivery.state === true && item.returnType === 'normal') {
             await updateStorage(existingProduct.id, {
               numberOfPacks: existingProduct.numberOfPacks + item.numberOfPacks
@@ -2192,7 +2192,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
         createdDate: new Date().toISOString(),
         modifiedDate:  new Date().toISOString(),
         customername: lastOrderData.customerdetails.customerId,
-        date: form2.getFieldValue().date ? form2.getFieldValue().date.format('DD/MM/YYYY') : '',
+        date: form2.getFieldValue().date ? (form2.getFieldValue().date.format('YYYY-MM-DD')) : (dayjs().format('YYYY-MM-DD')),
         // flavour: data.flavour,
         key: i + 1,
         margin: data.margin,
@@ -2240,7 +2240,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   const quickSalePayMt = async () => {
     // setQuickSalePay((pre) => ({ ...pre, loading: true }));
     let { date, decription, ...paydetails } = quicksalepayForm.getFieldValue()
-    let formateDate = dayjs(date).format('YYYY-MM-DD')
+    let formateDate = dayjs(date).format('YYYY-MM-DD') || (dayjs().format('YYYY-MM-DD'))
     let billId = deliveryBill.prdata.id
 
     let newData = {

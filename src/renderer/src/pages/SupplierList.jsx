@@ -243,10 +243,10 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
   const supplierPay = async (value) => {
     setPayModalLoading(true)
     let { date, decription, ...Datas } = value
-    let formateDate = dayjs(date).format('DD/MM/YYYY')
+    let formateDate = (dayjs(date).format('YYYY-MM-DD')) || (dayjs().format('YYYY-MM-DD'))
     const payData = {
       ...Datas,
-      date: dayjs().format('YYYY-MM-DD'),
+      date: formateDate,
       modifiedDate: new Date().toISOString(),
       decription: decription || '',
       createdDate: new Date().toISOString(),
@@ -276,6 +276,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
   const [supplierName, setSupplierName] = useState('')
 
   const showPayDetailsModal = async (record) => {
+    setSupplierName(record.name)
     try {
       let rawmaterial = await getRawMaterials()
       let paydetails = await getSupplierPaymentsById(record.id)
@@ -288,7 +289,7 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
         let sortData = await latestFirstSort([...filterBillOrders, ...getPaydetials])
         console.log(sortData)
         setPayDetailsData(sortData)
-        setSupplierName(record.name)
+        
 
         // calculation
         const totalBalance = sortData.reduce((total, item) => {
@@ -322,12 +323,11 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
           return total
         }, 0)
         setTotalPurchaseAmount(totalPurchase)
-
-        setIsPayDetailsModelOpen(true)
       }
     } catch (e) {
       console.log(e)
     }
+    setIsPayDetailsModelOpen(true)
   }
 
   const payDetailsColumns = [

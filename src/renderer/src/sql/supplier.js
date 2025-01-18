@@ -99,8 +99,13 @@ export const getSupplierPayments = async () => {
       },
     });
 
-    console.log('All supplier payments fetched successfully:', response.data);
-    return response.data;
+    if (response.data) {
+      console.log('All supplier payments fetched successfully:', response.data);
+      return response.data;
+    } else {
+      console.warn('No supplier payments found');
+      return {};
+    }
   } catch (error) {
     console.error('Error fetching all supplier payments:', error.message);
     throw error;

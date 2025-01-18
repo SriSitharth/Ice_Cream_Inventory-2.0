@@ -44,8 +44,13 @@ export const getProductById = async (id) => {
       },
     });
 
-    console.log('Product fetched successfully:', response.data);
-    return response.data;
+    if (response.data) {
+      console.log('Product fetched successfully by ID:', response.data);
+      return response.data;
+    } else {
+      console.warn('No product found for the given ID:', id);
+      return {};
+    }
   } catch (error) {
     console.error('Error fetching product:', error.message);
     throw error;

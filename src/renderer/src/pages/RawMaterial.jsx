@@ -1019,7 +1019,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
     setIsLoadMaterialUsedModal(true)
     try {
       let rawMaterialData = mtOption.tempproduct.map((data) => ({
-        date: dayjs().format('YYYY-MM-DD'),
+        date: (dayjs(usedmaterialform.getFieldValue().date).format('YYYY-MM-DD')) || (dayjs().format('YYYY-MM-DD')),
         isDeleted: 0,
         type: usedmaterialform.getFieldValue().type,
         paymentStatus: usedmaterialform.getFieldValue().type === 'Return' ? 'Returned' : 'Used',
@@ -1034,11 +1034,10 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       // const supplierDbRef = collection(db, 'rawmaterial');
       // const createSupplierRef = await addDoc(supplierDbRef, { ...materialDetailData });
       // const materialDbRef = collection(createSupplierRef, 'materialdetails');
-      
       const rawMaterialRef = await addRawMaterial(rawMaterialData)
 
       let materials = await getSupplierAndMaterials()
-      console.log(rawMaterialData,materials)
+      
       if (materials) {
         let processedProducts = new Set() // Track processed products
 
@@ -1159,7 +1158,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       paymentStatus: addmaterialpaymentform.getFieldsValue().paymentStatus,
       type: 'Added',
       isDeleted: 0,
-      date: dayjs().format('YYYY-MM-DD'),
+      date: (dayjs(addmaterialpaymentform.getFieldValue().date).format('YYYY-MM-DD')) || (dayjs().format('YYYY-MM-DD')),
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString()
     }

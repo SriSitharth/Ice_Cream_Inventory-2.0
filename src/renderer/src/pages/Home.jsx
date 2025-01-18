@@ -44,9 +44,9 @@ import './css/Home.css'
 import TableHeight from '../components/TableHeight'
 dayjs.extend(isSameOrAfter)
 // APIs
-import { getCustomerById } from '../sql/customer'
-import { getSupplierById } from '../sql/supplier'
-import { getEmployeeById } from '../sql/employee'
+import { getCustomerById, getCustomerPayments } from '../sql/customer'
+import { getSupplierById, getSupplierPayments } from '../sql/supplier'
+import { getEmployeeById, getEmployeePayments } from '../sql/employee'
 import { getDeliveryById, getDeliveryDetailById, getDeliveryPayments } from '../sql/delivery'
 import { getFreezerboxById } from '../sql/freezerbox'
 import { getMaterialById } from '../sql/supplierandmaterials'
@@ -347,12 +347,12 @@ export default function Home({ datas }) {
         let updatedTempproduct = quotationft.tempproduct.map((product) =>
           product.key === row.key
             ? {
-                ...product,
-                numberOfPacks: row.numberOfPacks,
-                margin: row.margin,
-                price: customRound(mrp - (mrp * row.margin) / 100),
-                mrp: mrp
-              }
+              ...product,
+              numberOfPacks: row.numberOfPacks,
+              margin: row.margin,
+              price: customRound(mrp - (mrp * row.margin) / 100),
+              mrp: mrp
+            }
             : product
         )
         // update amount
@@ -376,12 +376,12 @@ export default function Home({ datas }) {
         let updatedTempproduct = quotationft.tempproduct.map((product) =>
           product.key === row.key
             ? {
-                ...product,
-                numberOfPacks: row.numberOfPacks,
-                margin: customRound(((mrp - row.price) / mrp) * 100),
-                price: row.price,
-                mrp: mrp
-              }
+              ...product,
+              numberOfPacks: row.numberOfPacks,
+              margin: customRound(((mrp - row.price) / mrp) * 100),
+              price: row.price,
+              mrp: mrp
+            }
             : product
         )
         // update amount
@@ -415,10 +415,10 @@ export default function Home({ datas }) {
     newTempProduct.length <= 0
       ? setQuotationFt((pre) => ({ ...pre, count: 0, mrpamount: 0, totalamount: 0 }))
       : setQuotationFt((pre) => ({
-          ...pre,
-          totalamount: pre.totalamount - recorde.price,
-          mrpamount: pre.mrpamount - recorde.mrp
-        }))
+        ...pre,
+        totalamount: pre.totalamount - recorde.price,
+        mrpamount: pre.mrpamount - recorde.mrp
+      }))
     setQuotationFt((pre) => ({
       ...pre,
       tempproduct: newTempProduct,
@@ -460,7 +460,7 @@ export default function Home({ datas }) {
         datas.delivery
           .filter((data) => {
             return !data.isDeleted && data.date === today
-            })
+          })
           .map(async (item, index) => {
             const result = await getCustomerById(item.customerId)
             const customerName = result.name || item.customername
@@ -568,35 +568,65 @@ export default function Home({ datas }) {
       )
       setFilteredRawmaterials(newFilteredRawmaterials)
 
-      let deliverys = await getDeliveryPayments()
-      if (deliverys.length > 0) {
-        let filterData = await Promise.all(
-          deliverys
+      // let deliverys = await getDeliveryPayments()
+      //   let filterData = await Promise.all(
+      //     deliverys
+      //       .filter(
+      //         (data) =>
+      //           !data.isDeleted &&
+      //           isWithinRange(data.date) &&
+      //           (((data.collectionType === 'delivery' || data.collectionType === 'customer') &&
+      //             data.type === 'Payment') ||
+      //             (data.collectionType === 'firstpartial' && data.type === 'firstpartial') ||
+      //             (data.collectionType === 'employee' && data.type === 'Return'))
+      //       )
+      //       .map(async (data) => {
+      //         let name = ''
+      //         if (data.customerId) {
+      //           const result = await getCustomerById(data.customerId)
+      //           if (result) {
+      //             name = result.name
+      //           }
+      //         }
+      //         if (data.deliveryid) {
+      //           const result = await getDeliveryById(data.deliveryid)
+      //           if (result) {
+      //             name = result.name
+      //           }
+      //         }
+      //         if (data.employeeId) {
+      //           const result = await getEmployeeById(data.employeeId)
+      //           if (result) {
+      //             name = result.name
+      //           }
+      //         }
+      //         return {
+      //           ...data,
+      //           name: name
+      //         }
+      //       })
+      //   )
+
+      let delPaymentData = [];
+      let cusPaymentData = [];
+      let empPaymentData = [];
+
+      
+      let deliveryPays = await getDeliveryPayments()
+      if (deliveryPays) {
+        delPaymentData = await Promise.all(
+          deliveryPays
             .filter(
               (data) =>
                 !data.isDeleted &&
                 isWithinRange(data.date) &&
-                (((data.collectiontype === 'delivery' || data.collectiontype === 'customer') &&
-                  data.type === 'Payment') ||
-                  (data.collectiontype === 'firstpartial' && data.type === 'firstpartial') ||
-                  (data.collectiontype === 'employee' && data.type === 'Return'))
+                ((data.collectionType === 'delivery' && data.type === 'Payment') ||
+                  (data.collectionType === 'firstpartial' && data.type === 'firstpartial'))
             )
             .map(async (data) => {
               let name = ''
-              if (data.customerId) {
-                const result = await getCustomerById(data.customerId)
-                if (result) {
-                  name = result.name
-                }
-              }
-              if (data.deliveryid) {
-                const result = await getDeliveryById(data.deliveryid)
-                if (result) {
-                  name = result.name
-                }
-              }
-              if (data.employeeId) {
-                const result = await getEmployeeById(data.employeeId)
+              if (data.deliveryId) {
+                const result = await getDeliveryById(data.deliveryId)
                 if (result) {
                   name = result.name
                 }
@@ -606,73 +636,232 @@ export default function Home({ datas }) {
                 name: name
               }
             })
-        )
+        )}
+
+        let customerPays = await getCustomerPayments()
+      if (customerPays) {
+        cusPaymentData = await Promise.all(
+          customerPays
+            .filter(
+              (data) =>
+                !data.isDeleted &&
+                isWithinRange(data.date) &&
+                (data.collectionType === 'customer' &&
+                  data.type === 'Payment')
+            )
+            .map(async (data) => {
+              let name = ''
+              if (data.customerId) {
+                  const result = await getCustomerById(data.customerId)
+                  if (result) {
+                    name = result.name
+                  }
+                }
+              return {
+                ...data,
+                name: name
+              }
+            })
+        )}
+
+
+        let employeePays = await getEmployeePayments()
+        if (employeePays) {
+          empPaymentData = await Promise.all(
+            employeePays
+              .filter(
+                (data) =>
+                  !data.isDeleted &&
+                  isWithinRange(data.date) &&
+                  (data.collectionType === 'employee' && data.type === 'Return')
+              )
+              .map(async (data) => {
+                let name = ''
+                if (data.employeeId) {
+                  const result = await getEmployeeById(data.employeeId)
+                  if (result) {
+                    name = result.name
+                  }
+                }
+                return {
+                  ...data,
+                  name: name
+                }
+              })
+          )}
+
+
+          let filterData = [
+            ...(delPaymentData || []),
+            ...(cusPaymentData || []),
+            ...(empPaymentData || []),
+          ];
+
+          const uniqueFilterData = Array.from(
+            new Map(filterData.map((item) => [item.id, item])).values()
+          );
 
         // let calculateFilterData = await Promise.all(
         //   deliverys
         //     .filter(
         //       (data) =>
         //         isWithinRange(data.date) &&
-        //         (data.collectiontype === 'delivery' || data.collectiontype === 'customer' || data.collectiontype === 'firstpartial')
+        //         (data.collectionType === 'delivery' || data.collectionType === 'customer' || data.collectionType === 'firstpartial')
         //     ))
 
-        let totalAmount = filterData.reduce((total, data) => {
+        let totalAmount = uniqueFilterData.reduce((total, data) => {
           const amount = Number(data.amount) || 0
           return total + amount
         }, 0)
 
         setTotalPayAmount(totalAmount)
-        setFilteredPayments(filterData)
+        setFilteredPayments(uniqueFilterData)
 
-        let spendData = await Promise.all(
-          deliverys
+        // let spendData = await Promise.all(
+        //   deliverys
+        //     .filter(
+        //       (data) =>
+        //         isWithinRange(data.date) &&
+        //         (((data.collectionType === 'supplier' || data.collectionType === 'employee') &&
+        //           data.type === 'Payment') ||
+        //           (data.collectionType === 'customer' &&
+        //             (data.type === 'Advance' || data.type === 'Spend')))
+        //     )
+        //     .map(async (data) => {
+        //       let name = ''
+
+        //       if (data.supplierId) {
+        //         const result = await getSupplierById(data.supplierId)
+        //         if (result) {
+        //           name = result.name
+        //         }
+        //       }
+
+        //       if (data.employeeId) {
+        //         const result = await getEmployeeById(data.employeeId)
+        //         if (result) {
+        //           name = result.name
+        //         }
+        //       }
+
+        //       if (data.customerId) {
+        //         const result = await getCustomerById(data.customerId)
+        //         if (result) {
+        //           name = result.name
+        //         }
+        //       }
+
+        //       return {
+        //         ...data,
+        //         name: name
+        //       }
+        //     })
+        // )
+
+        let supSpendData = [];
+      let cusSpendData = [];
+      let empSpendData = [];
+
+      
+      let supplierSpends = await getSupplierPayments()
+      if (supplierSpends) {
+        supSpendData = await Promise.all(
+          supplierSpends
             .filter(
               (data) =>
+                !data.isDeleted &&
                 isWithinRange(data.date) &&
-                (((data.collectiontype === 'supplier' || data.collectiontype === 'employee') &&
-                  data.type === 'Payment') ||
-                  (data.collectiontype === 'customer' &&
-                    (data.type === 'Advance' || data.type === 'Spend')))
+                ((data.collectionType === 'supplier' &&
+                          data.type === 'Payment'))
             )
             .map(async (data) => {
               let name = ''
-
               if (data.supplierId) {
                 const result = await getSupplierById(data.supplierId)
                 if (result) {
                   name = result.name
                 }
               }
-
-              if (data.employeeId) {
-                const result = await getEmployeeById(data.employeeId)
-                if (result) {
-                  name = result.name
-                }
-              }
-
-              if (data.customerId) {
-                const result = await getCustomerById(data.customerId)
-                if (result) {
-                  name = result.name
-                }
-              }
-
               return {
                 ...data,
                 name: name
               }
             })
-        )
+        )}
 
-        let spendAmount = spendData.reduce((total, data) => {
+        let customerSpends = await getCustomerPayments()
+      if (customerSpends) {
+        cusSpendData = await Promise.all(
+          customerSpends
+            .filter(
+              (data) =>
+                !data.isDeleted &&
+                isWithinRange(data.date) &&
+                (data.collectionType === 'customer' &&
+                            (data.type === 'Advance' || data.type === 'Spend'))
+            )
+            .map(async (data) => {
+              let name = ''
+              if (data.customerId) {
+                  const result = await getCustomerById(data.customerId)
+                  if (result) {
+                    name = result.name
+                  }
+                }
+              return {
+                ...data,
+                name: name
+              }
+            })
+        )}
+
+
+        let employeeSpends = await getEmployeePayments()
+        if (employeeSpends) {
+          empSpendData = await Promise.all(
+            employeeSpends
+              .filter(
+                (data) =>
+                  !data.isDeleted &&
+                  isWithinRange(data.date) &&
+                  (( data.collectionType === 'employee' &&
+                  data.type === 'Payment'))
+              )
+              .map(async (data) => {
+                let name = ''
+                if (data.employeeId) {
+                  const result = await getEmployeeById(data.employeeId)
+                  if (result) {
+                    name = result.name
+                  }
+                }
+                return {
+                  ...data,
+                  name: name
+                }
+              })
+          )}
+
+
+          let spendData = [
+            ...(supSpendData || []),
+            ...(cusSpendData || []),
+            ...(empSpendData || []),
+          ];
+
+          const uniqueSpendData = Array.from(
+            new Map(spendData.map((item) => [item.id, item])).values()
+          );
+        
+
+        let spendAmount = uniqueSpendData.reduce((total, data) => {
           const amount = Number(data.amount) || 0
           return total + amount
         }, 0)
         setTotalSpendAmount(spendAmount)
 
-        setFilteredSpendingPayments(spendData)
-      }
+        setFilteredSpendingPayments(uniqueSpendData)
+      
 
       const newFilteredSpending = await Promise.all(
         datas.spending
@@ -780,10 +969,10 @@ export default function Home({ datas }) {
 
   const totalProfit = totalSales - totalSpend - totalReturn - totalGeneralSpending
 
-  const totalBooking = deliveryData.filter((product) => 
-      product.type === 'booking' &&
-      dayjs(product?.deliveryDate).isSameOrAfter(dayjs(), 'day')
-    ).length
+  const totalBooking = deliveryData.filter((product) =>
+    product.type === 'booking' &&
+    dayjs(product?.deliveryDate).isSameOrAfter(dayjs(), 'day')
+  ).length
 
   const totalPaid = filteredDelivery.reduce((total, product) => {
     if (product.paymentStatus === 'Paid' && product.type !== 'return') {
@@ -899,7 +1088,7 @@ export default function Home({ datas }) {
         product.paymentMode === paymentMode
     )
     const filterPayment = filteredPayments
-      .filter((pay) => pay.paymentMode === paymentMode && pay.collectiontype !== 'firstpartial')
+      .filter((pay) => pay.paymentMode === paymentMode && pay.collectionType !== 'firstpartial')
       .map((pay) => ({
         ...pay,
         customername: pay.name,
@@ -1026,10 +1215,10 @@ export default function Home({ datas }) {
   // }
 
   const handlePrint = async (record) => {
-    
+
     try {
       const items = await getDeliveryDetailById(record.id)
-      
+
       if (items.length === 0) {
         throw new Error(`Failed to fetch items`)
       }
@@ -1038,14 +1227,14 @@ export default function Home({ datas }) {
       const result = record.customerId ? await getCustomerById(record.customerId) : null
       const gstin = result?.gstin || ''
       const address = result?.address || ''
-      
+
       let prData = datas.product.filter((product) => items.find((item2) => product.id === item2.productId))
       // let prData = datas.product.filter((item) => item.isDeleted === false)
-      console.log(record,items,result,prData)
+      console.log(record, items, result, prData)
       let prItems = prData.flatMap((pr, i) => {
         // Get all matching items with the same id
         let matchingItems = items.filter((item) => item.productId === pr.id)
-        console.log(matchingItems,pr.id)
+        console.log(matchingItems, pr.id)
         // If there are matching items, map over them to return multiple results
         return matchingItems.map((matchingData) => ({
           sno: matchingData.sno,
@@ -1328,16 +1517,16 @@ export default function Home({ datas }) {
       key: 'customername',
       render: (text, record) => {
         if (activeCard === 'totalSpend') {
-          return record.collectiontype === 'supplier' ? (
+          return record.collectionType === 'supplier' ? (
             <>
               {text} <Tag color="gold">Supplier</Tag>
             </>
-          ) : record.collectiontype === 'employee' ? (
+          ) : record.collectionType === 'employee' ? (
             <>
               {' '}
               {text} <Tag color="purple">Employee</Tag>
             </>
-          ) : record.collectiontype === 'customer' ? (
+          ) : record.collectionType === 'customer' ? (
             <>
               {' '}
               {text} <Tag color="volcano">Customer</Tag>
@@ -1346,16 +1535,16 @@ export default function Home({ datas }) {
             text
           )
         } else if (activeCard === 'totalPaid' || activeTabKey2 === 'total') {
-          return record.collectiontype === 'customer' ? (
+          return record.collectionType === 'customer' ? (
             <>
               {text} <Tag color="gold">Customer</Tag>
             </>
-          ) : record.collectiontype === 'delivery' ? (
+          ) : record.collectionType === 'delivery' ? (
             <>
               {' '}
               {text} <Tag color="purple">Delivery</Tag>
             </>
-          ) : record.collectiontype === 'employee' ? (
+          ) : record.collectionType === 'employee' ? (
             <>
               {' '}
               {text} <Tag color="volcano">Employee</Tag>
@@ -1490,7 +1679,7 @@ export default function Home({ datas }) {
           <span>
             <Button
               disabled={
-                Object.keys(record).includes('collectiontype') || record.spendingtype === 'General'
+                Object.keys(record).includes('collectionType') || record.spendingtype === 'General'
                   ? true
                   : false
               }
@@ -1503,7 +1692,7 @@ export default function Home({ datas }) {
             <Popconfirm
               placement="leftTop"
               className="py-0 text-[0.7rem] h-[1.7rem]"
-              // className={`py-0 text-[0.7rem] h-[1.7rem] ${Object.keys(record).includes('collectiontype') ? 'hidden':'inline-block'}`}
+              // className={`py-0 text-[0.7rem] h-[1.7rem] ${Object.keys(record).includes('collectionType') ? 'hidden':'inline-block'}`}
               title={
                 <div>
                   <span>Sure to download pdf?</span>
@@ -1556,9 +1745,9 @@ export default function Home({ datas }) {
             >
               <Button
                 disabled={
-                  Object.keys(record).includes('collectiontype') ||
-                  record.type === 'Added' ||
-                  record.spendingtype === 'General'
+                  Object.keys(record).includes('collectionType') ||
+                    record.type === 'Added' ||
+                    record.spendingtype === 'General'
                     ? true
                     : false
                 }
@@ -1570,7 +1759,7 @@ export default function Home({ datas }) {
 
             {/* <ReactToPrint
           trigger={() => (
-            <Button disabled={Object.keys(record).includes('collectiontype') || record.type === "Added" ? true:false} className="py-0 text-[0.7rem] h-[1.7rem]" icon={<PrinterOutlined />} />
+            <Button disabled={Object.keys(record).includes('collectionType') || record.type === "Added" ? true:false} className="py-0 text-[0.7rem] h-[1.7rem]" icon={<PrinterOutlined />} />
           )}
           onBeforeGetContent={async () => {
             return new Promise((resolve) => {
@@ -1661,9 +1850,9 @@ export default function Home({ datas }) {
             >
               <Button
                 disabled={
-                  Object.keys(record).includes('collectiontype') ||
-                  record.type === 'Added' ||
-                  record.spendingtype === 'General'
+                  Object.keys(record).includes('collectionType') ||
+                    record.type === 'Added' ||
+                    record.spendingtype === 'General'
                     ? true
                     : false
                 }
@@ -1773,7 +1962,7 @@ export default function Home({ datas }) {
     const productOp = datas.product
       .filter(
         (item, i, s) =>
-          item.isDeleted === 0 
+          item.isDeleted === 0
         // && s.findIndex((item2) => item2.productname === item.productname) === i
       )
       .map((data) => ({ label: data.name, value: data.name }))
@@ -2059,7 +2248,7 @@ export default function Home({ datas }) {
                     fontWeight: 'bold',
                     fontSize: `${hasPdf === true ? pdfBillStyle.heading : printBillStyle.heading}`
                   }}
-                  // className={`${hasPdf === true ? 'text-[1.5rem]' : 'text-[0.7rem]'} font-bold`}
+                // className={`${hasPdf === true ? 'text-[1.5rem]' : 'text-[0.7rem]'} font-bold`}
                 >
                   NEW SARANYA ICE COMPANY
                 </h1>
@@ -2067,7 +2256,7 @@ export default function Home({ datas }) {
                   style={{
                     fontSize: `${hasPdf === true ? pdfBillStyle.subheading : printBillStyle.subheading}`
                   }}
-                  // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'}`}
+                // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'}`}
                 >
                   PILAVILAI, AZHAGANPARAI P.O.
                 </p>
@@ -2075,7 +2264,7 @@ export default function Home({ datas }) {
                   style={{
                     fontSize: `${hasPdf === true ? pdfBillStyle.subheading : printBillStyle.subheading}`
                   }}
-                  // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'}`}
+                // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'}`}
                 >
                   K.K.DIST
                 </p>
@@ -2090,7 +2279,7 @@ export default function Home({ datas }) {
                 alignItems: 'center',
                 margin: '40px 0 0 0'
               }}
-              // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} mt-1 flex justify-between`}
+            // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} mt-1 flex justify-between`}
             >
               <li>
                 <div>
@@ -2183,7 +2372,7 @@ export default function Home({ datas }) {
                 textAlign: 'left',
                 padding: '3px'
               }}
-              // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} min-w-full border-collapse mt-4`}
+            // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} min-w-full border-collapse mt-4`}
             >
               <thead>
                 <tr>
@@ -2194,7 +2383,7 @@ export default function Home({ datas }) {
                   </th>
                   <th
                     style={{ width: '350px' }}
-                    // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b text-left pb-2`}
+                  // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b text-left pb-2`}
                   >
                     Product
                   </th>
@@ -2227,7 +2416,7 @@ export default function Home({ datas }) {
                   </th>
                   <th
                     style={{ width: '50px' }}
-                    // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b text-left pb-2`}
+                  // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b text-left pb-2`}
                   >
                     Margin
                   </th>
@@ -2242,23 +2431,23 @@ export default function Home({ datas }) {
               <tbody>
                 {invoiceDatas.data.length > 0
                   ? invoiceDatas.data.map((item, i) => (
-                      <tr key={i}>
-                        <td
-                          width={20}
-                          // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
-                        >
-                          {i + 1}
-                        </td>
-                        <td
-                        // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
-                        >
-                          {item.productname}{' '}
-                          {invoiceDatas.customerdetails.type === 'return' &&
+                    <tr key={i}>
+                      <td
+                        width={20}
+                      // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
+                      >
+                        {i + 1}
+                      </td>
+                      <td
+                      // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
+                      >
+                        {item.productname}{' '}
+                        {invoiceDatas.customerdetails.type === 'return' &&
                           (item.returnType !== undefined || item.returnType !== null)
-                            ? `(${item.returnType})`
-                            : ''}
-                        </td>
-                        {/* <td
+                          ? `(${item.returnType})`
+                          : ''}
+                      </td>
+                      {/* <td
                           // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
                         >
                           {item.flavour}
@@ -2268,36 +2457,36 @@ export default function Home({ datas }) {
                         >
                           {item.quantity}
                         </td> */}
-                        <td
-                        // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
-                        >
-                          {item.pieceamount}
-                        </td>
-                        <td
-                        // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
-                        >
-                          {item.numberOfPacks}
-                        </td>
-                        <td
-                        // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
-                        >
-                          {item.producttotalamount}
-                        </td>
-                        <td
-                        // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
-                        >
-                          {toDigit(item.margin)}%
-                        </td>
-                        <td
-                        // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
-                        >
-                          {customRound(
-                            item.numberOfPacks * item.pieceamount -
-                              (item.numberOfPacks * item.pieceamount * item.margin) / 100
-                          )}
-                        </td>
-                      </tr>
-                    ))
+                      <td
+                      // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
+                      >
+                        {item.pieceamount}
+                      </td>
+                      <td
+                      // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
+                      >
+                        {item.numberOfPacks}
+                      </td>
+                      <td
+                      // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
+                      >
+                        {item.producttotalamount}
+                      </td>
+                      <td
+                      // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
+                      >
+                        {toDigit(item.margin)}%
+                      </td>
+                      <td
+                      // className={`${hasPdf === true ? 'text-[0.7rem]' : 'text-[0.5rem]'} border-b pb-2`}
+                      >
+                        {customRound(
+                          item.numberOfPacks * item.pieceamount -
+                          (item.numberOfPacks * item.pieceamount * item.margin) / 100
+                        )}
+                      </td>
+                    </tr>
+                  ))
                   : 'No Data'}
               </tbody>
             </table>
@@ -2329,9 +2518,9 @@ export default function Home({ datas }) {
                   <span className=" font-bold">
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
                       ? formatToRupee(
-                          invoiceDatas.customerdetails.billAmount -
-                            invoiceDatas.customerdetails.partialAmount
-                        )
+                        invoiceDatas.customerdetails.billAmount -
+                        invoiceDatas.customerdetails.partialAmount
+                      )
                       : null}
                     {/* {(Object.keys(invoiceDatas.customerdetails).length !== 0) && (invoiceDatas.customerdetails.partialAmount !== 0 )
                   ? formatToRupee( invoiceDatas.customerdetails.billAmount - invoiceDatas.customerdetails.partialAmount)
@@ -2373,7 +2562,7 @@ export default function Home({ datas }) {
                 </p>
                 <p
                   className={`${invoiceDatas.customerdetails.type === 'return' ? 'hidden' : 'block'}`}
-                  // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} ${invoiceDatas.customerdetails.partialAmount !== 0 || invoiceDatas.customerdetails.paymentStatus === 'Paid' ? 'block text-end' : 'hidden'}`}
+                // className={`${hasPdf === true ? 'text-[0.8rem]' : 'text-[0.5rem]'} ${invoiceDatas.customerdetails.partialAmount !== 0 || invoiceDatas.customerdetails.paymentStatus === 'Paid' ? 'block text-end' : 'hidden'}`}
                 >
                   Paid Amount:{' '}
                   <span className=" font-bold">
@@ -2627,7 +2816,7 @@ export default function Home({ datas }) {
                 overflowY: 'auto',
                 pageBreakInside: 'avoid'
               }}
-              //className={`${hasPdf ? "h-[42rem]" : "h-[26rem]"}`}
+            //className={`${hasPdf ? "h-[42rem]" : "h-[26rem]"}`}
             >
               <table
                 style={{
@@ -2698,72 +2887,72 @@ export default function Home({ datas }) {
                 <tbody>
                   {invoiceDatas.data.length > 0
                     ? invoiceDatas.data.map((item, i) => (
-                        <tr key={i}>
-                          <td
-                            style={{
-                              fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
-                            }}
-                            className={`${hasPdf === true ? 'pb-2' : ''} border-b text-center`}
-                          >
-                            {i + 1}
-                          </td>
-                          <td
-                            style={{
-                              fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
-                            }}
-                            className={` border-b px-1`}
-                          >
-                            {item.productname}{' '}
-                            {invoiceDatas.customerdetails.type === 'return' &&
+                      <tr key={i}>
+                        <td
+                          style={{
+                            fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
+                          }}
+                          className={`${hasPdf === true ? 'pb-2' : ''} border-b text-center`}
+                        >
+                          {i + 1}
+                        </td>
+                        <td
+                          style={{
+                            fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
+                          }}
+                          className={` border-b px-1`}
+                        >
+                          {item.productname}{' '}
+                          {invoiceDatas.customerdetails.type === 'return' &&
                             (item.returnType !== undefined || item.returnType !== null)
-                              ? `(${item.returnType})`
-                              : ''}
-                          </td>
-                          <td
-                            style={{
-                              fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
-                            }}
-                            className={` border-b text-center`}
-                          >
-                            {item.pieceamount}
-                          </td>
-                          <td
-                            style={{
-                              fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
-                            }}
-                            className={` border-b text-center`}
-                          >
-                            {item.numberOfPacks}
-                          </td>
-                          <td
-                            style={{
-                              fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
-                            }}
-                            className={` border-b text-center`}
-                          >
-                            {item.producttotalamount}
-                          </td>
-                          <td
-                            style={{
-                              fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
-                            }}
-                            className={` border-b text-center`}
-                          >
-                            {toDigit(item.margin)}%
-                          </td>
-                          <td
-                            style={{
-                              fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
-                            }}
-                            className={` border-b text-center`}
-                          >
-                            {customRound(
-                              item.numberOfPacks * item.pieceamount -
-                                (item.numberOfPacks * item.pieceamount * item.margin) / 100
-                            )}
-                          </td>
-                        </tr>
-                      ))
+                            ? `(${item.returnType})`
+                            : ''}
+                        </td>
+                        <td
+                          style={{
+                            fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
+                          }}
+                          className={` border-b text-center`}
+                        >
+                          {item.pieceamount}
+                        </td>
+                        <td
+                          style={{
+                            fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
+                          }}
+                          className={` border-b text-center`}
+                        >
+                          {item.numberOfPacks}
+                        </td>
+                        <td
+                          style={{
+                            fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
+                          }}
+                          className={` border-b text-center`}
+                        >
+                          {item.producttotalamount}
+                        </td>
+                        <td
+                          style={{
+                            fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
+                          }}
+                          className={` border-b text-center`}
+                        >
+                          {toDigit(item.margin)}%
+                        </td>
+                        <td
+                          style={{
+                            fontSize: `${hasPdf === true ? GstBillStylePdf.para : GstBillStylePrint.para}`
+                          }}
+                          className={` border-b text-center`}
+                        >
+                          {customRound(
+                            item.numberOfPacks * item.pieceamount -
+                            (item.numberOfPacks * item.pieceamount * item.margin) / 100
+                          )}
+                        </td>
+                      </tr>
+                    ))
                     : 'No Data'}
 
                   <tr className="px-1">
@@ -2930,9 +3119,9 @@ export default function Home({ datas }) {
                       <span>
                         {Object.keys(invoiceDatas.customerdetails).length !== 0
                           ? formatToRupee(
-                              invoiceDatas.customerdetails.total -
-                                invoiceDatas.customerdetails.billAmount
-                            )
+                            invoiceDatas.customerdetails.total -
+                            invoiceDatas.customerdetails.billAmount
+                          )
                           : null}
                       </span>
                     </span>
@@ -2992,9 +3181,9 @@ export default function Home({ datas }) {
                   <span>
                     {Object.keys(invoiceDatas.customerdetails).length !== 0
                       ? formatToRupee(
-                          invoiceDatas.customerdetails.billAmount +
-                            invoiceDatas.customerdetails.billAmount * 0.18
-                        )
+                        invoiceDatas.customerdetails.billAmount +
+                        invoiceDatas.customerdetails.billAmount * 0.18
+                      )
                       : null}
                   </span>
                 </span>
@@ -3414,7 +3603,7 @@ export default function Home({ datas }) {
                   <Form.Item
                     className="mb-1"
                     name="mobileNumber"
-                    // label="Mobile Number"
+                  // label="Mobile Number"
                   >
                     <InputNumber
                       type="number"
@@ -3447,7 +3636,7 @@ export default function Home({ datas }) {
               <Form
                 form={temform}
                 component={false}
-                //  onFinish={tempSingleMargin}
+              //  onFinish={tempSingleMargin}
               >
                 <Table
                   virtual

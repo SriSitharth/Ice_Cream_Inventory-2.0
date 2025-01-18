@@ -111,8 +111,13 @@ export const getCustomerPaymentsById = async (customerId) => {
       },
     });
 
-    console.log('Payments for customer fetched successfully:', response.data);
-    return response.data;
+    if (response.data) {
+      console.log('Payments for customer fetched successfully:', response.data);
+      return response.data;
+    } else {
+      console.warn('No customer payments found for the given ID:', customerId);
+      return {};
+    }
   } catch (error) {
     if (error.response && error.response.status === 404) {
       console.warn(`No payments found for customer ID: ${customerId}`);

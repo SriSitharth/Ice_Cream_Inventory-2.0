@@ -420,7 +420,7 @@ export default function NavBar({
         productItems.map(async (data) => {
           const existingProduct = datas.storage.find(
             (storageItem) =>
-              storageItem.productId === String(data.id) && storageItem.category === 'Product List'
+              storageItem.productId === String(data.productId) && storageItem.category === 'Product List'
           )
           // console.log(existingProduct.id,{numberOfPacks: existingProduct.numberOfPacks - data.numberOfPacks,updateddate:TimestampJs()});
           await updateStorage(existingProduct.id, {
@@ -433,9 +433,9 @@ export default function NavBar({
 
       const newDelivery = {
         name: qickSaleForm3Value.customername || 'Quick Sale',
-        mobileNumber: qickSaleForm3Value.mobileNumber || '',
+        mobileNumber: qickSaleForm3Value.mobileNumber || null,
         billAmount: isQuickSale.billAmount,
-        deliveryTime: qickSaleForm3Value.time ? qickSaleForm3Value.time.format('HH:mm:ss') : '',
+        deliveryTime: qickSaleForm3Value.time ? qickSaleForm3Value.time.format('HH:mm:ss') : '00:00:00',
         partialAmount:
           qickSaleForm3Value.partialAmount === undefined ||
           qickSaleForm3Value.partialAmount === null
@@ -444,14 +444,16 @@ export default function NavBar({
         paymentStatus: qickSaleForm3Value.paymentStatus,
         total: isQuickSale.total,
         type: isQuickSale.type,
-        bookingStatus: isQuickSale.type === "booking" ? "Booking" : null,
+        bookingStatus: isQuickSale.type === "booking" ? "Booking" : "",
         isDeleted: 0,
         paymentMode: qickSaleForm3Value.paymentStatus === 'Unpaid' ? '' : isQuickSale.paymentMode,
         createdDate: new Date().toISOString(),
         modifiedDate: new Date().toISOString(),
         date: dayjs().format('YYYY-MM-DD'),
         deliveryDate: dayjs(quickSaleForm.getFieldsValue().date).format('YYYY-MM-DD'),
-        address: qickSaleForm3Value.location || ''
+        address: qickSaleForm3Value.location || '',
+        customerId: null,
+        boxId: ""
       }
       
       const paydetailsHistory = {

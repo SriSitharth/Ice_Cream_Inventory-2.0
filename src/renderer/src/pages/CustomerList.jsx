@@ -179,7 +179,7 @@ export default function CustomerList({ datas, customerUpdateMt, freezerboxUpdate
   const customerPay = async (value) => {
     setIsCustomerPayLoading(true)
     let { date, decription, ...Datas } = value
-    let formatedDate = dayjs(date).format('YYYY-MM-DD')
+    let formatedDate = (dayjs(date).format('YYYY-MM-DD')) || (dayjs().format('YYYY-MM-DD'))
     const payData = {
       ...Datas,
       collectionType: 'customer',

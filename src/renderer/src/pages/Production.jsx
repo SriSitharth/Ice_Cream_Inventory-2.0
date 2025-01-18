@@ -629,6 +629,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
   // add new production
   const addNewProduction = async () => {
     setIsAddProductModal(true)
+    console.log(option.tempproduct)
     try {
       for (const item of option.tempproduct) {
         let { key, quantity, ...newProduction } = item
@@ -642,7 +643,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
         )
 
         await addProduction({
-          date: dayjs().format('YYYY-MM-DD'),
+          date: (dayjs(form2.getFieldValue().date).format('YYYY-MM-DD')) || (dayjs().format('YYYY-MM-DD')),
           createdDate: new Date().toISOString(),
           modifiedDate: new Date().toISOString(),
           productId: existingProductList.id,
@@ -656,7 +657,7 @@ export default function Production({ datas, productionUpdateMt, storageUpdateMt 
             storageItem.category === 'Product List'
         )
 
-        console.log(existingProduct)
+        
         // setIsAddProductModal(false)
         await updateStorage(existingProduct.id, {
           numberOfPacks: existingProduct.numberOfPacks + newProduction.numberOfPacks

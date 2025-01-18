@@ -507,7 +507,7 @@ export default function Employee({ datas, employeeUpdateMt }) {
   const empPayMt = async (value) => {
     setIsEmpLoading(true)
     let { date, description, ...Datas } = value
-    let formatedDate = dayjs(date).format('YYYY-MM-DD')
+    let formatedDate = (dayjs(date).format('YYYY-MM-DD')) || (dayjs().format('YYYY-MM-DD'))
     const empId = employeePay.name.id
     const payData = {
       ...Datas,
