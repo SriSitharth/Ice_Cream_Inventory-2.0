@@ -348,12 +348,11 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
 
   // create the new add material entry
   const AddTemMaterial = async (values) => {
-    
     let material = await getMaterialById(values.materialName)
     let exsitingData = addMaterialMethod.temperorarydata.some(
       (data) => data.id === values.materialName
     )
-    console.log(values,material)
+    console.log(values,material,exsitingData)
     // supplier data
     let supplierDatas = {
       supplierid: values.suppliername,
@@ -371,7 +370,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
         temperorarydata: [...pre.temperorarydata, compainAddData],
         supplierdata: supplierDatas
       }))
-
+      console.log(addMaterialMethod.temperorarydata)
       const newTotal = [...addMaterialMethod.temperorarydata, compainAddData].reduce(
         (total, item) => total + Number(item.price),
         0
@@ -1170,7 +1169,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
       quantity: data.quantity,
       createdDate: new Date().toISOString(),
       modifiedDate: new Date().toISOString(),
-      materialName: data.materialName
+      materialName: data.name
     }))
     let totalprice = materialArray.map((data) => data.price).reduce((a, b) => a + b, 0)
 
@@ -1199,8 +1198,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
         const existingMaterial = await datas.storage.find(
           (storageItem) =>
             storageItem.category === 'Material List' &&
-            storageItem.materialName?.trim().toLowerCase() ===
-              newmaterial.materialName?.trim().toLowerCase() &&
+            storageItem.materialName?.toLowerCase() === newmaterial.materialName?.toLowerCase() &&
             storageItem.isDeleted === 0
         )
 
@@ -1228,6 +1226,7 @@ export default function RawMaterial({ datas, rawmaterialUpdateMt, storageUpdateM
           await updateStorage(existingMaterial.id, {
             quantity: existingMaterial.quantity + newmaterial.quantity
           })
+
         } else {
           console.log(newmaterial, {
             alertcount: 0,

@@ -613,6 +613,7 @@ export default function Home({ datas }) {
 
       
       let deliveryPays = await getDeliveryPayments()
+      console.log(deliveryPays)
       if (deliveryPays) {
         delPaymentData = await Promise.all(
           deliveryPays

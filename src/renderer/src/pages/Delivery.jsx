@@ -1546,36 +1546,36 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   }, [])
 
   // create material
-  const createTemMaterial = async (values) => {
-    setMtOption((pre) => ({ ...pre, count: pre.count + 1 }))
-    const formattedDate = values.date ? values.date.format('DD/MM/YYYY') : ''
-    const newMaterial = {
-      ...values,
-      date: formattedDate,
-      key: mtOption.count,
-      createdDate: TimestampJs(),
-      isDeleted: false,
-      quantity: values.quantity + ' ' + values.unit
-    }
+  // const createTemMaterial = async (values) => {
+  //   setMtOption((pre) => ({ ...pre, count: pre.count + 1 }))
+  //   const formattedDate = values.date ? values.date.format('DD/MM/YYYY') : ''
+  //   const newMaterial = {
+  //     ...values,
+  //     date: formattedDate,
+  //     key: mtOption.count,
+  //     createdDate: TimestampJs(),
+  //     isDeleted: false,
+  //     quantity: values.quantity + ' ' + values.unit
+  //   }
 
-    const checkExsit = mtOption.tempproduct.find(
-      (item) => item.material === newMaterial.material && item.date === newMaterial.date
-    )
+  //   const checkExsit = mtOption.tempproduct.find(
+  //     (item) => item.material === newMaterial.material && item.date === newMaterial.date
+  //   )
 
-    const dbcheckExsit = datas.usedmaterials.find(
-      (item) => item.material === newMaterial.material && item.date === newMaterial.date
-    )
+  //   const dbcheckExsit = datas.usedmaterials.find(
+  //     (item) => item.material === newMaterial.material && item.date === newMaterial.date
+  //   )
 
-    if (checkExsit) {
-      message.open({ type: 'warning', content: 'Product is already added' })
-      return
-    } else if (dbcheckExsit) {
-      message.open({ type: 'warning', content: 'Product is already added' })
-      return
-    } else {
-      setMtOption((pre) => ({ ...pre, tempproduct: [...pre.tempproduct, newMaterial] }))
-    }
-  }
+  //   if (checkExsit) {
+  //     message.open({ type: 'warning', content: 'Product is already added' })
+  //     return
+  //   } else if (dbcheckExsit) {
+  //     message.open({ type: 'warning', content: 'Product is already added' })
+  //     return
+  //   } else {
+  //     setMtOption((pre) => ({ ...pre, tempproduct: [...pre.tempproduct, newMaterial] }))
+  //   }
+  // }
 
   // remove tem material
   const removeTemMaterial = (key) => {
@@ -1584,15 +1584,15 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
   }
 
   // add new material to data base
-  const addNewTemMaterial = async () => {
-    mtOption.tempproduct.map(async (item, i) => {
-      let { key, quantity, ...newMaterial } = item
-      let quntity = Number(quantity.split(' ')[0])
-      await addDelivery({ ...newMaterial, quantity: quntity })
-    })
-    usedmaterialUpdateMt()
-    materialModelCancel()
-  }
+  // const addNewTemMaterial = async () => {
+  //   mtOption.tempproduct.map(async (item, i) => {
+  //     let { key, quantity, ...newMaterial } = item
+  //     let quntity = Number(quantity.split(' ')[0])
+  //     await addDelivery({ ...newMaterial, quantity: quntity })
+  //   })
+  //   usedmaterialUpdateMt()
+  //   materialModelCancel()
+  // }
 
   // model cancel
   const materialModelCancel = () => {
@@ -2257,7 +2257,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
     let balanceAmount = deliveryBill.data.billAmount - deliveryBill.data.partialAmount
     let newPayAmount = balanceAmount - newData.amount
-
+    console.log('newData',newData)
     if (paydetails.amount === 0) {
       message.open({ type: 'info', content: 'Enter the Valuable Amount' })
       return
@@ -2442,7 +2442,7 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
     let partialAmount = deliveryBill.data.partialAmount
     let billingAmount = deliveryBill.data.billAmount
     if (
-      payModalState.data.date === dayjs(date).format('DD/MM/YYYY') &&
+      payModalState.data.date === dayjs(date).format('YYYY-MM-DD') &&
       payModalState.data.amount === amount &&
       payModalState.data.decription === decription.trim()
     ) {
