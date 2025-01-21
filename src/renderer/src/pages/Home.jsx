@@ -627,9 +627,12 @@ export default function Home({ datas }) {
             .map(async (data) => {
               let name = ''
               if (data.deliveryId) {
-                const result = await getDeliveryById(data.deliveryId)
-                if (result) {
-                  name = result.name
+                const delivery  = await getDeliveryById(data.deliveryId)
+                if (delivery?.customerId) {
+                  const customer = await getCustomerById(delivery.customerId);
+                  name = customer?.name || '';
+                }else {
+                  name = delivery.name
                 }
               }
               return {

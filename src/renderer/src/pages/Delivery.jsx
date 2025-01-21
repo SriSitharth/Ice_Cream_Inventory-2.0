@@ -1274,12 +1274,27 @@ export default function Delivery({ datas, deliveryUpdateMt, storageUpdateMt, cus
 
     // console.log(newDelivery);
     try {
-      // const deliveryCollectionRef = collection(db, 'delivery')
-      // const deliveryDocRef = await addDoc(deliveryCollectionRef, newDelivery)
-      // const itemsCollectionRef = collection(deliveryDocRef, 'items')
+
+      
       setOption((prev) => ({ ...prev, tempproduct: [] }))
-      console.log(newDelivery)
       let deliveryRef = await addDelivery(newDelivery)
+
+      if(returnDelivery.state === false && partialAmount > 0){
+        const partPayment = {
+            deliveryId: deliveryRef.id,
+            amount: partialAmount || 0,
+            paymentMode: paymentMode || '',
+            isDeleted: 0,
+            collectionType: 'delivery',
+            type: 'Payment',
+            decription: "",
+            date: dayjs(form2.getFieldValue().date).format('YYYY-MM-DD') || (dayjs().format('YYYY-MM-DD')),
+            createdDate: new Date().toISOString(),
+            modifiedDate: new Date().toISOString(),
+        }
+
+        await addDeliveryPayment(partPayment)
+      }
 
       for (const item of productItems) {
 
