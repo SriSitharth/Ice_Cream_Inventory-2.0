@@ -106,7 +106,8 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
   // create new project
   const createNewSupplier = async (values) => {
     let correctNameData = values.material.map((data) => ({
-      ...data
+      ...data,
+      name: formatName(data.name)
     }))
     console.log(correctNameData)
     // Create a map to count occurrences of each materialname
@@ -133,7 +134,8 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
 
     const correctMaterialName = await Promise.all(
       material.map(async (data) => ({
-        ...data
+        ...data,
+        name: formatName(data.name)
       }))
     )
 
@@ -170,11 +172,10 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
 
     setSupplierModalLoading(true)
     try {
-      console.log(supplierDatas)
+
       const addedSupplier = await addSupplier(supplierDatas)
 
       for (const materialItem of correctMaterialName) {
-        console.log(materialItem)
         await addSupplierAndMaterial({
           name: materialItem.name,
           unit: materialItem.unit,
@@ -183,22 +184,6 @@ export default function SupplierList({ datas, supplierUpdateMt, storageUpdateMt 
           createdDate: new Date().toISOString(),
           modifiedDate: new Date().toISOString()
         })
-
-        // await addDoc(materialCollectionRef, {...materialItem,isDeleted:false,createddate:TimestampJs()});
-        // const materialExists = datas.storage.find(
-        //   (storageItem) => storageItem.materialname === materialItem.materialname && storageItem.category === 'Material List' && storageItem.unit === materialItem.unit
-        // )
-        // if (!materialExists) {
-        //   await createStorage({
-        //     materialname: formatName(materialItem.materialname),
-        //     unit: materialItem.unit,
-        //     alertcount: 0,
-        //     quantity: 0,
-        //     isDeleted: false,
-        //     category: 'Material List',
-        //     createddate: TimestampJs()
-        //   })
-        // }
       }
 
       // new material add storage
